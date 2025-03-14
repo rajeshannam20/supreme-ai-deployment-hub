@@ -1,13 +1,15 @@
 
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
-import Index from "./pages/Index";
-import NotFound from "./pages/NotFound";
+import { TooltipProvider } from "@radix-ui/react-tooltip";
+import { Outlet } from "react-router-dom";
+import { Toaster } from "sonner";
 
+import Navbar from "./components/Navbar";
+import Footer from "./components/Footer";
+import "./App.css";
+
+// Create a client
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -15,14 +17,13 @@ const App = () => (
     <ThemeProvider defaultTheme="dark" enableSystem>
       <TooltipProvider>
         <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
+        <div className="min-h-screen flex flex-col">
+          <Navbar />
+          <main className="flex-grow">
+            <Outlet />
+          </main>
+          <Footer />
+        </div>
       </TooltipProvider>
     </ThemeProvider>
   </QueryClientProvider>
