@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Helmet } from 'react-helmet';
 import Container from '@/components/Container';
 import SectionHeading from '@/components/SectionHeading';
@@ -8,35 +8,15 @@ import APIConnectionsTab from '@/components/api/APIConnectionsTab';
 import APIDocumentationTab from '@/components/api/APIDocumentationTab';
 import APIPlaygroundTab from '@/components/api/APIPlaygroundTab';
 import SavedResponsesTab from '@/components/api/SavedResponsesTab';
-import { SavedAPIResponse } from '@/types/api';
-import { v4 as uuidv4 } from 'uuid';
+import { useSavedResponses } from '@/hooks/useSavedResponses';
 
 const API: React.FC = () => {
-  const [savedResponses, setSavedResponses] = useState<SavedAPIResponse[]>([]);
-
-  const saveResponse = (
-    apiName: string,
-    method: string,
-    endpoint: string,
-    status: string,
-    response: string
-  ) => {
-    const newSavedResponse: SavedAPIResponse = {
-      id: uuidv4(),
-      timestamp: new Date(),
-      apiName,
-      method,
-      endpoint,
-      status,
-      response
-    };
-    
-    setSavedResponses(prev => [newSavedResponse, ...prev]);
-  };
-
-  const deleteResponse = (id: string) => {
-    setSavedResponses(prev => prev.filter(response => response.id !== id));
-  };
+  const { 
+    savedResponses, 
+    saveResponse, 
+    deleteResponse, 
+    copyToClipboard 
+  } = useSavedResponses();
 
   return (
     <>
@@ -74,7 +54,8 @@ const API: React.FC = () => {
             <TabsContent value="saved" className="mt-6">
               <SavedResponsesTab 
                 savedResponses={savedResponses} 
-                onDeleteResponse={deleteResponse} 
+                onDeleteResponse={deleteResponse}
+                onCopyToClipboard={copyToClipboard}
               />
             </TabsContent>
           </Tabs>
