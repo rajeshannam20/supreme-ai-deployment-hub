@@ -9,3 +9,13 @@ export interface APIConfig {
 }
 
 export type NewAPIConfig = Omit<APIConfig, 'isConnected' | 'lastConnected'>;
+
+export interface SavedAPIResponse {
+  id: string;
+  timestamp: Date;
+  apiName: string;
+  method: string;
+  endpoint: string;
+  status: string;
+  response: string;
+}

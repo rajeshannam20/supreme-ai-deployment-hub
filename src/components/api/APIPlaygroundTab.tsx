@@ -9,8 +9,19 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
 import { useAPI } from '@/contexts/APIContext';
+import { Save } from 'lucide-react';
 
-const APIPlaygroundTab: React.FC = () => {
+interface APIPlaygroundTabProps {
+  onSaveResponse?: (
+    apiName: string, 
+    method: string, 
+    endpoint: string, 
+    status: string, 
+    response: string
+  ) => void;
+}
+
+const APIPlaygroundTab: React.FC<APIPlaygroundTabProps> = ({ onSaveResponse }) => {
   const { apiConfigs } = useAPI();
   const [selectedAPI, setSelectedAPI] = useState<string>('');
   const [method, setMethod] = useState<string>('GET');
@@ -113,6 +124,18 @@ const APIPlaygroundTab: React.FC = () => {
     }
   };
 
+  const handleSaveResponse = () => {
+    if (!response || !status || !selectedAPI) {
+      toast.error('No response to save');
+      return;
+    }
+    
+    if (onSaveResponse) {
+      onSaveResponse(selectedAPI, method, endpoint, status, response);
+      toast.success('Response saved successfully');
+    }
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -206,7 +229,21 @@ const APIPlaygroundTab: React.FC = () => {
           <Separator />
 
           <div className="space-y-4">
-            <h3 className="text-lg font-medium">Response</h3>
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-medium">Response</h3>
+              
+              {response && status && (
+                <Button 
+                  onClick={handleSaveResponse} 
+                  variant="outline" 
+                  size="sm"
+                  disabled={!response || !selectedAPI}
+                >
+                  <Save className="h-4 w-4 mr-2" />
+                  Save Response
+                </Button>
+              )}
+            </div>
             
             {status && (
               <div className={`text-sm px-3 py-1 rounded-md inline-block ${
