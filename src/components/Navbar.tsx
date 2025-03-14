@@ -3,9 +3,19 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
+import { Bot, Sun, Moon } from 'lucide-react';
+import { useTheme } from 'next-themes';
+import { Switch } from '@/components/ui/switch';
 
 const Navbar = () => {
   const [scrolled, setScrolled] = useState(false);
+  const { theme, setTheme } = useTheme();
+  const [isMounted, setIsMounted] = useState(false);
+  
+  // Mount check to prevent hydration mismatch
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
   
   useEffect(() => {
     const handleScroll = () => {
@@ -18,6 +28,10 @@ const Navbar = () => {
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, [scrolled]);
+
+  const toggleTheme = () => {
+    setTheme(theme === 'dark' ? 'light' : 'dark');
+  };
 
   return (
     <motion.header
@@ -34,6 +48,7 @@ const Navbar = () => {
       <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between">
           <div className="flex items-center">
+            <Bot className="w-6 h-6 mr-2 text-primary" />
             <Link 
               to="/" 
               className="text-xl font-display font-semibold text-foreground"
@@ -49,6 +64,17 @@ const Navbar = () => {
           </nav>
           
           <div className="flex items-center space-x-4">
+            {isMounted && (
+              <div className="flex items-center space-x-2">
+                <Sun className="h-4 w-4 text-muted-foreground" />
+                <Switch 
+                  checked={theme === 'dark'} 
+                  onCheckedChange={toggleTheme}
+                  aria-label="Toggle dark mode"
+                />
+                <Moon className="h-4 w-4 text-muted-foreground" />
+              </div>
+            )}
             <a 
               href="https://github.com/devonn-ai/framework" 
               target="_blank"
