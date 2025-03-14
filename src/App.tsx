@@ -7,6 +7,7 @@ import { Toaster } from "sonner";
 
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
+import { DeploymentProvider } from "./contexts/DeploymentContext";
 import "./App.css";
 
 // Create a client
@@ -16,14 +17,16 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider defaultTheme="dark" enableSystem>
       <TooltipProvider>
-        <Toaster />
-        <div className="min-h-screen flex flex-col">
-          <Navbar />
-          <main className="flex-grow">
-            <Outlet />
-          </main>
-          <Footer />
-        </div>
+        <DeploymentProvider>
+          <Toaster />
+          <div className="min-h-screen flex flex-col">
+            <Navbar />
+            <main className="flex-grow">
+              <Outlet />
+            </main>
+            <Footer />
+          </div>
+        </DeploymentProvider>
       </TooltipProvider>
     </ThemeProvider>
   </QueryClientProvider>

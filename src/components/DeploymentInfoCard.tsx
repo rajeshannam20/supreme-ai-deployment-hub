@@ -3,7 +3,10 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Play } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useDeployment } from '@/contexts/DeploymentContext';
 
 interface DeploymentInfoCardProps {
   title: string;
@@ -12,6 +15,8 @@ interface DeploymentInfoCardProps {
   progress?: number;
   className?: string;
   children?: React.ReactNode;
+  stepId?: string;
+  onClick?: () => void;
 }
 
 const DeploymentInfoCard: React.FC<DeploymentInfoCardProps> = ({
@@ -21,7 +26,11 @@ const DeploymentInfoCard: React.FC<DeploymentInfoCardProps> = ({
   progress,
   className,
   children,
+  stepId,
+  onClick,
 }) => {
+  const { isDeploying, currentStep, runStep } = useDeployment();
+  
   const statusColors = {
     success: 'bg-green-500',
     warning: 'bg-yellow-500',
@@ -38,8 +47,21 @@ const DeploymentInfoCard: React.FC<DeploymentInfoCardProps> = ({
     'in-progress': 'In Progress',
   };
 
+  const handleRunStep = async () => {
+    if (stepId && !isDeploying) {
+      onClick?.();
+      await runStep(stepId);
+    }
+  };
+
+  const isActive = stepId && currentStep === stepId;
+
   return (
-    <Card className={cn("transition-all duration-300", className)}>
+    <Card className={cn(
+      "transition-all duration-300", 
+      isActive ? "border-primary" : "",
+      className
+    )}>
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <CardTitle className="text-lg">{title}</CardTitle>
@@ -58,6 +80,17 @@ const DeploymentInfoCard: React.FC<DeploymentInfoCardProps> = ({
           </div>
         )}
         {children}
+        
+        {stepId && status === 'pending' && !isDeploying && (
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="mt-2" 
+            onClick={handleRunStep}
+          >
+            <Play className="h-3 w-3 mr-1" /> Run this step
+          </Button>
+        )}
       </CardContent>
     </Card>
   );
