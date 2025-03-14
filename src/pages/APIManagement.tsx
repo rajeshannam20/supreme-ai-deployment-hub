@@ -3,7 +3,7 @@ import React from 'react';
 import { Helmet } from 'react-helmet';
 import Container from '@/components/Container';
 import SectionHeading from '@/components/SectionHeading';
-import APIConnectionForm from '@/components/APIConnectionForm';
+import APIConnectionsTab from '@/components/api/APIConnectionsTab';
 
 const APIManagement: React.FC = () => {
   return (
@@ -19,7 +19,7 @@ const APIManagement: React.FC = () => {
         </SectionHeading>
         
         <div className="mt-8">
-          <APIConnectionForm />
+          <APIConnectionsTab />
         </div>
       </Container>
     </>
