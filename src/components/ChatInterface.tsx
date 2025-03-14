@@ -1,8 +1,10 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Bot, Send, ThumbsUp, ThumbsDown, X, Sparkles, Activity, Maximize2, Minimize2 } from 'lucide-react';
+import { Bot, Send, ThumbsUp, ThumbsDown, X, Sparkles, Activity, Globe, Minimize2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useChat } from '@/contexts/ChatContext';
+import { useAPI } from '@/contexts/APIContext';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -11,10 +13,13 @@ import { Label } from '@/components/ui/label';
 
 const ChatInterface: React.FC = () => {
   const { messages, processes, isProcessing, sendMessage, provideFeedback, clearConversation } = useChat();
+  const { apiConfigs } = useAPI();
   const [input, setInput] = useState('');
   const [isMinimized, setIsMinimized] = useState(true);
   const [showProcessMonitor, setShowProcessMonitor] = useState(false);
+  const [showAPIStatus, setShowAPIStatus] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
 
   // Scroll to bottom of messages
   useEffect(() => {
@@ -31,6 +36,11 @@ const ChatInterface: React.FC = () => {
 
   const formatTimestamp = (date: Date) => {
     return new Date(date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
+
+  const goToAPIManagement = () => {
+    setIsMinimized(true);
+    navigate('/api-management');
   };
 
   return (
@@ -55,6 +65,15 @@ const ChatInterface: React.FC = () => {
                 </div>
               </div>
               <div className="flex items-center space-x-1">
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-7 w-7" 
+                  onClick={() => setShowAPIStatus(true)}
+                  aria-label="API Status"
+                >
+                  <Globe className="h-4 w-4" />
+                </Button>
                 <Button 
                   variant="ghost" 
                   size="icon" 
@@ -295,6 +314,58 @@ const ChatInterface: React.FC = () => {
                 </div>
               </div>
             ))}
+          </div>
+        </DialogContent>
+      </Dialog>
+      
+      {/* API Status Dialog */}
+      <Dialog open={showAPIStatus} onOpenChange={setShowAPIStatus}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>API Connection Status</DialogTitle>
+            <DialogDescription>
+              Manage your external API connections
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            {apiConfigs.length === 0 ? (
+              <div className="text-center py-4">
+                <p className="text-muted-foreground">No API connections configured</p>
+                <Button 
+                  variant="outline" 
+                  onClick={goToAPIManagement} 
+                  className="mt-2"
+                >
+                  Add API Connection
+                </Button>
+              </div>
+            ) : (
+              <>
+                {apiConfigs.map((api) => (
+                  <div key={api.name} className="flex justify-between items-center border-b pb-2">
+                    <div>
+                      <p className="font-medium">{api.name}</p>
+                      <p className="text-xs text-muted-foreground truncate max-w-[200px]">{api.endpoint}</p>
+                    </div>
+                    <div>
+                      {api.isConnected ? (
+                        <span className="text-xs bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 px-2 py-1 rounded-full">
+                          Connected
+                        </span>
+                      ) : (
+                        <span className="text-xs bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 px-2 py-1 rounded-full">
+                          Disconnected
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+                <Button onClick={goToAPIManagement} className="w-full mt-2">
+                  Manage API Connections
+                </Button>
+              </>
+            )}
           </div>
         </DialogContent>
       </Dialog>

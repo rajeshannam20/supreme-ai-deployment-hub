@@ -1,5 +1,8 @@
+
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { toast } from 'sonner';
+import { useDeployment } from './DeploymentContext';
+import { useAPI } from './APIContext';
 
 // Define types for our chat system
 type MessageType = 'text' | 'buttons' | 'links' | 'image';
@@ -64,6 +67,8 @@ const INTENTS = [
   'deployment',
   'technical',
   'farewell',
+  'api',
+  'status',
 ];
 
 // Provider component
@@ -71,6 +76,8 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [processes, setProcesses] = useState<Process[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
+  const { getDeploymentSummary, isConnected: isClusterConnected } = useDeployment();
+  const { apiConfigs, isAnyAPIConnected } = useAPI();
   
   // Initialize some sample processes
   useEffect(() => {
@@ -102,6 +109,15 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         memoryUsage: 90,
         startTime: new Date(),
       },
+      {
+        id: '4',
+        name: 'API Integration Manager',
+        status: 'running',
+        priority: 6,
+        cpuUsage: 8,
+        memoryUsage: 75,
+        startTime: new Date(),
+      },
     ];
 
     setProcesses(initialProcesses);
@@ -109,7 +125,7 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     // Add an initial welcome message
     const welcomeMessage: ChatMessage = {
       id: '0',
-      content: "Welcome to DEVONN.AI Assistant. How can I help you with your AI deployment needs today?",
+      content: "Welcome to DEVONN.AI Assistant. How can I help you with your AI deployment and integration needs today?",
       sender: 'ai',
       timestamp: new Date(),
       type: 'text',
@@ -135,7 +151,8 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       return { type: 'features', confidence: 0.85 };
     }
     
-    if (lowerMessage.includes('how') && lowerMessage.includes('deploy')) {
+    if ((lowerMessage.includes('how') && lowerMessage.includes('deploy')) || 
+         lowerMessage.includes('deployment')) {
       return { type: 'deployment', confidence: 0.95 };
     }
     
@@ -145,6 +162,16 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     
     if (lowerMessage.includes('help')) {
       return { type: 'help', confidence: 0.95 };
+    }
+    
+    if (lowerMessage.includes('api') || lowerMessage.includes('connect') || 
+        lowerMessage.includes('integration') || lowerMessage.includes('service')) {
+      return { type: 'api', confidence: 0.9 };
+    }
+    
+    if (lowerMessage.includes('status') || lowerMessage.includes('how are') || 
+        lowerMessage.includes('what\'s happening')) {
+      return { type: 'status', confidence: 0.85 };
     }
     
     // Default to technical intent for anything else
@@ -163,21 +190,22 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     
     switch (intent.type) {
       case 'greeting':
-        response.content = "Hello! Welcome to DEVONN.AI. I'm your AI assistant for deploying AI systems. How can I help you today?";
+        response.content = "Hello! Welcome to DEVONN.AI. I'm your AI assistant for deploying AI systems and managing API integrations. How can I help you today?";
         break;
         
       case 'help':
-        response.content = "I can help you with deploying AI systems, managing Kubernetes clusters, monitoring services, and more. What specific assistance do you need?";
+        response.content = "I can help you with deploying AI systems, managing Kubernetes clusters, connecting to APIs, monitoring services, and more. What specific assistance do you need?";
         response.type = 'buttons';
         response.buttons = [
           { id: 'b1', label: 'Deployment Help', action: () => sendMessage("How do I deploy an AI system?") },
-          { id: 'b2', label: 'Monitoring Help', action: () => sendMessage("How can I monitor my deployed services?") },
+          { id: 'b2', label: 'API Integration', action: () => sendMessage("How can I connect to external APIs?") },
           { id: 'b3', label: 'Cluster Management', action: () => sendMessage("Tell me about cluster management") },
+          { id: 'b4', label: 'System Status', action: () => sendMessage("What's the current status?") },
         ];
         break;
         
       case 'pricing':
-        response.content = "DEVONN.AI offers several pricing tiers based on your deployment needs:";
+        response.content = "DEVONN.AI offers several pricing tiers based on your deployment and integration needs:";
         response.type = 'links';
         response.links = [
           { url: "#", label: "Basic Plan - $99/month" },
@@ -189,19 +217,64 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       case 'features':
         response.content = "DEVONN.AI offers the following key features:";
         response.type = 'text';
-        response.content += "\n\n• Kubernetes deployment orchestration\n• Service monitoring and observability\n• Istio service mesh integration\n• Kong API gateway management\n• Canary deployments with Argo Rollouts\n• Comprehensive logging system";
+        response.content += "\n\n• Kubernetes deployment orchestration\n• External API integration\n• Service monitoring and observability\n• Istio service mesh integration\n• Kong API gateway management\n• Canary deployments with Argo Rollouts\n• Comprehensive logging system";
         break;
         
       case 'deployment':
         response.content = "To deploy an AI system using DEVONN.AI, navigate to the Deployment Dashboard where you can connect to your Kubernetes cluster and follow our step-by-step deployment process. Would you like me to walk you through it?";
+        if (isClusterConnected) {
+          response.content += "\n\nI notice you're already connected to a Kubernetes cluster. " + getDeploymentSummary();
+        }
+        break;
+        
+      case 'api':
+        if (apiConfigs.length > 0) {
+          response.content = `I see you have ${apiConfigs.length} API configurations set up. `;
+          if (isAnyAPIConnected) {
+            const connectedApis = apiConfigs.filter(api => api.isConnected);
+            response.content += `${connectedApis.length} of them are currently connected.`;
+          } else {
+            response.content += "None of them are currently connected.";
+          }
+          response.content += "\n\nYou can manage your API connections by clicking on the API Management section. Would you like to add a new API connection?";
+        } else {
+          response.content = "To connect to external APIs, you can use our API Management section. Would you like to add a new API connection now?";
+        }
+        response.type = 'buttons';
+        response.buttons = [
+          { id: 'api1', label: 'Add New API', action: () => {
+              // This would normally navigate to the API management page
+              toast.info("Navigate to API Management to add new APIs");
+            } 
+          },
+          { id: 'api2', label: 'View API Status', action: () => sendMessage("What's the status of my APIs?") },
+        ];
+        break;
+
+      case 'status':
+        response.content = "Here's the current status of your DEVONN.AI system:\n\n";
+        
+        // Add deployment status if available
+        response.content += getDeploymentSummary() + "\n\n";
+        
+        // Add API status if there are any configured
+        if (apiConfigs.length > 0) {
+          response.content += `API Integrations: ${apiConfigs.length} configured, ${apiConfigs.filter(api => api.isConnected).length} connected.\n\n`;
+        } else {
+          response.content += "API Integrations: None configured.\n\n";
+        }
+        
+        // Add system process status
+        const runningProcesses = processes.filter(p => p.status === 'running').length;
+        response.content += `System Processes: ${runningProcesses}/${processes.length} running.`;
         break;
         
       case 'technical':
-        response.content = "I understand you have a technical question. DEVONN.AI supports various technologies including Kubernetes, Istio, Kong, Prometheus, Grafana, and Jaeger. Could you provide more specific details about your question?";
+        response.content = "I understand you have a technical question. DEVONN.AI supports various technologies including Kubernetes, Istio, Kong, Prometheus, Grafana, Jaeger, and external API integrations. Could you provide more specific details about your question?";
         break;
         
       case 'farewell':
-        response.content = "Thank you for using DEVONN.AI Assistant. If you need any further assistance, feel free to ask. Have a great day!";
+        response.content = "Thank you for using DEVONN.AI Assistant. If you need any further assistance with deployments or API integrations, feel free to ask. Have a great day!";
         break;
         
       default:
@@ -209,7 +282,7 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         response.type = 'buttons';
         response.buttons = [
           { id: 'b1', label: 'Deployment', action: () => sendMessage("Tell me about deployment") },
-          { id: 'b2', label: 'Features', action: () => sendMessage("What features does DEVONN.AI have?") },
+          { id: 'b2', label: 'API Integration', action: () => sendMessage("How do I connect APIs?") },
           { id: 'b3', label: 'Help', action: () => sendMessage("I need help") },
         ];
     }

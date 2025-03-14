@@ -9,6 +9,7 @@ import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import { DeploymentProvider } from "./contexts/DeploymentContext";
 import { ChatProvider } from "./contexts/ChatContext";
+import { APIProvider } from "./contexts/APIContext";
 import ChatInterface from "./components/ChatInterface";
 import "./App.css";
 
@@ -20,17 +21,19 @@ const App = () => (
     <ThemeProvider defaultTheme="dark" enableSystem>
       <TooltipProvider>
         <DeploymentProvider>
-          <ChatProvider>
-            <Toaster />
-            <div className="min-h-screen flex flex-col">
-              <Navbar />
-              <main className="flex-grow">
-                <Outlet />
-              </main>
-              <Footer />
-              <ChatInterface />
-            </div>
-          </ChatProvider>
+          <APIProvider>
+            <ChatProvider>
+              <Toaster />
+              <div className="min-h-screen flex flex-col">
+                <Navbar />
+                <main className="flex-grow">
+                  <Outlet />
+                </main>
+                <Footer />
+                <ChatInterface />
+              </div>
+            </ChatProvider>
+          </APIProvider>
         </DeploymentProvider>
       </TooltipProvider>
     </ThemeProvider>
