@@ -95,7 +95,7 @@ const API: React.FC = () => {
                     <h3 className="text-lg font-semibold">Authentication</h3>
                     <p>All API requests require authentication using an API key. Include your API key in the request headers:</p>
                     <pre className="bg-secondary p-4 rounded-md overflow-x-auto">
-                      <code>{`Authorization: Bearer YOUR_API_KEY`}</code>
+                      <code>{"Authorization: Bearer YOUR_API_KEY"}</code>
                     </pre>
                   </div>
                   
