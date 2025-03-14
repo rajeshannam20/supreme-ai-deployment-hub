@@ -29,6 +29,7 @@ createRoot(document.getElementById("root")!).render(
         <Route path="/deployment" element={<DeploymentDashboard />} />
         <Route path="/documentation" element={<Documentation />} />
         <Route path="/api" element={<API />} />
+        <Route path="/api-management" element={<APIManagement />} />
         <Route path="*" element={<NotFound />} />
       </Route>
     </Routes>

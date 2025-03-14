@@ -182,22 +182,22 @@ const response = await ai.generate({
                         <tr className="border-b">
                           <td className="py-2 font-mono">generate()</td>
                           <td className="py-2">Generates code based on a prompt</td>
-                          <td className="py-2 font-mono text-xs">ai.generate({ prompt: '...' })</td>
+                          <td className="py-2 font-mono text-xs">ai.generate({'{'} prompt: '...' {'}'})</td>
                         </tr>
                         <tr className="border-b">
                           <td className="py-2 font-mono">enhance()</td>
                           <td className="py-2">Improves existing code</td>
-                          <td className="py-2 font-mono text-xs">ai.enhance({ code: '...', instruction: '...' })</td>
+                          <td className="py-2 font-mono text-xs">ai.enhance({'{'} code: '...', instruction: '...' {'}'})</td>
                         </tr>
                         <tr className="border-b">
                           <td className="py-2 font-mono">explain()</td>
                           <td className="py-2">Analyzes and explains code</td>
-                          <td className="py-2 font-mono text-xs">ai.explain({ code: '...' })</td>
+                          <td className="py-2 font-mono text-xs">ai.explain({'{'} code: '...' {'}'})</td>
                         </tr>
                         <tr>
                           <td className="py-2 font-mono">debug()</td>
                           <td className="py-2">Identifies and fixes issues</td>
-                          <td className="py-2 font-mono text-xs">ai.debug({ code: '...', error: '...' })</td>
+                          <td className="py-2 font-mono text-xs">ai.debug({'{'} code: '...', error: '...' {'}'})</td>
                         </tr>
                       </tbody>
                     </table>
