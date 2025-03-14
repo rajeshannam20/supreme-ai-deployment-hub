@@ -13,9 +13,10 @@ const APIManagement: React.FC = () => {
       </Helmet>
       <Container>
         <SectionHeading
-          title="API Management"
-          description="Connect DEVONN.AI to external services and APIs to extend its capabilities."
-        />
+          subheading="Connect DEVONN.AI to external services and APIs to extend its capabilities."
+        >
+          API Management
+        </SectionHeading>
         
         <div className="mt-8">
           <APIConnectionForm />
