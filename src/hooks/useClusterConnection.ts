@@ -16,7 +16,7 @@ export const useClusterConnection = (addLog: (message: string, type: 'info' | 's
 
   // Connect to Kubernetes cluster
   const connectToCluster = async (kubeConfig?: string): Promise<boolean> => {
-    addLog('Attempting to connect to Kubernetes cluster...');
+    addLog('Attempting to connect to Kubernetes cluster...', 'info');
     
     try {
       // Simulating connection to a Kubernetes cluster

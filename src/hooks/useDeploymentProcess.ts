@@ -26,7 +26,7 @@ export const useDeploymentProcess = ({
   const runStep = async (stepId: string): Promise<boolean> => {
     setCurrentStep(stepId);
     updateStep(stepId, { status: 'in-progress', progress: 10 });
-    addLog(`Starting step: ${stepId}`);
+    addLog(`Starting step: ${stepId}`, 'info');
     
     // Simulate step progress
     for (let progress = 20; progress <= 100; progress += 20) {
@@ -38,7 +38,7 @@ export const useDeploymentProcess = ({
       
       await new Promise(resolve => setTimeout(resolve, 1000));
       updateStep(stepId, { progress });
-      addLog(`${stepId}: Progress ${progress}%`);
+      addLog(`${stepId}: Progress ${progress}%`, 'info');
     }
     
     updateStep(stepId, { status: 'success', progress: 100 });
