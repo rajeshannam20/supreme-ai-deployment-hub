@@ -6,7 +6,28 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 
 const DeploymentSummary = () => {
-  const { deploymentStatus, deploymentName, deploymentEnv, startTime, endTime } = useDeployment();
+  const { deploymentSteps, isDeploying, currentStep } = useDeployment();
+
+  // Derive deployment status from steps
+  const hasFailed = deploymentSteps.some(step => step.status === 'error');
+  const allCompleted = deploymentSteps.every(step => step.status === 'success');
+  const deploymentStatus = hasFailed ? 'failed' : 
+                           allCompleted ? 'success' : 
+                           isDeploying ? 'in-progress' : 'idle';
+
+  // Mock data for deployment details
+  const deploymentName = "DEVONN.AI Framework v1.0";
+  const deploymentEnv = "Production";
+  
+  // Find the first step that started and the last one that completed (if any)
+  const firstStartedStep = deploymentSteps.find(step => 
+    step.status === 'success' || step.status === 'in-progress' || step.status === 'error'
+  );
+  const lastCompletedStep = [...deploymentSteps].reverse().find(step => step.status === 'success');
+  
+  // Create mock timestamps based on whether steps have started/completed
+  const startTime = firstStartedStep ? new Date(Date.now() - 3600000).toISOString() : null; // 1 hour ago
+  const endTime = allCompleted ? new Date().toISOString() : null;
 
   return (
     <Card>

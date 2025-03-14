@@ -8,7 +8,7 @@ import DeploymentInfoCard from '@/components/DeploymentInfoCard';
 const DeploymentStepsOverview = () => {
   const { 
     deploymentSteps, 
-    runDeploymentStep, 
+    runStep, 
     isDeploying, 
     currentStep 
   } = useDeployment();
@@ -46,7 +46,7 @@ const DeploymentStepsOverview = () => {
               status={step.status}
               progress={step.progress}
               stepId={step.id}
-              onClick={() => runDeploymentStep(step.id)}
+              onClick={() => runStep(step.id)}
               className={currentStep === step.id ? "border-primary" : ""}
             />
           ))}

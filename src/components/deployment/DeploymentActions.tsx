@@ -19,12 +19,30 @@ import {
 const DeploymentActions = () => {
   const { 
     startDeployment, 
-    stopDeployment, 
-    resetDeployment, 
+    cancelDeployment, 
     isDeploying,
-    deploymentStatus,
-    hasFailed
+    logs,
+    deploymentSteps
   } = useDeployment();
+
+  // Determine if any steps have failed
+  const hasFailed = deploymentSteps.some(step => step.status === 'error');
+  
+  // Derive deployment status from steps
+  const allCompleted = deploymentSteps.every(step => step.status === 'success');
+  const deploymentStatus = hasFailed ? 'failed' : 
+                           allCompleted ? 'success' : 
+                           isDeploying ? 'in-progress' : 'idle';
+
+  // Function to reset deployment by calling cancel
+  const resetDeployment = () => {
+    cancelDeployment();
+  };
+
+  // Function to stop deployment by calling cancel
+  const stopDeployment = () => {
+    cancelDeployment();
+  };
 
   return (
     <Card>
