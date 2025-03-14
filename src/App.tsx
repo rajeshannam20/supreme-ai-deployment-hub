@@ -8,6 +8,8 @@ import { Toaster } from "sonner";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import { DeploymentProvider } from "./contexts/DeploymentContext";
+import { ChatProvider } from "./contexts/ChatContext";
+import ChatInterface from "./components/ChatInterface";
 import "./App.css";
 
 // Create a client
@@ -18,14 +20,17 @@ const App = () => (
     <ThemeProvider defaultTheme="dark" enableSystem>
       <TooltipProvider>
         <DeploymentProvider>
-          <Toaster />
-          <div className="min-h-screen flex flex-col">
-            <Navbar />
-            <main className="flex-grow">
-              <Outlet />
-            </main>
-            <Footer />
-          </div>
+          <ChatProvider>
+            <Toaster />
+            <div className="min-h-screen flex flex-col">
+              <Navbar />
+              <main className="flex-grow">
+                <Outlet />
+              </main>
+              <Footer />
+              <ChatInterface />
+            </div>
+          </ChatProvider>
         </DeploymentProvider>
       </TooltipProvider>
     </ThemeProvider>

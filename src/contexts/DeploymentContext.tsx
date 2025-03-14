@@ -21,6 +21,7 @@ interface DeploymentContextType {
   startDeployment: () => Promise<void>;
   runStep: (stepId: string, timeoutMs?: number) => Promise<boolean>;
   cancelDeployment: () => void;
+  getDeploymentSummary: () => string;
 }
 
 // Create the context
@@ -52,6 +53,37 @@ export const DeploymentProvider: React.FC<{ children: ReactNode }> = ({ children
     }
   }, [deploymentSteps]);
 
+  // New function to get a summary of the deployment status
+  const getDeploymentSummary = (): string => {
+    const completedSteps = deploymentSteps.filter(step => step.status === 'success').length;
+    const totalSteps = deploymentSteps.length;
+    const failedSteps = deploymentSteps.filter(step => step.status === 'error').length;
+    
+    let status = '';
+    if (isConnected) {
+      status += `Connected to cluster. `;
+    } else {
+      status += `Not connected to any cluster. `;
+    }
+    
+    if (isDeploying) {
+      status += `Deployment in progress. `;
+    }
+    
+    status += `${completedSteps}/${totalSteps} steps completed. `;
+    
+    if (failedSteps > 0) {
+      status += `${failedSteps} step(s) failed. `;
+    }
+    
+    if (serviceStatus.length > 0) {
+      const runningServices = serviceStatus.filter(s => s.status === 'running').length;
+      status += `${runningServices}/${serviceStatus.length} services running.`;
+    }
+    
+    return status;
+  };
+
   return (
     <DeploymentContext.Provider
       value={{
@@ -68,6 +100,7 @@ export const DeploymentProvider: React.FC<{ children: ReactNode }> = ({ children
         startDeployment,
         runStep,
         cancelDeployment,
+        getDeploymentSummary,
       }}
     >
       {children}
