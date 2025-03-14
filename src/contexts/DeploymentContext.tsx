@@ -14,10 +14,12 @@ interface DeploymentContextType {
   logs: string[];
   currentStep: string;
   isConnected: boolean;
+  isConnecting: boolean;
   isDeploying: boolean;
   connectToCluster: (kubeConfig?: string) => Promise<boolean>;
+  disconnectFromCluster: () => boolean;
   startDeployment: () => Promise<void>;
-  runStep: (stepId: string) => Promise<boolean>;
+  runStep: (stepId: string, timeoutMs?: number) => Promise<boolean>;
   cancelDeployment: () => void;
 }
 
@@ -28,7 +30,7 @@ const DeploymentContext = createContext<DeploymentContextType | undefined>(undef
 export const DeploymentProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { logs, addLog } = useDeploymentLogs();
   const { deploymentSteps, currentStep, setCurrentStep, updateStep } = useDeploymentSteps();
-  const { isConnected, clusterStatus, serviceStatus, connectToCluster } = useClusterConnection(addLog);
+  const { isConnected, isConnecting, clusterStatus, serviceStatus, connectToCluster, disconnectFromCluster } = useClusterConnection(addLog);
   const { isDeploying, runStep, startDeployment, cancelDeployment } = useDeploymentProcess({
     deploymentSteps,
     isConnected,
@@ -59,8 +61,10 @@ export const DeploymentProvider: React.FC<{ children: ReactNode }> = ({ children
         logs,
         currentStep,
         isConnected,
+        isConnecting,
         isDeploying,
         connectToCluster,
+        disconnectFromCluster,
         startDeployment,
         runStep,
         cancelDeployment,

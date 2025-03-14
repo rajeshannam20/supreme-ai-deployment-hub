@@ -21,12 +21,52 @@ export const useDeploymentProcess = ({
   addLog
 }: UseDeploymentProcessProps) => {
   const [isDeploying, setIsDeploying] = useState<boolean>(false);
+  const DEFAULT_TIMEOUT = 30000; // 30 seconds timeout by default
 
-  // Simulate running a step
-  const runStep = async (stepId: string): Promise<boolean> => {
+  // Function to run a step with timeout
+  const runStepWithTimeout = async (
+    stepId: string, 
+    timeoutMs: number = DEFAULT_TIMEOUT
+  ): Promise<boolean> => {
+    return new Promise((resolve) => {
+      let stepComplete = false;
+      
+      // Set timeout for the step
+      const timeoutId = setTimeout(() => {
+        if (!stepComplete) {
+          updateStep(stepId, { status: 'error', progress: 0 });
+          addLog(`Step ${stepId} timed out after ${timeoutMs/1000} seconds`, 'error');
+          stepComplete = true;
+          resolve(false);
+        }
+      }, timeoutMs);
+      
+      // Run the actual step
+      runStepImpl(stepId)
+        .then(success => {
+          stepComplete = true;
+          clearTimeout(timeoutId);
+          resolve(success);
+        })
+        .catch(error => {
+          stepComplete = true;
+          clearTimeout(timeoutId);
+          addLog(`Error in step ${stepId}: ${error.message}`, 'error');
+          updateStep(stepId, { status: 'error', progress: 0 });
+          resolve(false);
+        });
+    });
+  };
+
+  // Internal implementation of running a step
+  const runStepImpl = async (stepId: string): Promise<boolean> => {
     setCurrentStep(stepId);
     updateStep(stepId, { status: 'in-progress', progress: 10 });
     addLog(`Starting step: ${stepId}`, 'info');
+    
+    // Simulate randomness in completion time (and occasional failures)
+    const shouldFail = Math.random() < 0.1; // 10% chance of failure
+    const slowStep = Math.random() < 0.2; // 20% chance of slow step
     
     // Simulate step progress
     for (let progress = 20; progress <= 100; progress += 20) {
@@ -36,7 +76,17 @@ export const useDeploymentProcess = ({
         return false;
       }
       
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Simulate slower execution for some steps
+      const delay = slowStep ? 2000 : 1000;
+      await new Promise(resolve => setTimeout(resolve, delay));
+      
+      // If this step is meant to fail, fail around 60% progress
+      if (shouldFail && progress >= 60) {
+        updateStep(stepId, { status: 'error', progress: progress });
+        addLog(`Step ${stepId} failed at ${progress}%`, 'error');
+        return false;
+      }
+      
       updateStep(stepId, { progress });
       addLog(`${stepId}: Progress ${progress}%`, 'info');
     }
@@ -70,11 +120,18 @@ export const useDeploymentProcess = ({
       updateStep(step.id, { status: 'pending', progress: 0 });
     });
     
-    // Run through each step sequentially
+    // Run through each step sequentially with timeouts
     for (const step of deploymentSteps) {
-      const completed = await runStep(step.id);
+      // Custom timeouts for different steps
+      let timeout = DEFAULT_TIMEOUT;
+      if (step.id === 'backend' || step.id === 'monitoring') {
+        timeout = 45000; // 45 seconds for more complex steps
+      }
+      
+      const completed = await runStepWithTimeout(step.id, timeout);
       if (!completed) {
-        addLog('Deployment process stopped', 'warning');
+        addLog('Deployment process stopped due to errors', 'error');
+        toast.error(`Deployment failed during ${step.title} step`);
         setIsDeploying(false);
         return;
       }
@@ -96,7 +153,7 @@ export const useDeploymentProcess = ({
 
   return {
     isDeploying,
-    runStep,
+    runStep: runStepWithTimeout, // Expose the timeout-enabled version
     startDeployment,
     cancelDeployment
   };
