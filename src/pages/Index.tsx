@@ -6,7 +6,7 @@ import Container from '@/components/Container';
 import SectionHeading from '@/components/SectionHeading';
 import CodeDisplay from '@/components/CodeDisplay';
 import Footer from '@/components/Footer';
-import { toast } from '@/components/ui/sonner';
+import { toast } from 'sonner'; // Changed from '@/components/ui/sonner' to 'sonner'
 
 const yamlCode = `# Supreme AI Framework Deployment Manifest
 
@@ -339,7 +339,7 @@ const Index = () => {
       
       {/* Manifest Section */}
       <section id="manifest" className="py-20">
-        <Container maxWidth="4xl">
+        <Container maxWidth="2xl"> {/* Changed from "4xl" to "2xl" */}
           <SectionHeading 
             animate 
             tag="Documentation"
