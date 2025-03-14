@@ -1,19 +1,10 @@
-
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 import { toast } from 'sonner';
-
-interface APIConfig {
-  name: string;
-  endpoint: string;
-  apiKey?: string;
-  description: string;
-  isConnected: boolean;
-  lastConnected?: Date;
-}
+import { APIConfig, NewAPIConfig } from '@/types/api';
 
 interface APIContextType {
   apiConfigs: APIConfig[];
-  addAPIConfig: (config: Omit<APIConfig, 'isConnected' | 'lastConnected'>) => void;
+  addAPIConfig: (config: NewAPIConfig) => void;
   removeAPIConfig: (name: string) => void;
   testConnection: (name: string) => Promise<boolean>;
   getAPIConfig: (name: string) => APIConfig | undefined;
@@ -25,7 +16,7 @@ const APIContext = createContext<APIContextType | undefined>(undefined);
 export const APIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [apiConfigs, setAPIConfigs] = useState<APIConfig[]>([]);
   
-  const addAPIConfig = (config: Omit<APIConfig, 'isConnected' | 'lastConnected'>) => {
+  const addAPIConfig = (config: NewAPIConfig) => {
     setAPIConfigs(prev => {
       // Check if config with this name already exists
       const exists = prev.some(c => c.name === config.name);
