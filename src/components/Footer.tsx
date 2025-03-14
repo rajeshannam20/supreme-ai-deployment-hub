@@ -14,7 +14,7 @@ const Footer = ({ className }: FooterProps) => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div className="col-span-1 md:col-span-2">
             <Link to="/" className="text-xl font-display font-semibold text-foreground">
-              Supreme<span className="text-primary">AI</span>
+              DEVONN<span className="text-primary">.AI</span>
             </Link>
             <p className="mt-4 text-sm text-muted-foreground max-w-md">
               A minimalist, intuitive framework for deploying AI applications, focusing on simplicity, 
@@ -58,7 +58,7 @@ const Footer = ({ className }: FooterProps) => {
               </li>
               <li>
                 <a 
-                  href="https://github.com/supremeai/framework" 
+                  href="https://github.com/devonn-ai/framework" 
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-sm text-muted-foreground hover:text-primary transition-colors"
@@ -72,7 +72,7 @@ const Footer = ({ className }: FooterProps) => {
         
         <div className="mt-12 pt-8 border-t border-gray-200/30 dark:border-gray-800/30 flex flex-col md:flex-row justify-between items-center">
           <p className="text-sm text-muted-foreground">
-            &copy; {new Date().getFullYear()} SupremeAI. All rights reserved.
+            &copy; {new Date().getFullYear()} DEVONN.AI. All rights reserved.
           </p>
           <div className="mt-4 md:mt-0 flex space-x-6">
             <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">

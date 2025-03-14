@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Navbar from '@/components/Navbar';
@@ -6,7 +5,7 @@ import Container from '@/components/Container';
 import SectionHeading from '@/components/SectionHeading';
 import CodeDisplay from '@/components/CodeDisplay';
 import Footer from '@/components/Footer';
-import { toast } from 'sonner'; // Changed from '@/components/ui/sonner' to 'sonner'
+import { toast } from 'sonner';
 
 const yamlCode = `# Supreme AI Framework Deployment Manifest
 
@@ -183,7 +182,7 @@ istioctl analyze
 const Index = () => {
   useEffect(() => {
     // Show welcome toast
-    toast('Welcome to Supreme AI Framework', {
+    toast('Welcome to DEVONN.AI', {
       description: 'Explore the deployment manifest for AI systems',
       position: 'bottom-right',
     });
@@ -212,8 +211,7 @@ const Index = () => {
                 Deployment Framework
               </span>
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-display font-semibold tracking-tight mb-4">
-                Supreme AI <br />
-                <span className="text-primary">Deployment Hub</span>
+                DEVONN<span className="text-primary">.AI</span>
               </h1>
               <p className="text-xl text-muted-foreground mb-8 max-w-md">
                 A minimalist, elegant framework for deploying AI systems with precision and scalability.
@@ -249,7 +247,7 @@ const Index = () => {
                         <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
                         <div className="w-3 h-3 rounded-full bg-green-500"></div>
                       </div>
-                      <div className="ml-3 text-xs font-mono text-gray-400">Supreme AI Framework</div>
+                      <div className="ml-3 text-xs font-mono text-gray-400">DEVONN.AI Framework</div>
                     </div>
                     <pre className="text-xs text-green-400 font-mono overflow-x-auto">
                       <code>
@@ -339,11 +337,11 @@ const Index = () => {
       
       {/* Manifest Section */}
       <section id="manifest" className="py-20">
-        <Container maxWidth="2xl"> {/* Changed from "4xl" to "2xl" */}
+        <Container maxWidth="2xl">
           <SectionHeading 
             animate 
             tag="Documentation"
-            subheading="Complete Kubernetes deployment manifest for the Supreme AI Framework."
+            subheading="Complete Kubernetes deployment manifest for the DEVONN.AI Framework."
           >
             Deployment Manifest
           </SectionHeading>
