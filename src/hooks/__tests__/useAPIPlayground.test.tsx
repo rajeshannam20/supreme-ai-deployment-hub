@@ -128,12 +128,12 @@ describe('useAPIPlayground hook', () => {
 
   it('should send a GET request successfully', async () => {
     const mockResponse = {
-      json: jest.fn().resolves({ success: true }),
+      json: jest.fn().mockReturnValue(Promise.resolve({ success: true })),
       ok: true,
       status: 200,
       statusText: 'OK'
     };
-    (global.fetch as jest.Mock).mockResolvedValueOnce(mockResponse);
+    (global.fetch as jest.Mock).mockReturnValue(Promise.resolve(mockResponse));
     
     const { result, waitForNextUpdate } = renderHook(() => useAPIPlayground());
     
@@ -154,7 +154,7 @@ describe('useAPIPlayground hook', () => {
   });
 
   it('should handle fetch errors', async () => {
-    (global.fetch as jest.Mock).mockRejectedValueOnce(new Error('Network error'));
+    (global.fetch as jest.Mock).mockReturnValue(Promise.reject(new Error('Network error')));
     
     const { result, waitForNextUpdate } = renderHook(() => useAPIPlayground());
     
