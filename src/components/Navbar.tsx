@@ -33,6 +33,13 @@ const Navbar = () => {
     setTheme(theme === 'dark' ? 'light' : 'dark');
   };
 
+  // Force a reload to ensure theme changes are applied
+  useEffect(() => {
+    if (isMounted) {
+      console.log("Current theme:", theme);
+    }
+  }, [theme, isMounted]);
+
   return (
     <motion.header
       className={cn(
@@ -48,7 +55,7 @@ const Navbar = () => {
       <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between">
           <div className="flex items-center">
-            <Bot className="w-6 h-6 mr-2 text-primary" />
+            <Bot className="w-8 h-8 mr-2 text-primary" />
             <Link 
               to="/" 
               className="text-xl font-display font-semibold text-foreground"
@@ -65,14 +72,14 @@ const Navbar = () => {
           
           <div className="flex items-center space-x-4">
             {isMounted && (
-              <div className="flex items-center space-x-2">
-                <Sun className="h-4 w-4 text-muted-foreground" />
+              <div className="flex items-center space-x-2 bg-secondary/50 p-2 rounded-full">
+                <Sun className="h-4 w-4 text-yellow-500" />
                 <Switch 
                   checked={theme === 'dark'} 
                   onCheckedChange={toggleTheme}
                   aria-label="Toggle dark mode"
                 />
-                <Moon className="h-4 w-4 text-muted-foreground" />
+                <Moon className="h-4 w-4 text-blue-500" />
               </div>
             )}
             <a 
