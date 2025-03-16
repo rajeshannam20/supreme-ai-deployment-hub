@@ -3,13 +3,15 @@ import React from 'react';
 import Container from '@/components/Container';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { BrainCircuit, Cpu, Bot } from 'lucide-react';
+import { Button } from '../ui/button';
 
 const CTASection: React.FC = () => {
   return (
     <section className="py-20 bg-secondary">
       <Container maxWidth="2xl">
         <div className="rounded-2xl bg-gradient-to-br from-primary/80 to-blue-600/80 p-8 md:p-12 shadow-lg relative overflow-hidden">
-          {/* Background image with overlay */}
+          {/* Abstract neural network background */}
           <div className="absolute inset-0 z-0">
             <img 
               src="https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5" 
@@ -17,6 +19,17 @@ const CTASection: React.FC = () => {
               className="w-full h-full object-cover opacity-15"
             />
             <div className="absolute inset-0 bg-gradient-to-br from-primary/90 to-blue-600/90"></div>
+          </div>
+          
+          {/* Floating elements */}
+          <div className="absolute top-10 left-10 opacity-20 animate-pulse">
+            <BrainCircuit size={40} className="text-white" />
+          </div>
+          <div className="absolute bottom-10 right-10 opacity-20 animate-pulse" style={{ animationDelay: "1s" }}>
+            <Cpu size={40} className="text-white" />
+          </div>
+          <div className="absolute top-1/2 right-20 opacity-20 animate-pulse" style={{ animationDelay: "0.5s" }}>
+            <Bot size={40} className="text-white" />
           </div>
           
           <div className="max-w-2xl mx-auto text-center relative z-10">
@@ -42,18 +55,25 @@ const CTASection: React.FC = () => {
               transition={{ duration: 0.5, delay: 0.2 }}
               className="flex flex-col sm:flex-row gap-4 justify-center"
             >
-              <Link 
-                to="/deployment"
-                className="inline-flex items-center justify-center rounded-md px-6 py-3 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring bg-white text-primary hover:bg-white/90"
+              <Button
+                asChild
+                size="lg"
+                className="bg-white text-primary hover:bg-white/90"
               >
-                Get Started
-              </Link>
-              <Link
-                to="/documentation"
-                className="inline-flex items-center justify-center rounded-md px-6 py-3 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring bg-primary/20 text-white hover:bg-primary/30 border border-white/20"
+                <Link to="/deployment">
+                  Get Started
+                </Link>
+              </Button>
+              <Button
+                asChild
+                variant="outline"
+                size="lg"
+                className="bg-primary/20 text-white hover:bg-primary/30 border border-white/20"
               >
-                View Documentation
-              </Link>
+                <Link to="/documentation">
+                  View Documentation
+                </Link>
+              </Button>
             </motion.div>
           </div>
         </div>
