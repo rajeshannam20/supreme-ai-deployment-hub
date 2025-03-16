@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Navbar from '@/components/Navbar';
@@ -6,6 +7,9 @@ import SectionHeading from '@/components/SectionHeading';
 import CodeDisplay from '@/components/CodeDisplay';
 import Footer from '@/components/Footer';
 import { toast } from 'sonner';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { BadgeCheck, Bolt, Clock, Code2, Database, FileText, Globe, Server, Shield } from 'lucide-react';
 
 const yamlCode = `# Supreme AI Framework Deployment Manifest
 
@@ -179,6 +183,27 @@ istioctl analyze
 # Document how the AI agent works, and how to use it.
 `;
 
+// Sample data for charts
+const deploymentData = [
+  { name: 'Jan', deployments: 4 },
+  { name: 'Feb', deployments: 3 },
+  { name: 'Mar', deployments: 7 },
+  { name: 'Apr', deployments: 5 },
+  { name: 'May', deployments: 8 },
+  { name: 'Jun', deployments: 12 },
+  { name: 'Jul', deployments: 9 },
+];
+
+const metricsData = [
+  { name: 'Mon', cpu: 45, memory: 60 },
+  { name: 'Tue', cpu: 55, memory: 65 },
+  { name: 'Wed', cpu: 65, memory: 70 },
+  { name: 'Thu', cpu: 70, memory: 75 },
+  { name: 'Fri', cpu: 60, memory: 68 },
+  { name: 'Sat', cpu: 50, memory: 62 },
+  { name: 'Sun', cpu: 48, memory: 60 },
+];
+
 const Index = () => {
   useEffect(() => {
     // Show welcome toast
@@ -224,10 +249,10 @@ const Index = () => {
                   View Manifest
                 </a>
                 <a
-                  href="#"
+                  href="#dashboard-preview"
                   className="inline-flex items-center justify-center rounded-md px-6 py-3 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring bg-secondary text-secondary-foreground hover:bg-secondary/80"
                 >
-                  Learn More
+                  See Dashboard
                 </a>
               </div>
             </motion.div>
@@ -266,6 +291,191 @@ const Index = () => {
                 <div className="absolute inset-0 bg-gradient-to-r from-primary/30 to-blue-400/30 rounded-xl blur-2xl opacity-30"></div>
               </div>
             </div>
+          </div>
+        </Container>
+      </section>
+      
+      {/* Dashboard Statistics Preview */}
+      <section id="dashboard-preview" className="py-20 bg-gradient-to-b from-background/50 to-secondary/20">
+        <Container maxWidth="2xl">
+          <SectionHeading 
+            centered 
+            animate 
+            tag="Analytics"
+            subheading="Real-time metrics from your AI deployment environment"
+          >
+            Dashboard Preview
+          </SectionHeading>
+          
+          <div className="mt-12 grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }} 
+              animate={{ opacity: 1, y: 0 }} 
+              transition={{ duration: 0.5, delay: 0.1 }}
+              className="col-span-1"
+            >
+              <Card className="h-full">
+                <CardHeader>
+                  <CardTitle>Deployment Status</CardTitle>
+                  <CardDescription>Current system health and metrics</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium">CPU Usage</span>
+                      <div className="flex items-center">
+                        <span className="text-sm font-medium text-primary">68%</span>
+                        <div className="w-24 h-2 ml-2 bg-gray-200 rounded-full overflow-hidden">
+                          <div className="h-full bg-primary rounded-full" style={{ width: "68%" }}></div>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium">Memory</span>
+                      <div className="flex items-center">
+                        <span className="text-sm font-medium text-blue-500">72%</span>
+                        <div className="w-24 h-2 ml-2 bg-gray-200 rounded-full overflow-hidden">
+                          <div className="h-full bg-blue-500 rounded-full" style={{ width: "72%" }}></div>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium">Storage</span>
+                      <div className="flex items-center">
+                        <span className="text-sm font-medium text-green-500">45%</span>
+                        <div className="w-24 h-2 ml-2 bg-gray-200 rounded-full overflow-hidden">
+                          <div className="h-full bg-green-500 rounded-full" style={{ width: "45%" }}></div>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium">Network</span>
+                      <div className="flex items-center">
+                        <span className="text-sm font-medium text-amber-500">86%</span>
+                        <div className="w-24 h-2 ml-2 bg-gray-200 rounded-full overflow-hidden">
+                          <div className="h-full bg-amber-500 rounded-full" style={{ width: "86%" }}></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="mt-8 grid grid-cols-2 gap-4">
+                    <div className="dashboard-stat bg-green-50 dark:bg-green-900/20">
+                      <span className="dashboard-stat-value text-green-600 dark:text-green-400">18</span>
+                      <span className="dashboard-stat-label">Services Online</span>
+                    </div>
+                    <div className="dashboard-stat bg-red-50 dark:bg-red-900/20">
+                      <span className="dashboard-stat-value text-red-600 dark:text-red-400">2</span>
+                      <span className="dashboard-stat-label">Alerts</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+            
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }} 
+              animate={{ opacity: 1, y: 0 }} 
+              transition={{ duration: 0.5, delay: 0.2 }}
+              className="lg:col-span-2"
+            >
+              <Card className="h-full">
+                <CardHeader>
+                  <CardTitle>System Performance</CardTitle>
+                  <CardDescription>7-day resource utilization</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-80">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={metricsData} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="var(--secondary)" opacity={0.2} />
+                        <XAxis dataKey="name" stroke="var(--muted-foreground)" />
+                        <YAxis stroke="var(--muted-foreground)" />
+                        <Tooltip />
+                        <Line type="monotone" dataKey="cpu" stroke="var(--primary)" strokeWidth={2} activeDot={{ r: 8 }} />
+                        <Line type="monotone" dataKey="memory" stroke="#3b82f6" strokeWidth={2} />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          </div>
+        </Container>
+      </section>
+      
+      {/* Getting Started Steps */}
+      <section className="py-20">
+        <Container maxWidth="2xl">
+          <SectionHeading 
+            centered 
+            animate 
+            tag="Quick Start"
+            subheading="Follow these steps to get started with DEVONN.AI Framework"
+          >
+            Getting Started
+          </SectionHeading>
+          
+          <div className="mt-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {[
+              {
+                step: 1,
+                title: "Install Tools",
+                description: "Set up the required CLI tools for Kubernetes, Helm, and Istio",
+                icon: <Code2 className="w-6 h-6" />
+              },
+              {
+                step: 2,
+                title: "Deploy Core Services",
+                description: "Install and configure the service mesh, API gateway, and observability stack",
+                icon: <Server className="w-6 h-6" />
+              },
+              {
+                step: 3,
+                title: "Configure Security",
+                description: "Set up mTLS, authentication, and authorization policies",
+                icon: <Shield className="w-6 h-6" />
+              },
+              {
+                step: 4,
+                title: "Deploy AI Services",
+                description: "Deploy your AI models and supporting services",
+                icon: <Database className="w-6 h-6" />
+              }
+            ].map((item, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.1 * i }}
+                className="relative"
+              >
+                <Card className="h-full border-2 border-primary/10 hover:border-primary/30 transition-colors">
+                  <div className="absolute -top-5 -left-3 w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center font-bold text-lg">
+                    {item.step}
+                  </div>
+                  <CardHeader>
+                    <div className="w-12 h-12 rounded-full bg-primary/10 text-primary flex items-center justify-center mb-2">
+                      {item.icon}
+                    </div>
+                    <CardTitle>{item.title}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-muted-foreground">{item.description}</p>
+                    <a href="#" className="inline-block mt-4 text-primary hover:underline">Learn more →</a>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))}
+          </div>
+          
+          <div className="mt-12 flex justify-center">
+            <a 
+              href="#"
+              className="inline-flex items-center justify-center rounded-md px-6 py-3 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring bg-primary text-primary-foreground hover:bg-primary/90"
+            >
+              Complete Installation Guide
+            </a>
           </div>
         </Container>
       </section>
@@ -329,6 +539,401 @@ const Index = () => {
                 </div>
                 <h3 className="text-lg font-medium mb-2">{feature.title}</h3>
                 <p className="text-muted-foreground">{feature.description}</p>
+              </motion.div>
+            ))}
+          </div>
+        </Container>
+      </section>
+      
+      {/* Latest Updates Section */}
+      <section className="py-20">
+        <Container maxWidth="2xl">
+          <SectionHeading 
+            animate 
+            tag="Updates"
+            subheading="Stay informed about the latest improvements and changes to the framework"
+          >
+            Latest News
+          </SectionHeading>
+          
+          <div className="mt-8 space-y-6">
+            {[
+              {
+                date: "June 15, 2023",
+                title: "Version 2.3.0 Released",
+                description: "Major improvements to the observability stack and enhanced security features",
+                badge: "Release"
+              },
+              {
+                date: "May 28, 2023",
+                title: "Kong API Gateway Integration Improved",
+                description: "Added support for custom plugins and enhanced rate limiting capabilities",
+                badge: "Feature"
+              },
+              {
+                date: "May 12, 2023",
+                title: "Security Vulnerability Patched",
+                description: "Critical security update for Istio components, all users should update immediately",
+                badge: "Security"
+              }
+            ].map((update, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.5, delay: 0.1 * i }}
+                className="flex gap-4 p-6 border rounded-xl hover:bg-secondary/10 transition-colors"
+              >
+                <div className="hidden sm:flex flex-col items-center">
+                  <div className="w-12 h-12 rounded-full bg-primary/10 text-primary flex items-center justify-center">
+                    <Clock className="w-6 h-6" />
+                  </div>
+                  <div className="w-px h-full bg-gray-200 dark:bg-gray-700 my-2"></div>
+                </div>
+                <div className="flex-1">
+                  <div className="flex flex-wrap items-center gap-2 mb-2">
+                    <span className="text-sm text-muted-foreground">{update.date}</span>
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                      update.badge === 'Release' ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300' :
+                      update.badge === 'Feature' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300' :
+                      'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300'
+                    }`}>
+                      {update.badge}
+                    </span>
+                  </div>
+                  <h3 className="text-lg font-medium mb-1">{update.title}</h3>
+                  <p className="text-muted-foreground">{update.description}</p>
+                  <a href="#" className="inline-block mt-2 text-primary hover:underline">Read more →</a>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+          
+          <div className="mt-8 flex justify-center">
+            <a
+              href="#"
+              className="inline-flex items-center justify-center rounded-md px-6 py-3 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring bg-secondary text-secondary-foreground hover:bg-secondary/80"
+            >
+              View All Updates
+            </a>
+          </div>
+        </Container>
+      </section>
+      
+      {/* Architecture Diagram Section */}
+      <section className="py-20 bg-gradient-to-b from-background to-secondary/20">
+        <Container maxWidth="2xl">
+          <SectionHeading 
+            centered
+            animate 
+            tag="Architecture"
+            subheading="Visual representation of the DEVONN.AI framework components and their interactions"
+          >
+            Technical Architecture
+          </SectionHeading>
+          
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            className="mt-12 bg-white dark:bg-gray-900 p-6 rounded-xl shadow-lg"
+          >
+            <div className="w-full overflow-hidden rounded-lg">
+              {/* Architecture Diagram */}
+              <div className="w-full h-[400px] bg-gradient-to-r from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 rounded-lg p-6 flex items-center justify-center">
+                <div className="relative w-full max-w-4xl h-full">
+                  {/* User Layer */}
+                  <div className="absolute top-0 left-0 right-0 flex justify-center">
+                    <div className="px-4 py-2 bg-blue-500 text-white rounded-lg shadow-md">
+                      Client Applications
+                    </div>
+                  </div>
+                  
+                  {/* API Gateway Layer */}
+                  <div className="absolute top-[20%] left-0 right-0 flex justify-center">
+                    <div className="px-6 py-3 bg-purple-500 text-white rounded-lg shadow-md w-64 text-center">
+                      Kong API Gateway
+                    </div>
+                  </div>
+                  
+                  {/* Service Mesh Layer */}
+                  <div className="absolute top-[40%] left-0 right-0 flex justify-center">
+                    <div className="px-6 py-3 bg-indigo-500 text-white rounded-lg shadow-md w-72 text-center">
+                      Istio Service Mesh
+                    </div>
+                  </div>
+                  
+                  {/* Microservices Layer */}
+                  <div className="absolute top-[60%] left-0 right-0 flex justify-around px-12">
+                    <div className="px-4 py-2 bg-green-500 text-white rounded-lg shadow-md">
+                      AI Model Service
+                    </div>
+                    <div className="px-4 py-2 bg-green-500 text-white rounded-lg shadow-md">
+                      Data Processing
+                    </div>
+                    <div className="px-4 py-2 bg-green-500 text-white rounded-lg shadow-md">
+                      Authentication
+                    </div>
+                    <div className="px-4 py-2 bg-green-500 text-white rounded-lg shadow-md">
+                      Storage Service
+                    </div>
+                  </div>
+                  
+                  {/* Infrastructure Layer */}
+                  <div className="absolute bottom-0 left-0 right-0 flex justify-center">
+                    <div className="px-6 py-3 bg-gray-700 text-white rounded-lg shadow-md w-80 text-center">
+                      Kubernetes Infrastructure
+                    </div>
+                  </div>
+                  
+                  {/* Observability sidebar */}
+                  <div className="absolute top-[30%] right-0 flex flex-col gap-2">
+                    <div className="px-3 py-2 bg-amber-500 text-white rounded-lg shadow-md text-sm">
+                      Prometheus
+                    </div>
+                    <div className="px-3 py-2 bg-teal-500 text-white rounded-lg shadow-md text-sm">
+                      Grafana
+                    </div>
+                    <div className="px-3 py-2 bg-blue-400 text-white rounded-lg shadow-md text-sm">
+                      Jaeger
+                    </div>
+                  </div>
+                  
+                  {/* Connection Lines */}
+                  <svg className="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg">
+                    {/* User to API Gateway */}
+                    <line x1="50%" y1="32" x2="50%" y2="80" stroke="#cbd5e1" strokeWidth="2" strokeDasharray="4" />
+                    {/* API Gateway to Service Mesh */}
+                    <line x1="50%" y1="112" x2="50%" y2="160" stroke="#cbd5e1" strokeWidth="2" strokeDasharray="4" />
+                    {/* Service Mesh to Microservices */}
+                    <line x1="50%" y1="192" x2="25%" y2="240" stroke="#cbd5e1" strokeWidth="2" strokeDasharray="4" />
+                    <line x1="50%" y1="192" x2="40%" y2="240" stroke="#cbd5e1" strokeWidth="2" strokeDasharray="4" />
+                    <line x1="50%" y1="192" x2="60%" y2="240" stroke="#cbd5e1" strokeWidth="2" strokeDasharray="4" />
+                    <line x1="50%" y1="192" x2="75%" y2="240" stroke="#cbd5e1" strokeWidth="2" strokeDasharray="4" />
+                    {/* Microservices to Infrastructure */}
+                    <line x1="25%" y1="272" x2="50%" y2="320" stroke="#cbd5e1" strokeWidth="2" strokeDasharray="4" />
+                    <line x1="40%" y1="272" x2="50%" y2="320" stroke="#cbd5e1" strokeWidth="2" strokeDasharray="4" />
+                    <line x1="60%" y1="272" x2="50%" y2="320" stroke="#cbd5e1" strokeWidth="2" strokeDasharray="4" />
+                    <line x1="75%" y1="272" x2="50%" y2="320" stroke="#cbd5e1" strokeWidth="2" strokeDasharray="4" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+            <div className="mt-4 text-center">
+              <a
+                href="#"
+                className="inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring bg-secondary text-secondary-foreground hover:bg-secondary/80"
+              >
+                View Full Architecture Documentation
+              </a>
+            </div>
+          </motion.div>
+        </Container>
+      </section>
+      
+      {/* Case Studies Section */}
+      <section className="py-20">
+        <Container maxWidth="2xl">
+          <SectionHeading 
+            animate 
+            tag="Success Stories"
+            subheading="Real-world applications of the DEVONN.AI Framework in production environments"
+          >
+            Case Studies
+          </SectionHeading>
+          
+          <div className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[
+              {
+                company: "NeuroLeap AI",
+                title: "Scaling to 10M Predictions Per Day",
+                description: "How NeuroLeap deployed their NLP model to handle 10 million daily predictions with 99.99% availability",
+                icon: <Database className="w-5 h-5" />
+              },
+              {
+                company: "VisionCraft",
+                title: "Secure Multi-tenant Deployment",
+                description: "Implementing strict isolation and security for a computer vision platform serving multiple enterprise clients",
+                icon: <Shield className="w-5 h-5" />
+              },
+              {
+                company: "PredictSphere",
+                title: "Cost Optimization Journey",
+                description: "Reducing cloud costs by 68% while improving performance through efficient architecture design",
+                icon: <Bolt className="w-5 h-5" />
+              }
+            ].map((study, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.1 * i }}
+                className="relative group"
+              >
+                <Card className="h-full overflow-hidden transition-all duration-300 hover:-translate-y-2 hover:shadow-lg">
+                  <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary to-blue-500"></div>
+                  <CardHeader>
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10">
+                        {study.icon}
+                      </div>
+                      <span className="text-sm font-medium text-muted-foreground">{study.company}</span>
+                    </div>
+                    <CardTitle>{study.title}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-muted-foreground">{study.description}</p>
+                    <a href="#" className="inline-block mt-4 text-primary font-medium hover:underline">
+                      Read case study →
+                    </a>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))}
+          </div>
+        </Container>
+      </section>
+      
+      {/* FAQ Section */}
+      <section className="py-20 bg-secondary/20">
+        <Container maxWidth="2xl">
+          <SectionHeading 
+            centered
+            animate 
+            tag="FAQ"
+            subheading="Common questions about the DEVONN.AI Framework"
+          >
+            Frequently Asked Questions
+          </SectionHeading>
+          
+          <div className="mt-12 max-w-3xl mx-auto">
+            {[
+              {
+                question: "What are the minimum system requirements?",
+                answer: "For local development, we recommend at least 16GB RAM, 4-core CPU, and 50GB storage. For production, a Kubernetes cluster with at least 3 nodes is recommended, each with 8 CPU cores and 32GB RAM."
+              },
+              {
+                question: "Does DEVONN.AI work with any cloud provider?",
+                answer: "Yes, DEVONN.AI is cloud-agnostic and works with all major cloud providers including AWS, GCP, Azure, and others. It can also be deployed on on-premises Kubernetes clusters."
+              },
+              {
+                question: "How does the framework handle model versioning?",
+                answer: "DEVONN.AI includes built-in support for model versioning through its integration with MLflow. It tracks model versions, parameters, and metrics, and provides tools for model promotion through environments."
+              },
+              {
+                question: "Is there support for A/B testing AI models?",
+                answer: "Yes, the framework supports A/B testing through the Argo Rollouts component, which allows for canary deployments and traffic splitting between different model versions."
+              },
+              {
+                question: "How is security handled in DEVONN.AI?",
+                answer: "Security is implemented at multiple layers including network policies, Istio authorization policies, mTLS encryption, API authentication through Kong, and RBAC for Kubernetes resources."
+              }
+            ].map((faq, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: 0.1 * i }}
+                className="mb-4"
+              >
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <BadgeCheck className="w-5 h-5 text-primary" />
+                      {faq.question}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-muted-foreground">{faq.answer}</p>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))}
+          </div>
+        </Container>
+      </section>
+      
+      {/* Integration Partners */}
+      <section className="py-20">
+        <Container maxWidth="2xl">
+          <SectionHeading 
+            centered
+            animate 
+            tag="Ecosystem"
+            subheading="DEVONN.AI integrates seamlessly with leading tools and platforms"
+          >
+            Integration Partners
+          </SectionHeading>
+          
+          <div className="mt-12 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-8">
+            {Array.from({ length: 12 }).map((_, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.3, delay: 0.05 * i }}
+                className="flex items-center justify-center p-4"
+              >
+                <div className="w-16 h-16 bg-white dark:bg-gray-800 rounded-full shadow-md flex items-center justify-center">
+                  <Globe className="w-8 h-8 text-primary/70" />
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </Container>
+      </section>
+      
+      {/* Testimonials */}
+      <section className="py-20 bg-gradient-to-b from-secondary/20 to-background">
+        <Container maxWidth="2xl">
+          <SectionHeading 
+            centered
+            animate 
+            tag="Testimonials"
+            subheading="What our users say about DEVONN.AI Framework"
+          >
+            User Feedback
+          </SectionHeading>
+          
+          <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6">
+            {[
+              {
+                quote: "DEVONN.AI transformed how we deploy machine learning models. We reduced our deployment time from days to minutes.",
+                name: "Sarah Johnson",
+                role: "CTO, DataStream AI"
+              },
+              {
+                quote: "The observability stack integration saved us countless hours of troubleshooting and helped us identify performance bottlenecks immediately.",
+                name: "Michael Chen",
+                role: "Lead DevOps Engineer, TechFusion"
+              },
+              {
+                quote: "The security features of DEVONN.AI gave us the confidence to deploy sensitive financial models in production environments.",
+                name: "Elena Rodriguez",
+                role: "Head of AI, FinTech Solutions"
+              }
+            ].map((testimonial, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.1 * i }}
+              >
+                <Card className="h-full border-2 border-primary/5 hover:border-primary/20 transition-colors">
+                  <CardContent className="pt-6">
+                    <div className="mb-4 text-4xl text-primary/20">"</div>
+                    <p className="italic text-muted-foreground mb-6">{testimonial.quote}</p>
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center">
+                        <span className="font-semibold text-secondary-foreground">{testimonial.name[0]}</span>
+                      </div>
+                      <div>
+                        <p className="font-medium">{testimonial.name}</p>
+                        <p className="text-sm text-muted-foreground">{testimonial.role}</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
               </motion.div>
             ))}
           </div>
