@@ -1,4 +1,3 @@
-
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ThemeProvider } from "next-themes";
 import { TooltipProvider } from "@radix-ui/react-tooltip";
@@ -15,6 +14,31 @@ import "./App.css";
 
 // Create a client
 const queryClient = new QueryClient();
+
+// Update the route configuration in the router definition to include the new documentation routes:
+const router = createBrowserRouter([
+  {
+    path: "/",
+    element: <Index />,
+    errorElement: <NotFound />,
+  },
+  {
+    path: "/documentation/*",
+    element: <Documentation />,
+  },
+  {
+    path: "/api",
+    element: <API />,
+  },
+  {
+    path: "/api-management",
+    element: <APIManagement />,
+  },
+  {
+    path: "/deployment-dashboard",
+    element: <DeploymentDashboard />,
+  },
+]);
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
