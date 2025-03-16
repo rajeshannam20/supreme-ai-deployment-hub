@@ -60,3 +60,41 @@
 .method-patch {
   @apply bg-purple-100 text-purple-800 dark:bg-purple-900/50 dark:text-purple-300;
 }
+
+/* Dashboard styles */
+.dashboard-card {
+  @apply transition-all duration-200 hover:shadow-md;
+}
+
+.dashboard-stat {
+  @apply flex flex-col items-center justify-center p-4 rounded-lg;
+}
+
+.dashboard-stat-value {
+  @apply text-2xl font-bold;
+}
+
+.dashboard-stat-label {
+  @apply text-sm text-muted-foreground;
+}
+
+/* API response formatting */
+.json-key {
+  @apply text-blue-600 dark:text-blue-400;
+}
+
+.json-string {
+  @apply text-green-600 dark:text-green-400;
+}
+
+.json-number {
+  @apply text-purple-600 dark:text-purple-400;
+}
+
+.json-boolean {
+  @apply text-amber-600 dark:text-amber-400;
+}
+
+.json-null {
+  @apply text-gray-500 dark:text-gray-400;
+}
