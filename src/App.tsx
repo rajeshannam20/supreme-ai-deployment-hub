@@ -1,7 +1,8 @@
+
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ThemeProvider } from "next-themes";
 import { TooltipProvider } from "@radix-ui/react-tooltip";
-import { Outlet } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 import { Toaster } from "sonner";
 
 import Navbar from "./components/Navbar";
@@ -15,53 +16,36 @@ import "./App.css";
 // Create a client
 const queryClient = new QueryClient();
 
-// Update the route configuration in the router definition to include the new documentation routes:
-const router = createBrowserRouter([
-  {
-    path: "/",
-    element: <Index />,
-    errorElement: <NotFound />,
-  },
-  {
-    path: "/documentation/*",
-    element: <Documentation />,
-  },
-  {
-    path: "/api",
-    element: <API />,
-  },
-  {
-    path: "/api-management",
-    element: <APIManagement />,
-  },
-  {
-    path: "/deployment-dashboard",
-    element: <DeploymentDashboard />,
-  },
-]);
+// Note: We don't need createBrowserRouter in this file since we're using BrowserRouter in main.tsx
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <ThemeProvider defaultTheme="dark" enableSystem>
-      <TooltipProvider>
-        <DeploymentProvider>
-          <APIProvider>
-            <ChatProvider>
-              <Toaster />
-              <div className="min-h-screen flex flex-col">
-                <Navbar />
-                <main className="flex-grow">
-                  <Outlet />
-                </main>
-                <Footer />
-                <ChatInterface />
-              </div>
-            </ChatProvider>
-          </APIProvider>
-        </DeploymentProvider>
-      </TooltipProvider>
-    </ThemeProvider>
-  </QueryClientProvider>
-);
+const App = () => {
+  const location = useLocation();
+  const isHome = location.pathname === '/';
+  
+  return (
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider defaultTheme="dark" enableSystem>
+        <TooltipProvider>
+          <DeploymentProvider>
+            <APIProvider>
+              <ChatProvider>
+                <Toaster />
+                <div className="min-h-screen flex flex-col">
+                  <Navbar />
+                  <main className="flex-grow">
+                    <Outlet />
+                  </main>
+                  {/* Only show footer on non-home pages as home already has one */}
+                  {!isHome && <Footer />}
+                  <ChatInterface />
+                </div>
+              </ChatProvider>
+            </APIProvider>
+          </DeploymentProvider>
+        </TooltipProvider>
+      </ThemeProvider>
+    </QueryClientProvider>
+  );
+};
 
 export default App;
