@@ -16,6 +16,14 @@ const Privacy: React.FC = () => {
           Privacy Policy
         </SectionHeading>
         
+        <div className="mb-8 rounded-xl overflow-hidden shadow-lg">
+          <img 
+            src="https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5" 
+            alt="Data privacy visualization" 
+            className="w-full h-64 object-cover"
+          />
+        </div>
+        
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}

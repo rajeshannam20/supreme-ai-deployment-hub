@@ -10,19 +10,22 @@ const updatesData = [
     date: "June 15, 2023",
     title: "Version 2.3.0 Released",
     description: "Major improvements to the observability stack and enhanced security features",
-    badge: "Release"
+    badge: "Release",
+    image: "https://images.unsplash.com/photo-1519389950473-47ba0277781c"
   },
   {
     date: "May 28, 2023",
     title: "Kong API Gateway Integration Improved",
     description: "Added support for custom plugins and enhanced rate limiting capabilities",
-    badge: "Feature"
+    badge: "Feature",
+    image: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158"
   },
   {
     date: "May 12, 2023",
     title: "Security Vulnerability Patched",
     description: "Critical security update for Istio components, all users should update immediately",
-    badge: "Security"
+    badge: "Security",
+    image: "https://images.unsplash.com/photo-1473091534298-04dcbce3278c"
   }
 ];
 
@@ -64,9 +67,20 @@ const LatestUpdates: React.FC = () => {
                     {update.badge}
                   </span>
                 </div>
-                <h3 className="text-lg font-medium mb-1">{update.title}</h3>
-                <p className="text-muted-foreground">{update.description}</p>
-                <a href="#" className="inline-block mt-2 text-primary hover:underline">Read more →</a>
+                <div className="md:flex items-start gap-4">
+                  <div className="md:flex-1">
+                    <h3 className="text-lg font-medium mb-1">{update.title}</h3>
+                    <p className="text-muted-foreground">{update.description}</p>
+                    <a href="#" className="inline-block mt-2 text-primary hover:underline">Read more →</a>
+                  </div>
+                  <div className="mt-4 md:mt-0 md:w-1/4 rounded-lg overflow-hidden">
+                    <img 
+                      src={update.image} 
+                      alt={update.title} 
+                      className="w-full h-24 object-cover"
+                    />
+                  </div>
+                </div>
               </div>
             </motion.div>
           ))}

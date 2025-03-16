@@ -16,6 +16,14 @@ const Terms: React.FC = () => {
           Terms of Service
         </SectionHeading>
         
+        <div className="mb-8 rounded-xl overflow-hidden shadow-lg">
+          <img 
+            src="https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d" 
+            alt="Person using computer" 
+            className="w-full h-64 object-cover"
+          />
+        </div>
+        
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
