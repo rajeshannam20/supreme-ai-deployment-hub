@@ -8,6 +8,8 @@ import APISelector from './playground/APISelector';
 import MethodSelector from './playground/MethodSelector';
 import RequestConfig from './playground/RequestConfig';
 import ResponseDisplay from './playground/ResponseDisplay';
+import { motion } from 'framer-motion';
+import { Send } from 'lucide-react';
 
 interface APIPlaygroundTabProps {
   onSaveResponse?: (
@@ -38,7 +40,12 @@ const APIPlaygroundTab: React.FC<APIPlaygroundTabProps> = ({ onSaveResponse }) =
         <CardDescription>Test API endpoints interactively</CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="space-y-6">
+        <motion.div 
+          className="space-y-6"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.4 }}
+        >
           <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <APISelector 
@@ -62,13 +69,18 @@ const APIPlaygroundTab: React.FC<APIPlaygroundTabProps> = ({ onSaveResponse }) =
             />
 
             <div className="flex justify-end">
-              <Button onClick={sendRequest} disabled={!state.endpoint || state.loading}>
+              <Button 
+                onClick={sendRequest} 
+                disabled={!state.endpoint || state.loading}
+                className="gap-2"
+              >
+                <Send className="h-4 w-4" />
                 {state.loading ? 'Sending...' : 'Send Request'}
               </Button>
             </div>
           </div>
 
-          <Separator />
+          <Separator className="my-6" />
 
           <ResponseDisplay 
             response={state.response}
@@ -76,7 +88,7 @@ const APIPlaygroundTab: React.FC<APIPlaygroundTabProps> = ({ onSaveResponse }) =
             onSaveResponse={handleSaveResponse}
             hasValidResponse={!!(state.response && state.status && state.selectedAPI)}
           />
-        </div>
+        </motion.div>
       </CardContent>
     </Card>
   );
