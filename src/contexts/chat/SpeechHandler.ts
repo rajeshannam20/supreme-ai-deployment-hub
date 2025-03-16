@@ -1,5 +1,4 @@
 
-
 interface SpeechOptions {
   onStart?: () => void;
   onEnd?: () => void;
@@ -137,12 +136,18 @@ export class SpeechHandler {
 // Fix TypeScript issues with the Speech API
 declare global {
   interface Window {
-    SpeechRecognition: typeof SpeechRecognition;
-    webkitSpeechRecognition: typeof SpeechRecognition;
+    SpeechRecognition: typeof SpeechRecognitionConstructor;
+    webkitSpeechRecognition: typeof SpeechRecognitionConstructor;
   }
 }
 
-// Add missing type definition for SpeechRecognition
+// Define a constructor type for SpeechRecognition
+interface SpeechRecognitionConstructor {
+  new(): SpeechRecognition;
+  prototype: SpeechRecognition;
+}
+
+// Define the SpeechRecognition interface
 interface SpeechRecognition extends EventTarget {
   continuous: boolean;
   interimResults: boolean;
@@ -180,4 +185,3 @@ interface SpeechRecognitionAlternative {
   transcript: string;
   confidence: number;
 }
-
