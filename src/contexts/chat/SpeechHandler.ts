@@ -1,4 +1,5 @@
 
+
 interface SpeechOptions {
   onStart?: () => void;
   onEnd?: () => void;
@@ -25,8 +26,8 @@ export class SpeechHandler {
     }
 
     // Initialize speech recognition
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    this.recognition = new SpeechRecognition();
+    const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
+    this.recognition = new SpeechRecognitionAPI();
     
     if (this.recognition) {
       this.recognition.continuous = false;
@@ -179,3 +180,4 @@ interface SpeechRecognitionAlternative {
   transcript: string;
   confidence: number;
 }
+
