@@ -1,18 +1,25 @@
 
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Bot, Github, Sun, Moon } from 'lucide-react';
+import { Bot, Github, Sun, Moon, Menu, X } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Switch } from '@/components/ui/switch';
+import { 
+  Sheet, 
+  SheetContent, 
+  SheetTrigger,
+  SheetClose 
+} from '@/components/ui/sheet';
 
 const navigationItems = [
   { name: 'Home', path: '/' },
   { name: 'Documentation', path: '/documentation' },
   { name: 'Deployment', path: '/deployment' },
   { name: 'API', path: '/api' },
+  { name: 'About', path: '/about' },
 ];
 
 interface NavbarProps {
@@ -24,6 +31,7 @@ const Navbar = ({
   className, 
   transparent = false 
 }: NavbarProps) => {
+  const location = useLocation();
   const isMobile = useIsMobile();
   const [isScrolled, setIsScrolled] = useState(false);
   const { theme, setTheme } = useTheme();
@@ -69,7 +77,7 @@ const Navbar = ({
       transition={{ duration: 0.6 }}
     >
       <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between h-16">
           <div className="flex items-center">
             <Bot className="w-8 h-8 mr-2 text-primary" />
             <Link 
@@ -83,7 +91,16 @@ const Navbar = ({
           {!isMobile && (
             <nav className="hidden md:flex items-center space-x-8">
               {navigationItems.map(item => (
-                <Link key={item.name} to={item.path} className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+                <Link 
+                  key={item.name} 
+                  to={item.path} 
+                  className={cn(
+                    "text-sm font-medium transition-colors",
+                    location.pathname === item.path
+                      ? "text-foreground"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
                   {item.name}
                 </Link>
               ))}
@@ -111,6 +128,51 @@ const Navbar = ({
             >
               <Github className="h-5 w-5" />
             </a>
+            
+            {isMobile && (
+              <Sheet>
+                <SheetTrigger asChild>
+                  <Button variant="ghost" size="icon">
+                    <Menu className="h-5 w-5" />
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="right">
+                  <div className="flex flex-col h-full">
+                    <div className="flex items-center justify-between mb-6">
+                      <div className="flex items-center">
+                        <Bot className="w-6 h-6 mr-2 text-primary" />
+                        <span className="text-lg font-display font-semibold">
+                          DEVONN<span className="text-primary">.AI</span>
+                        </span>
+                      </div>
+                      <SheetClose asChild>
+                        <Button variant="ghost" size="icon">
+                          <X className="h-5 w-5" />
+                        </Button>
+                      </SheetClose>
+                    </div>
+                    
+                    <nav className="flex flex-col space-y-4">
+                      {navigationItems.map(item => (
+                        <SheetClose asChild key={item.name}>
+                          <Link 
+                            to={item.path} 
+                            className={cn(
+                              "px-2 py-1.5 rounded-md text-sm font-medium transition-colors",
+                              location.pathname === item.path
+                                ? "bg-secondary text-foreground"
+                                : "text-muted-foreground hover:bg-secondary/50 hover:text-foreground"
+                            )}
+                          >
+                            {item.name}
+                          </Link>
+                        </SheetClose>
+                      ))}
+                    </nav>
+                  </div>
+                </SheetContent>
+              </Sheet>
+            )}
           </div>
         </div>
       </div>
@@ -119,3 +181,38 @@ const Navbar = ({
 };
 
 export default Navbar;
+
+// Define the Button component for the mobile menu
+const Button = React.forwardRef<
+  HTMLButtonElement, 
+  React.ButtonHTMLAttributes<HTMLButtonElement> & { 
+    variant?: 'default' | 'ghost' | 'link';
+    size?: 'default' | 'sm' | 'lg' | 'icon';
+  }
+>(({ 
+  className, 
+  variant = 'default', 
+  size = 'default', 
+  ...props 
+}, ref) => {
+  return (
+    <button
+      className={cn(
+        "inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50",
+        {
+          'bg-primary text-primary-foreground hover:bg-primary/90': variant === 'default',
+          'hover:bg-accent hover:text-accent-foreground': variant === 'ghost',
+          'text-primary underline-offset-4 hover:underline': variant === 'link',
+          'h-10 px-4 py-2': size === 'default',
+          'h-9 px-3': size === 'sm',
+          'h-11 px-8': size === 'lg',
+          'h-9 w-9 p-0': size === 'icon',
+        },
+        className
+      )}
+      ref={ref}
+      {...props}
+    />
+  );
+});
+Button.displayName = "Button";

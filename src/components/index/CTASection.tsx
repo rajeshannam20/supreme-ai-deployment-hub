@@ -1,6 +1,7 @@
 
 import React from 'react';
 import Container from '@/components/Container';
+import { Link } from 'react-router-dom';
 
 const CTASection: React.FC = () => {
   return (
@@ -15,18 +16,18 @@ const CTASection: React.FC = () => {
               Start with our comprehensive deployment framework and take your AI applications to production with confidence.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <a 
-                href="#"
+              <Link 
+                to="/deployment"
                 className="inline-flex items-center justify-center rounded-md px-6 py-3 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring bg-white text-primary hover:bg-white/90"
               >
                 Get Started
-              </a>
-              <a
-                href="#"
+              </Link>
+              <Link
+                to="/documentation"
                 className="inline-flex items-center justify-center rounded-md px-6 py-3 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring bg-primary/20 text-white hover:bg-primary/30 border border-white/20"
               >
                 View Documentation
-              </a>
+              </Link>
             </div>
           </div>
         </div>

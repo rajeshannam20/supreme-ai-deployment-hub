@@ -31,8 +31,8 @@ const Footer = ({ className }: FooterProps) => {
                 </Link>
               </li>
               <li>
-                <Link to="/guides" className="text-sm text-muted-foreground hover:text-primary transition-colors">
-                  Guides
+                <Link to="/deployment" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                  Deployment
                 </Link>
               </li>
               <li>
@@ -75,12 +75,12 @@ const Footer = ({ className }: FooterProps) => {
             &copy; {new Date().getFullYear()} DEVONN.AI. All rights reserved.
           </p>
           <div className="mt-4 md:mt-0 flex space-x-6">
-            <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">
+            <Link to="/privacy" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
               Privacy
-            </a>
-            <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">
+            </Link>
+            <Link to="/terms" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
               Terms
-            </a>
+            </Link>
           </div>
         </div>
       </div>
