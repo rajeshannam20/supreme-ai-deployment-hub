@@ -83,7 +83,7 @@ const ObservabilityStackPage: React.FC = () => {
               kubectl apply -f prometheus/alerting-rules.yaml<br/>
               <br/>
               # To access Grafana Dashboard<br/>
-              kubectl get secret --namespace default grafana -o jsonpath="{{'{'}}{{'.data.admin-password'}}" | base64 --decode ; echo<br/>
+              kubectl get secret --namespace default grafana -o jsonpath="&#123;.data.admin-password&#125;" | base64 --decode ; echo<br/>
               kubectl port-forward svc/grafana 3000:80
             </pre>
           </div>
