@@ -1,6 +1,8 @@
 import { Intent, ConversationContext, Entity } from './types';
 import { INTENTS } from './constants';
 import { extractEntities } from './entityExtractor';
+import { analyzeSentiment } from './sentimentAnalyzer';
+import { isLowConfidenceIntent } from './fallbackManager';
 
 export const detectIntent = (
   message: string, 
@@ -9,6 +11,7 @@ export const detectIntent = (
 ): Intent => {
   const lowerMessage = message.toLowerCase();
   const entities = extractEntities(message);
+  const sentiment = analyzeSentiment(message);
   
   // Keep track of entities for conversation context
   entities.forEach(entity => {
@@ -58,12 +61,22 @@ export const detectIntent = (
     };
   });
   
-  // Consider conversation context for intent detection
+  // Enhanced conversation context consideration
   if (conversationContext.lastIntent && conversationContext.messageCount < 5) {
     // If we're in a conversation thread, slightly bias toward same intent family
     intentScores.forEach(intent => {
       if (intent.type === conversationContext.lastIntent) {
-        intent.score += 0.1;
+        intent.score += 0.15; // Increased from 0.1 for stronger context continuity
+      }
+    });
+  }
+  
+  // Consider topic history for more coherent conversations
+  if (conversationContext.topicHistory && conversationContext.topicHistory.length > 0) {
+    intentScores.forEach(intent => {
+      // If intent matches any recent topics, give it a small boost
+      if (conversationContext.topicHistory.includes(intent.type)) {
+        intent.score += 0.05 * (conversationContext.topicHistory.length > 3 ? 3 : conversationContext.topicHistory.length);
       }
     });
   }
@@ -74,8 +87,21 @@ export const detectIntent = (
     { type: 'technical', score: 0.3 }
   );
   
+  // Calculate confidence score
+  const confidence = Math.min(0.95, highestIntent.score + 0.5); // Convert score to confidence
+  
+  // Determine if this is a low confidence intent
+  const isLowConfidence = isLowConfidenceIntent(highestIntent.type, confidence);
+  
   // If no strong intent is detected, default to technical
   if (highestIntent.score < 0.3) {
+    // Update failed intent count if low confidence
+    updateConversationContext(prev => ({
+      ...prev,
+      failedIntentCount: prev.failedIntentCount + 1,
+      lastUserSentiment: sentiment
+    }));
+    
     return { 
       type: 'technical', 
       confidence: 0.6,
@@ -83,16 +109,31 @@ export const detectIntent = (
     };
   }
   
-  // Update conversation context with the detected intent
-  updateConversationContext(prev => ({
-    ...prev,
-    lastIntent: highestIntent.type,
-    messageCount: prev.messageCount + 1
-  }));
+  // Update conversation context with the detected intent and sentiment
+  updateConversationContext(prev => {
+    // Add to topic history (keep last 5 topics)
+    const newTopicHistory = [...(prev.topicHistory || [])];
+    if (!newTopicHistory.includes(highestIntent.type)) {
+      newTopicHistory.push(highestIntent.type);
+      if (newTopicHistory.length > 5) {
+        newTopicHistory.shift();
+      }
+    }
+    
+    return {
+      ...prev,
+      lastIntent: highestIntent.type,
+      messageCount: prev.messageCount + 1,
+      topicHistory: newTopicHistory,
+      lastUserSentiment: sentiment,
+      // Reset or increment failed intent count
+      failedIntentCount: isLowConfidence ? prev.failedIntentCount + 1 : 0
+    };
+  });
   
   return {
     type: highestIntent.type,
-    confidence: Math.min(0.95, highestIntent.score + 0.5), // Convert score to confidence
+    confidence,
     entities
   };
 };

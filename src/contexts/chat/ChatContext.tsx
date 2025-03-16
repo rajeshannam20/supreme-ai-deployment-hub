@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { toast } from 'sonner';
 import { useDeployment } from '../DeploymentContext';
@@ -11,6 +10,7 @@ import {
 } from './types';
 import { detectIntent } from './intentDetector';
 import { generateResponse } from './responseGenerator';
+import { analyzeSentiment } from './sentimentAnalyzer';
 
 // Create the context
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
@@ -23,11 +23,13 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [conversationContext, setConversationContext] = useState<ConversationContext>({
     mentionedEntities: {},
     messageCount: 0,
+    topicHistory: [],
+    failedIntentCount: 0
   });
   const { getDeploymentSummary, isConnected: isClusterConnected } = useDeployment();
   const { apiConfigs, isAnyAPIConnected } = useAPI();
   
-  // Initialize some sample processes
+  // Initialize sample processes
   useEffect(() => {
     const initialProcesses: Process[] = [
       {
@@ -82,7 +84,7 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setMessages([welcomeMessage]);
   }, []);
 
-  // Update process statistics periodically to simulate system activity
+  // Update process statistics periodically
   useEffect(() => {
     const interval = setInterval(() => {
       setProcesses(prevProcesses => 
@@ -101,19 +103,25 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const sendMessage = (content: string) => {
     if (!content.trim()) return;
     
-    // Create and add user message
+    // Analyze sentiment for user message
+    const sentiment = analyzeSentiment(content);
+    
+    // Create and add user message with sentiment
     const userMessage: ChatMessage = {
       id: Date.now().toString(),
       content,
       sender: 'user',
       timestamp: new Date(),
       type: 'text',
+      sentiment
     };
     
     setMessages(prev => [...prev, userMessage]);
     setIsProcessing(true);
     
-    // Simulate AI processing time
+    // Simulate AI processing time with a more natural variable delay
+    const processingTime = Math.floor(1200 + Math.random() * 800); // 1.2-2s
+    
     setTimeout(() => {
       const intent = detectIntent(content, conversationContext, setConversationContext);
       
@@ -123,12 +131,13 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         console.log(`Detected entities:`, intent.entities);
       }
       
-      // Generate AI response
+      // Generate AI response with enhanced context
       let aiResponse = generateResponse(intent, content, {
         getDeploymentSummary,
         isClusterConnected,
         apiConfigs,
-        isAnyAPIConnected
+        isAnyAPIConnected,
+        conversationContext
       });
 
       // Process specific post-processing
@@ -156,7 +165,7 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       
       // Show toast notification for new message
       toast.info("New message from DEVONN.AI Assistant");
-    }, 1500);
+    }, processingTime);
   };
 
   // Provide feedback on a message
@@ -169,7 +178,23 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       )
     );
     
-    toast.success(`Thank you for your feedback!`);
+    // Improve future responses based on feedback
+    if (feedback === 'negative') {
+      // When negative feedback is received, add a follow-up message asking for clarification
+      setTimeout(() => {
+        const followUpMessage: ChatMessage = {
+          id: Date.now().toString(),
+          content: "I'm sorry my response wasn't helpful. Could you explain what you're looking for in more detail?",
+          sender: 'ai',
+          timestamp: new Date(),
+          type: 'text',
+        };
+        setMessages(prev => [...prev, followUpMessage]);
+        toast.info("New message from DEVONN.AI Assistant");
+      }, 1000);
+    } else {
+      toast.success(`Thank you for your feedback!`);
+    }
   };
 
   // Clear conversation history
@@ -180,7 +205,9 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     
     setConversationContext({
       mentionedEntities: {},
-      messageCount: 0
+      messageCount: 0,
+      topicHistory: [],
+      failedIntentCount: 0
     });
   };
 

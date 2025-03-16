@@ -1,7 +1,9 @@
 
-import { ChatMessage, Intent } from './types';
+import { ChatMessage, Intent, ConversationContext } from './types';
 import { toast } from 'sonner';
 import { ENTITY_TYPES } from './constants';
+import { getSentimentResponseModifier } from './sentimentAnalyzer';
+import { getFallbackResponse, DEFAULT_FALLBACK_STRATEGY } from './fallbackManager';
 
 interface ResponseGeneratorProps {
   getDeploymentSummary: () => string;
@@ -12,6 +14,7 @@ interface ResponseGeneratorProps {
     isConnected: boolean;
   }[];
   isAnyAPIConnected: boolean;
+  conversationContext: ConversationContext;
 }
 
 export const generateResponse = (
@@ -19,33 +22,58 @@ export const generateResponse = (
   message: string,
   props: ResponseGeneratorProps
 ): ChatMessage => {
-  const { getDeploymentSummary, isClusterConnected, apiConfigs, isAnyAPIConnected } = props;
+  const { 
+    getDeploymentSummary, 
+    isClusterConnected, 
+    apiConfigs, 
+    isAnyAPIConnected, 
+    conversationContext 
+  } = props;
   
+  // Check if we should use fallback response
+  const fallbackResponse = getFallbackResponse(conversationContext.failedIntentCount);
+  
+  // Start with a default response
   let response: ChatMessage = {
     id: Date.now().toString(),
     sender: 'ai',
     timestamp: new Date(),
     type: 'text',
-    content: "",
+    content: fallbackResponse || "", // Use fallback if available
   };
+  
+  // If using fallback, return early
+  if (fallbackResponse) {
+    return response;
+  }
   
   // Use extracted entities to personalize responses
   const mentionedServices = intent.entities?.filter(e => e.type === ENTITY_TYPES.SERVICE).map(e => e.value) || [];
   const mentionedPlatforms = intent.entities?.filter(e => e.type === ENTITY_TYPES.PLATFORM).map(e => e.value) || [];
   const mentionedActions = intent.entities?.filter(e => e.type === ENTITY_TYPES.ACTION).map(e => e.value) || [];
   
+  // Get sentiment modifier based on user's detected sentiment
+  const sentimentModifier = conversationContext.lastUserSentiment 
+    ? getSentimentResponseModifier(conversationContext.lastUserSentiment)
+    : "";
+  
   switch (intent.type) {
     case 'greeting':
-      response.content = "Hello! Welcome to DEVONN.AI. I'm your AI assistant for deploying AI systems and managing API integrations. How can I help you today?";
+      response.content = sentimentModifier + "Hello! Welcome to DEVONN.AI. I'm your AI assistant for deploying AI systems and managing API integrations. How can I help you today?";
+      
+      // If returning user (more than 5 messages), personalize greeting
+      if (conversationContext.messageCount > 5) {
+        response.content = "Welcome back! I'm ready to continue helping with your AI deployment and integration needs. What would you like to work on now?";
+      }
       break;
       
     case 'help':
       if (mentionedServices.length > 0) {
-        response.content = `I can help you with ${mentionedServices.join(", ")}. What specifically would you like to know?`;
+        response.content = sentimentModifier + `I can help you with ${mentionedServices.join(", ")}. What specifically would you like to know?`;
       } else if (mentionedActions.length > 0) {
-        response.content = `I can help you ${mentionedActions.join(", ")} your AI systems. Would you like specific guidance?`;
+        response.content = sentimentModifier + `I can help you ${mentionedActions.join(", ")} your AI systems. Would you like specific guidance?`;
       } else {
-        response.content = "I can help you with deploying AI systems, managing Kubernetes clusters, connecting to APIs, monitoring services, and more. What specific assistance do you need?";
+        response.content = sentimentModifier + "I can help you with deploying AI systems, managing Kubernetes clusters, connecting to APIs, monitoring services, and more. What specific assistance do you need?";
       }
       
       response.type = 'buttons';

@@ -22,6 +22,7 @@ export interface ChatMessage {
   links?: ChatLink[];
   imageUrl?: string;
   feedback?: 'positive' | 'negative' | null;
+  sentiment?: 'positive' | 'negative' | 'neutral'; // Added sentiment field
 }
 
 export interface Intent {
@@ -62,4 +63,13 @@ export interface ConversationContext {
   lastIntent?: string;
   mentionedEntities: Record<string, string[]>;
   messageCount: number;
+  topicHistory: string[]; // Added to track conversation topics
+  lastUserSentiment?: 'positive' | 'negative' | 'neutral'; // Track user sentiment
+  failedIntentCount: number; // Track consecutive failed intents for fallback
+}
+
+// New fallback response options
+export interface FallbackStrategy {
+  threshold: number; // Number of low-confidence intents before fallback
+  responses: string[]; // Array of fallback responses to cycle through
 }
