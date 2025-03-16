@@ -12,9 +12,9 @@ const CTASection: React.FC = () => {
           {/* Background image with overlay */}
           <div className="absolute inset-0 z-0">
             <img 
-              src="https://images.unsplash.com/photo-1518770660439-4636190af475" 
-              alt="Circuit board background" 
-              className="w-full h-full object-cover opacity-10"
+              src="https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5" 
+              alt="Neural network visualization" 
+              className="w-full h-full object-cover opacity-15"
             />
             <div className="absolute inset-0 bg-gradient-to-br from-primary/90 to-blue-600/90"></div>
           </div>
