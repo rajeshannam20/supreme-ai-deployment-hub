@@ -136,15 +136,9 @@ export class SpeechHandler {
 // Fix TypeScript issues with the Speech API
 declare global {
   interface Window {
-    SpeechRecognition: typeof SpeechRecognitionConstructor;
-    webkitSpeechRecognition: typeof SpeechRecognitionConstructor;
+    SpeechRecognition: any;
+    webkitSpeechRecognition: any;
   }
-}
-
-// Define a constructor type for SpeechRecognition
-interface SpeechRecognitionConstructor {
-  new(): SpeechRecognition;
-  prototype: SpeechRecognition;
 }
 
 // Define the SpeechRecognition interface
