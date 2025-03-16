@@ -24,7 +24,14 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setConversationContext
   } = useChatState();
 
-  const { sendMessage, provideFeedback, clearConversation } = createChatActions({
+  const { 
+    sendMessage, 
+    provideFeedback, 
+    clearConversation,
+    startVoiceInput,
+    stopSpeaking,
+    isSpeechSupported
+  } = createChatActions({
     messages,
     setMessages,
     setIsProcessing,
@@ -62,6 +69,9 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         sendMessage,
         provideFeedback,
         clearConversation,
+        startVoiceInput,
+        stopSpeaking,
+        isSpeechSupported,
       }}
     >
       {children}

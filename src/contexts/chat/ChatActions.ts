@@ -4,6 +4,7 @@ import { ChatMessage, ConversationContext } from './types';
 import { detectIntent } from './intentDetector';
 import { generateResponse } from './responseGenerator';
 import { analyzeSentiment } from './sentimentAnalyzer';
+import { SpeechHandler } from './SpeechHandler';
 
 interface ChatActionsProps {
   messages: ChatMessage[];
@@ -32,8 +33,15 @@ export const createChatActions = ({
   apiConfigs,
   isAnyAPIConnected
 }: ChatActionsProps) => {
+  // Create SpeechHandler instance
+  const speechHandler = new SpeechHandler({
+    onError: (error) => {
+      toast.error(`Speech error: ${error}`);
+    }
+  });
+
   // Send a message
-  const sendMessage = (content: string) => {
+  const sendMessage = (content: string, fromVoice: boolean = false) => {
     if (!content.trim()) return;
     
     // Analyze sentiment for user message
@@ -46,7 +54,8 @@ export const createChatActions = ({
       sender: 'user',
       timestamp: new Date(),
       type: 'text',
-      sentiment
+      sentiment,
+      fromVoice
     };
     
     setMessages(prev => [...prev, userMessage]);
@@ -98,7 +107,42 @@ export const createChatActions = ({
       
       // Show toast notification for new message
       toast.info("New message from DEVONN.AI Assistant");
+
+      // If the user message was from voice input, speak the response
+      if (fromVoice && speechHandler.isSpeechSupported()) {
+        // Use only text content for speech
+        speechHandler.speak(aiResponse.content);
+      }
     }, processingTime);
+  };
+
+  // Start voice recognition
+  const startVoiceInput = () => {
+    if (!speechHandler.isVoiceSupported()) {
+      toast.error("Speech recognition is not supported in this browser");
+      return;
+    }
+    
+    speechHandler.startListening();
+    
+    // Set up the callback for when voice input is received
+    speechHandler.options.onResult = (text) => {
+      sendMessage(text, true);
+      speechHandler.stopListening();
+    };
+  };
+
+  // Stop speaking
+  const stopSpeaking = () => {
+    speechHandler.stopSpeaking();
+  };
+
+  // Check if speech is supported in this browser
+  const isSpeechSupported = () => {
+    return {
+      voiceInput: speechHandler.isVoiceSupported(),
+      voiceOutput: speechHandler.isSpeechSupported()
+    };
   };
 
   // Provide feedback on a message
@@ -147,6 +191,9 @@ export const createChatActions = ({
   return {
     sendMessage,
     provideFeedback,
-    clearConversation
+    clearConversation,
+    startVoiceInput,
+    stopSpeaking,
+    isSpeechSupported
   };
 };

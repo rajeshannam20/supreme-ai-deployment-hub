@@ -22,7 +22,8 @@ export interface ChatMessage {
   links?: ChatLink[];
   imageUrl?: string;
   feedback?: 'positive' | 'negative' | null;
-  sentiment?: 'positive' | 'negative' | 'neutral'; // Added sentiment field
+  sentiment?: 'positive' | 'negative' | 'neutral';
+  fromVoice?: boolean; // Added to track if message was from voice input
 }
 
 export interface Intent {
@@ -54,22 +55,24 @@ export interface ChatContextType {
   messages: ChatMessage[];
   processes: Process[];
   isProcessing: boolean;
-  sendMessage: (content: string) => void;
+  sendMessage: (content: string, fromVoice?: boolean) => void;
   provideFeedback: (messageId: string, feedback: 'positive' | 'negative') => void;
   clearConversation: () => void;
+  startVoiceInput: () => void; // New function to start voice recognition
+  stopSpeaking: () => void; // New function to stop text-to-speech
+  isSpeechSupported: () => { voiceInput: boolean; voiceOutput: boolean }; // Check browser support
 }
 
 export interface ConversationContext {
   lastIntent?: string;
   mentionedEntities: Record<string, string[]>;
   messageCount: number;
-  topicHistory: string[]; // Added to track conversation topics
-  lastUserSentiment?: 'positive' | 'negative' | 'neutral'; // Track user sentiment
-  failedIntentCount: number; // Track consecutive failed intents for fallback
+  topicHistory: string[];
+  lastUserSentiment?: 'positive' | 'negative' | 'neutral';
+  failedIntentCount: number;
 }
 
-// New fallback response options
 export interface FallbackStrategy {
-  threshold: number; // Number of low-confidence intents before fallback
-  responses: string[]; // Array of fallback responses to cycle through
+  threshold: number;
+  responses: string[];
 }

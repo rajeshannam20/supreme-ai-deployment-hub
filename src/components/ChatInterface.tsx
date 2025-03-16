@@ -1,7 +1,6 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Bot, Send, ThumbsUp, ThumbsDown, X, Sparkles, Activity, Globe, Minimize2 } from 'lucide-react';
+import { Bot, Send, ThumbsUp, ThumbsDown, X, Sparkles, Activity, Globe, Minimize2, Mic, Volume2, VolumeX } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useChat } from '@/contexts/ChatContext';
 import { useAPI } from '@/contexts/APIContext';
@@ -10,18 +9,32 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
 
 const ChatInterface: React.FC = () => {
-  const { messages, processes, isProcessing, sendMessage, provideFeedback, clearConversation } = useChat();
+  const { 
+    messages, 
+    processes, 
+    isProcessing, 
+    sendMessage, 
+    provideFeedback, 
+    clearConversation,
+    startVoiceInput,
+    stopSpeaking,
+    isSpeechSupported
+  } = useChat();
+  
   const { apiConfigs } = useAPI();
   const [input, setInput] = useState('');
   const [isMinimized, setIsMinimized] = useState(true);
   const [showProcessMonitor, setShowProcessMonitor] = useState(false);
   const [showAPIStatus, setShowAPIStatus] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
+  
+  const speechSupport = isSpeechSupported();
 
-  // Scroll to bottom of messages
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
@@ -32,6 +45,18 @@ const ChatInterface: React.FC = () => {
     
     sendMessage(input);
     setInput('');
+  };
+
+  const handleVoiceInput = () => {
+    if (isSpeaking) {
+      stopSpeaking();
+      setIsSpeaking(false);
+      return;
+    }
+    
+    startVoiceInput();
+    
+    setInput('Listening...');
   };
 
   const formatTimestamp = (date: Date) => {
@@ -53,7 +78,6 @@ const ChatInterface: React.FC = () => {
             exit={{ y: 500, opacity: 0 }}
             className="fixed bottom-5 right-5 w-80 sm:w-96 h-[500px] bg-background border rounded-xl shadow-lg flex flex-col z-40"
           >
-            {/* Chat Header */}
             <div className="flex items-center justify-between p-3 border-b">
               <div className="flex items-center">
                 <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center mr-2">
@@ -104,7 +128,6 @@ const ChatInterface: React.FC = () => {
               </div>
             </div>
             
-            {/* Chat Messages */}
             <div className="flex-1 overflow-y-auto p-3 space-y-4">
               <AnimatePresence>
                 {messages.map((message) => (
@@ -121,7 +144,13 @@ const ChatInterface: React.FC = () => {
                           : 'bg-secondary'
                       }`}
                     >
-                      {/* Message content based on type */}
+                      {message.fromVoice && (
+                        <div className="flex items-center mb-1">
+                          <Mic className="h-3 w-3 mr-1" />
+                          <span className="text-xs">Voice message</span>
+                        </div>
+                      )}
+                    
                       {message.type === 'text' && (
                         <p className="text-sm whitespace-pre-line">{message.content}</p>
                       )}
@@ -175,7 +204,6 @@ const ChatInterface: React.FC = () => {
                         </div>
                       )}
                       
-                      {/* Message footer with timestamp and feedback */}
                       <div className={`flex justify-between items-center mt-2 text-xs ${
                         message.sender === 'user' ? 'text-primary-foreground/70' : 'text-muted-foreground'
                       }`}>
@@ -183,6 +211,23 @@ const ChatInterface: React.FC = () => {
                         
                         {message.sender === 'ai' && (
                           <div className="flex space-x-1">
+                            {speechSupport.voiceOutput && (
+                              <button
+                                className="p-1 rounded-full hover:bg-background/10"
+                                onClick={() => {
+                                  if (isSpeaking) {
+                                    stopSpeaking();
+                                    setIsSpeaking(false);
+                                  } else {
+                                    sendMessage(message.content, true);
+                                    setIsSpeaking(true);
+                                  }
+                                }}
+                                aria-label={isSpeaking ? "Stop speaking" : "Speak message"}
+                              >
+                                {isSpeaking ? <VolumeX className="h-3 w-3" /> : <Volume2 className="h-3 w-3" />}
+                              </button>
+                            )}
                             <button
                               className={`p-1 rounded-full hover:bg-background/10 ${
                                 message.feedback === 'positive' ? 'bg-green-100 text-green-600' : ''
@@ -209,7 +254,6 @@ const ChatInterface: React.FC = () => {
                 ))}
               </AnimatePresence>
               
-              {/* Typing indicator */}
               {isProcessing && (
                 <motion.div
                   initial={{ opacity: 0 }}
@@ -229,7 +273,6 @@ const ChatInterface: React.FC = () => {
               <div ref={messagesEndRef} />
             </div>
             
-            {/* Input Area */}
             <form onSubmit={handleSubmit} className="p-3 border-t">
               <div className="flex space-x-2">
                 <Textarea
@@ -244,10 +287,35 @@ const ChatInterface: React.FC = () => {
                     }
                   }}
                 />
+                
+                {speechSupport.voiceInput && (
+                  <Button 
+                    type="button" 
+                    variant={isProcessing ? "outline" : "ghost"}
+                    size="icon"
+                    onClick={handleVoiceInput}
+                    disabled={isProcessing}
+                    className="bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700"
+                  >
+                    <Mic className="h-4 w-4" />
+                  </Button>
+                )}
+                
                 <Button type="submit" size="icon" disabled={isProcessing || !input.trim()}>
                   <Send className="h-4 w-4" />
                 </Button>
               </div>
+              
+              {(speechSupport.voiceInput || speechSupport.voiceOutput) && (
+                <div className="flex pt-2 text-xs text-muted-foreground">
+                  {speechSupport.voiceInput && (
+                    <Badge variant="outline" className="mr-1 py-0">Voice input</Badge>
+                  )}
+                  {speechSupport.voiceOutput && (
+                    <Badge variant="outline" className="py-0">Voice output</Badge>
+                  )}
+                </div>
+              )}
             </form>
           </motion.div>
         ) : (
@@ -265,7 +333,6 @@ const ChatInterface: React.FC = () => {
         )}
       </AnimatePresence>
       
-      {/* Process Monitor Dialog */}
       <Dialog open={showProcessMonitor} onOpenChange={setShowProcessMonitor}>
         <DialogContent className="max-w-md">
           <DialogHeader>
@@ -318,7 +385,6 @@ const ChatInterface: React.FC = () => {
         </DialogContent>
       </Dialog>
       
-      {/* API Status Dialog */}
       <Dialog open={showAPIStatus} onOpenChange={setShowAPIStatus}>
         <DialogContent className="max-w-md">
           <DialogHeader>
