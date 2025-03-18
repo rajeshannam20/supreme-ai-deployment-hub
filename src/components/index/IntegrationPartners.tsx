@@ -83,13 +83,35 @@ const partners = [
 const IntegrationPartners: React.FC = () => {
   return (
     <section className="py-20 relative overflow-hidden">
-      {/* Abstract background pattern */}
-      <div className="absolute inset-0 opacity-5">
+      {/* Enhanced abstract background pattern with floating particles */}
+      <div className="absolute inset-0 opacity-10">
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-purple-500/5 z-0"></div>
         <img 
           src="https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5" 
           alt="AI pattern background" 
           className="w-full h-full object-cover"
         />
+        
+        {/* Animated floating particles */}
+        {[...Array(20)].map((_, i) => (
+          <motion.div
+            key={i}
+            className="absolute w-2 h-2 rounded-full bg-primary/20"
+            style={{
+              top: `${Math.random() * 100}%`,
+              left: `${Math.random() * 100}%`,
+            }}
+            animate={{
+              y: [0, -20, 0],
+              opacity: [0.2, 0.5, 0.2],
+            }}
+            transition={{
+              duration: 3 + Math.random() * 5,
+              repeat: Infinity,
+              delay: Math.random() * 5,
+            }}
+          />
+        ))}
       </div>
       
       <Container maxWidth="2xl">
@@ -109,11 +131,21 @@ const IntegrationPartners: React.FC = () => {
               <motion.div
                 key={i}
                 initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true, margin: "-50px" }}
                 transition={{ duration: 0.3, delay: 0.05 * i }}
-                className="flex flex-col items-center justify-center p-4 text-center group hover:scale-105 transition-transform duration-200"
+                whileHover={{ 
+                  scale: 1.05,
+                  transition: { duration: 0.2 }
+                }}
+                className="flex flex-col items-center justify-center p-4 text-center group cursor-pointer"
               >
-                <div className={`w-16 h-16 ${partner.color} rounded-full shadow-md flex items-center justify-center mb-2 relative overflow-hidden group-hover:shadow-lg transition-all duration-200`}>
+                <motion.div 
+                  className={`w-16 h-16 ${partner.color} rounded-full shadow-md flex items-center justify-center mb-2 relative overflow-hidden`}
+                  whileHover={{ 
+                    boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)" 
+                  }}
+                >
                   <div className="absolute inset-0 opacity-10">
                     <img 
                       src={partner.image} 
@@ -121,9 +153,14 @@ const IntegrationPartners: React.FC = () => {
                       className="w-full h-full object-cover"
                     />
                   </div>
+                  <motion.div
+                    animate={{ rotate: [0, 360] }}
+                    transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+                    className="absolute inset-0 rounded-full border border-primary/20 opacity-70"
+                  ></motion.div>
                   <Icon className="w-8 h-8 relative z-10" />
-                </div>
-                <span className="text-xs font-medium text-muted-foreground mt-1 group-hover:text-primary transition-colors">{partner.name}</span>
+                </motion.div>
+                <span className="text-xs font-medium text-muted-foreground mt-1 group-hover:text-primary transition-colors duration-300">{partner.name}</span>
               </motion.div>
             );
           })}

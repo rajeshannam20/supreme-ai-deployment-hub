@@ -3,6 +3,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import Container from '@/components/Container';
 import SectionHeading from '@/components/SectionHeading';
+import { cardHover, staggerWithConfig } from '@/lib/animations';
 
 const componentsData = [
   {
@@ -15,7 +16,14 @@ const componentsData = [
         <path d="M12 14C13.1046 14 14 13.1046 14 12C14 10.8954 13.1046 10 12 10C10.8954 10 10 10.8954 10 12C10 13.1046 10.8954 14 12 14Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
       </svg>
     ),
-    image: "https://images.unsplash.com/photo-1531297484001-80022131f5a1"
+    image: "https://images.unsplash.com/photo-1531297484001-80022131f5a1",
+    details: [
+      "Service Discovery",
+      "Circuit Breaking",
+      "Fault Injection",
+      "Traffic Shifting"
+    ],
+    color: "from-blue-500 to-indigo-600"
   },
   {
     title: "Kong API Gateway",
@@ -27,7 +35,14 @@ const componentsData = [
         <path d="M2 12L12 17L22 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
       </svg>
     ),
-    image: "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b"
+    image: "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b",
+    details: [
+      "Rate Limiting",
+      "Authentication",
+      "Logging & Analytics",
+      "Request Transformation"
+    ],
+    color: "from-green-500 to-emerald-600"
   },
   {
     title: "Observability Stack",
@@ -38,11 +53,20 @@ const componentsData = [
         <path d="M19 9L13 15L9 11L5 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
       </svg>
     ),
-    image: "https://images.unsplash.com/photo-1487058792275-0ad4aaf24ca7"
+    image: "https://images.unsplash.com/photo-1487058792275-0ad4aaf24ca7",
+    details: [
+      "Real-time Metrics",
+      "Distributed Tracing",
+      "Log Aggregation",
+      "Custom Dashboards"
+    ],
+    color: "from-amber-500 to-orange-600"
   },
 ];
 
 const KeyComponents: React.FC = () => {
+  const containerVariants = staggerWithConfig(0.2, 0.1);
+  
   return (
     <section className="py-20 bg-gradient-to-b from-background to-secondary/50">
       <Container maxWidth="2xl">
@@ -55,32 +79,72 @@ const KeyComponents: React.FC = () => {
           Key Components
         </SectionHeading>
         
-        <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-8">
+        <motion.div 
+          className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-8"
+          variants={containerVariants}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: "-50px" }}
+        >
           {componentsData.map((feature, i) => (
             <motion.div
               key={i}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.1 * i }}
-              className="bg-white/50 dark:bg-gray-900/40 backdrop-blur-sm border border-gray-200 dark:border-gray-800 rounded-xl overflow-hidden shadow-sm"
+              variants={cardHover}
+              initial="rest"
+              whileHover="hover"
+              whileTap="rest"
+              className="rounded-xl overflow-hidden shadow-md transition-all duration-300 h-full"
             >
-              <div className="h-40 overflow-hidden">
+              <div className="h-48 overflow-hidden relative">
+                <div className={`absolute inset-0 bg-gradient-to-br ${feature.color} opacity-90`}></div>
                 <img 
                   src={feature.image} 
                   alt={feature.title} 
-                  className="w-full h-full object-cover transition-transform hover:scale-105 duration-500"
+                  className="w-full h-full object-cover opacity-50 mix-blend-overlay"
                 />
-              </div>
-              <div className="p-6">
-                <div className="w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center mb-4">
-                  {feature.icon}
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <motion.div 
+                    className="w-20 h-20 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center"
+                    animate={{ 
+                      boxShadow: [
+                        "0 0 0 0 rgba(255, 255, 255, 0.3)",
+                        "0 0 0 20px rgba(255, 255, 255, 0)",
+                      ],
+                    }}
+                    transition={{
+                      duration: 2,
+                      repeat: Infinity,
+                      repeatType: "loop"
+                    }}
+                  >
+                    <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center">
+                      <div className="text-primary w-10 h-10">
+                        {feature.icon}
+                      </div>
+                    </div>
+                  </motion.div>
                 </div>
-                <h3 className="text-lg font-medium mb-2">{feature.title}</h3>
-                <p className="text-muted-foreground">{feature.description}</p>
+              </div>
+              
+              <div className="p-6 bg-white dark:bg-gray-900">
+                <h3 className="text-xl font-medium mb-2">{feature.title}</h3>
+                <p className="text-muted-foreground mb-4">{feature.description}</p>
+                
+                <div className="mt-4">
+                  <h4 className="text-sm font-medium mb-2">Key Features</h4>
+                  <ul className="grid grid-cols-2 gap-x-4 gap-y-2">
+                    {feature.details.map((detail, idx) => (
+                      <li key={idx} className="flex items-center text-sm text-muted-foreground">
+                        <div className="w-1.5 h-1.5 rounded-full bg-primary mr-2"></div>
+                        {detail}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               </div>
             </motion.div>
           ))}
-        </div>
+        </motion.div>
       </Container>
     </section>
   );
