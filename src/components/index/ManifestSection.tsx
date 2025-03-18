@@ -1,9 +1,13 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
+import { saveAs } from 'file-saver';
+import { Download, Copy } from 'lucide-react';
+import { toast } from 'sonner';
 import Container from '@/components/Container';
 import SectionHeading from '@/components/SectionHeading';
 import CodeDisplay from '@/components/CodeDisplay';
+import { Button } from '@/components/ui/button';
 
 // YAML code for the manifest
 const yamlCode = `# Supreme AI Framework Deployment Manifest
@@ -178,7 +182,101 @@ istioctl analyze
 # Document how the AI agent works, and how to use it.
 `;
 
+// File list for the deployment manifest
+const deploymentFiles = `
+# DEVONN.AI Framework - Deployment File Manifest
+
+## Frontend Assets
+- /dist/index.html
+- /dist/assets/**/*
+
+## Kubernetes Configuration Files
+- /k8s/backend-deployment.yaml
+- /k8s/frontend-deployment.yaml
+- /k8s/database-statefulset.yaml
+- /k8s/redis-statefulset.yaml
+- /k8s/ingress.yaml
+- /k8s/services.yaml
+- /k8s/configmaps.yaml
+- /k8s/secrets.yaml
+
+## Istio Service Mesh
+- /istio/virtual-service.yaml
+- /istio/destination-rule.yaml
+- /istio/authorization-policy.yaml
+- /istio/gateway.yaml
+
+## Kong API Gateway
+- /kong/ingress.yaml
+- /kong/rate-limiting.yaml
+- /kong/authentication-plugin.yaml
+- /kong/cors-plugin.yaml
+
+## Monitoring & Observability
+- /prometheus/prometheus.yaml
+- /prometheus/alerting-rules.yaml
+- /grafana/dashboards/devonn-ai-dashboard.json
+- /grafana/datasources/prometheus-datasource.yaml
+- /jaeger/jaeger.yaml
+- /loki/loki.yaml
+- /loki/promtail.yaml
+
+## Argo Rollouts (Canary Deployments)
+- /argo/rollout.yaml
+- /argo/analysis-template.yaml
+
+## Elasticsearch, Fluentd, Kibana (Logging)
+- /efk/elasticsearch.yaml
+- /efk/fluentd-configmap.yaml
+- /efk/fluentd-daemonset.yaml
+- /efk/kibana.yaml
+
+## CI/CD Pipeline
+- /.github/workflows/build-and-deploy.yaml
+- /.gitlab-ci.yml
+- /Jenkinsfile
+
+## Documentation
+- /docs/**/*
+- /README.md
+- /DEPLOYMENT.md
+- /TROUBLESHOOTING.md
+
+## Docker Files
+- /Dockerfile.backend
+- /Dockerfile.frontend
+- /docker-compose.yaml
+- /.dockerignore
+
+## Miscellaneous
+- /.gitignore
+- /package.json
+- /tsconfig.json
+- /vite.config.ts
+`;
+
 const ManifestSection: React.FC = () => {
+  // Function to download the manifest as a YAML file
+  const downloadManifest = () => {
+    const blob = new Blob([yamlCode], { type: 'text/yaml;charset=utf-8' });
+    saveAs(blob, 'devonn-ai-manifest.yaml');
+    toast.success('Manifest downloaded successfully');
+  };
+  
+  // Function to download the file list
+  const downloadFileList = () => {
+    const blob = new Blob([deploymentFiles], { type: 'text/plain;charset=utf-8' });
+    saveAs(blob, 'devonn-ai-deployment-files.txt');
+    toast.success('Deployment file list downloaded successfully');
+  };
+  
+  // Function to copy the manifest to clipboard
+  const copyManifest = () => {
+    navigator.clipboard.writeText(yamlCode)
+      .then(() => toast.success('Manifest copied to clipboard'))
+      .catch(err => toast.error('Failed to copy: ' + err));
+  };
+
   return (
     <section id="manifest" className="py-20">
       <Container maxWidth="2xl">
@@ -205,14 +303,47 @@ const ManifestSection: React.FC = () => {
           />
         </motion.div>
         
-        <div className="mt-8 flex justify-center">
-          <a
-            href="#"
-            className="inline-flex items-center justify-center rounded-md px-6 py-3 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring bg-secondary text-secondary-foreground hover:bg-secondary/80"
+        <div className="mt-8 flex justify-center space-x-4">
+          <Button
+            onClick={downloadManifest}
+            className="inline-flex items-center justify-center rounded-md px-6 py-3 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring bg-primary text-primary-foreground hover:bg-primary/90"
           >
+            <Download className="mr-2 h-4 w-4" />
             Download Manifest
-          </a>
+          </Button>
+          
+          <Button
+            onClick={copyManifest}
+            variant="outline"
+            className="inline-flex items-center justify-center rounded-md px-6 py-3 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <Copy className="mr-2 h-4 w-4" />
+            Copy to Clipboard
+          </Button>
         </div>
+        
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.4 }}
+          className="mt-12"
+        >
+          <h3 className="text-xl font-semibold mb-4 text-center">Deployment File Manifest</h3>
+          <div className="bg-slate-950 text-slate-200 p-6 rounded-lg shadow-xl overflow-auto max-h-96">
+            <pre className="text-sm whitespace-pre-wrap">{deploymentFiles}</pre>
+          </div>
+          
+          <div className="mt-6 flex justify-center">
+            <Button
+              onClick={downloadFileList}
+              variant="secondary"
+              className="inline-flex items-center justify-center rounded-md px-6 py-3 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <Download className="mr-2 h-4 w-4" />
+              Download File List
+            </Button>
+          </div>
+        </motion.div>
       </Container>
     </section>
   );
