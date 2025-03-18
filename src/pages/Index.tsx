@@ -21,6 +21,8 @@ import CTASection from '@/components/index/CTASection';
 // New components
 import AIFeatureShowcase from '@/components/index/AIFeatureShowcase';
 import AIVisualization from '@/components/index/AIVisualization';
+import VoiceEnabledAI from '@/components/index/VoiceEnabledAI';
+import MultiCloudDeployment from '@/components/index/MultiCloudDeployment';
 
 const Index = () => {
   const { scrollYProgress } = useScroll();
@@ -33,7 +35,7 @@ const Index = () => {
   useEffect(() => {
     // Show welcome toast with improved message
     toast('Welcome to DEVONN.AI', {
-      description: 'Explore our advanced AI deployment framework with interactive visualizations',
+      description: 'Explore our voice-enabled AI deployment framework with multi-cloud capabilities',
       position: 'bottom-right',
       duration: 5000,
     });
@@ -60,7 +62,9 @@ const Index = () => {
       
       <HeroSection />
       <AIVisualization />
+      <VoiceEnabledAI />
       <DashboardPreview />
+      <MultiCloudDeployment />
       <GettingStartedSteps />
       <KeyComponents />
       <AIFeatureShowcase />
