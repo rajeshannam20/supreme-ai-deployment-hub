@@ -1,8 +1,8 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import CodeDisplay from '@/components/CodeDisplay';
+import { Link } from 'react-router-dom';
 
 const DeploymentConfig = () => {
   // Sample configurations from the deployment guide
@@ -59,10 +59,11 @@ GRAFANA_URL=http://grafana:3000`;
       </CardHeader>
       <CardContent>
         <Tabs defaultValue="cluster">
-          <TabsList className="grid grid-cols-3 mb-4">
+          <TabsList className="grid grid-cols-4 mb-4">
             <TabsTrigger value="cluster">Cluster</TabsTrigger>
             <TabsTrigger value="services">Services</TabsTrigger>
             <TabsTrigger value="monitoring">Monitoring</TabsTrigger>
+            <TabsTrigger value="domain">Domain</TabsTrigger>
           </TabsList>
           
           <TabsContent value="cluster">
@@ -112,6 +113,39 @@ GRAFANA_URL=http://grafana:3000`;
                   <li>Access Grafana dashboard at: <code>http://&lt;node-ip&gt;:3000</code></li>
                   <li>Default Grafana credentials: admin/admin</li>
                 </ul>
+              </div>
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="domain">
+            <div className="space-y-4">
+              <div>
+                <h3 className="text-sm font-medium mb-2">Domain Configuration</h3>
+                <p className="text-sm mb-3">
+                  Configure the devonn.ai domain to point to your Kubernetes deployment.
+                </p>
+                
+                <CodeDisplay 
+                  code={`# Route53 DNS Configuration
+aws route53domains update-domain-nameservers \\
+  --domain-name devonn.ai \\
+  --nameservers \\
+    Name=ns-xxxx.awsdns-xx.com \\
+    Name=ns-xxxx.awsdns-xx.net \\
+    Name=ns-xxxx.awsdns-xx.org \\
+    Name=ns-xxxx.awsdns-xx.co.uk`} 
+                  language="bash" 
+                />
+              </div>
+              
+              <div className="bg-secondary/30 p-4 rounded-md mt-4">
+                <p className="text-sm">
+                  For complete domain setup instructions, visit the{" "}
+                  <Link to="/documentation" className="text-primary underline">
+                    Documentation
+                  </Link>{" "}
+                  page and navigate to the Domain Setup tab.
+                </p>
               </div>
             </div>
           </TabsContent>
