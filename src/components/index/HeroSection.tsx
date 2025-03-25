@@ -2,6 +2,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import Container from '@/components/Container';
+import { AnimatedText } from '@/components/ui/animated-shiny-text';
 
 const HeroSection: React.FC = () => {
   return (
@@ -16,9 +17,14 @@ const HeroSection: React.FC = () => {
             <span className="inline-block mb-3 px-3 py-1 text-xs font-medium tracking-wider uppercase rounded-full bg-primary/10 text-primary">
               Deployment Framework
             </span>
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-display font-semibold tracking-tight mb-4">
-              DEVONN<span className="text-primary">.AI</span>
-            </h1>
+            <AnimatedText 
+              text="devonn.ai"
+              gradientColors="linear-gradient(90deg, #3b82f6, #8b5cf6, #3b82f6)"
+              gradientAnimationDuration={3}
+              hoverEffect={true}
+              className="py-0 justify-start mb-4"
+              textClassName="text-4xl md:text-5xl lg:text-6xl font-display font-semibold tracking-tight"
+            />
             <p className="text-xl text-muted-foreground mb-8 max-w-md">
               A minimalist, elegant framework for deploying AI systems with precision and scalability.
             </p>
@@ -53,14 +59,14 @@ const HeroSection: React.FC = () => {
                       <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
                       <div className="w-3 h-3 rounded-full bg-green-500"></div>
                     </div>
-                    <div className="ml-3 text-xs font-mono text-gray-400">DEVONN.AI Framework</div>
+                    <div className="ml-3 text-xs font-mono text-gray-400">devonn.ai Framework</div>
                   </div>
                   <pre className="text-xs text-green-400 font-mono overflow-x-auto">
                     <code>
-                      $ kubectl apply -f supreme-ai-manifest.yaml<br />
-                      service/supreme-ai created<br />
-                      deployment.apps/supreme-ai created<br />
-                      ingress.networking/supreme-ai created<br />
+                      $ kubectl apply -f devonn-ai-manifest.yaml<br />
+                      service/devonn-ai created<br />
+                      deployment.apps/devonn-ai created<br />
+                      ingress.networking/devonn-ai created<br />
                       <span className="text-blue-400">✓</span> Framework successfully deployed
                     </code>
                   </pre>
