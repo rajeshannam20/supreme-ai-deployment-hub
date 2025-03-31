@@ -11,12 +11,11 @@ import { DeploymentProvider } from "./contexts/DeploymentContext";
 import { ChatProvider } from "./contexts/ChatContext";
 import { APIProvider } from "./contexts/APIContext";
 import ChatInterface from "./components/ChatInterface";
+import { MatrixRain } from "./components/ui/matrix-rain";
 import "./App.css";
 
 // Create a client
 const queryClient = new QueryClient();
-
-// Note: We don't need createBrowserRouter in this file since we're using BrowserRouter in main.tsx
 
 const App = () => {
   const location = useLocation();
@@ -29,9 +28,24 @@ const App = () => {
           <DeploymentProvider>
             <APIProvider>
               <ChatProvider>
-                <Toaster />
-                <div className="min-h-screen flex flex-col">
-                  <Navbar />
+                {/* Matrix Rain Background - present on all pages */}
+                <MatrixRain speed={0.8} density={0.4} opacity={0.2} />
+                
+                {/* Semi-transparent overlay for better readability */}
+                <div className="fixed inset-0 bg-black/80 -z-10"></div>
+                
+                <Toaster 
+                  theme="dark"
+                  toastOptions={{
+                    style: { 
+                      background: 'rgba(0, 0, 0, 0.8)',
+                      border: '1px solid rgba(0, 255, 65, 0.2)',
+                      color: 'white'
+                    }
+                  }}
+                />
+                <div className="min-h-screen flex flex-col bg-black text-white">
+                  <Navbar transparent={isHome} />
                   <main className="flex-grow">
                     <Outlet />
                   </main>
