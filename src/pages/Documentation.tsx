@@ -8,7 +8,7 @@ import { motion } from 'framer-motion';
 const Documentation: React.FC = () => {
   return (
     <div className="py-16">
-      <Container maxWidth="7xl">
+      <Container maxWidth="2xl">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
