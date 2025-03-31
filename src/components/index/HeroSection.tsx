@@ -1,11 +1,12 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Container from '@/components/Container';
 import { AnimatedText } from '@/components/ui/animated-shiny-text';
 import { MatrixRain } from '@/components/ui/matrix-rain';
 import { Button } from '@/components/ui/button';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Download, Code, Sparkles } from 'lucide-react';
+import TypewriterEffect from '@/components/ui/typewriter-effect';
 
 const HeroSection: React.FC = () => {
   return (
@@ -55,11 +56,14 @@ const HeroSection: React.FC = () => {
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4">
+              {/* Enhanced primary CTA button with download icon and animation */}
               <Button 
                 size="lg"
-                className="bg-[#00FF41] hover:bg-[#00FF41]/90 text-black shadow-[0_0_15px_rgba(0,255,65,0.5)] transition-all duration-300 group"
+                className="bg-[#00FF41] hover:bg-[#00FF41]/90 text-black shadow-[0_0_15px_rgba(0,255,65,0.5)] transition-all duration-300 group relative overflow-hidden"
               >
-                <span className="group-hover:mr-2 transition-all">View Manifest</span>
+                <div className="absolute inset-0 bg-white/20 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-out"></div>
+                <Download className="mr-2 h-4 w-4 opacity-70" />
+                <span className="group-hover:mr-2 transition-all">Download Framework</span>
                 <ArrowRight className="ml-2 h-4 w-4 opacity-70 group-hover:translate-x-1 transition-transform" />
               </Button>
               
@@ -68,7 +72,8 @@ const HeroSection: React.FC = () => {
                 size="lg"
                 className="border-[#00FF41]/50 text-[#00FF41] hover:bg-[#00FF41]/10 backdrop-blur-sm"
               >
-                See Dashboard
+                <Code className="mr-2 h-4 w-4" />
+                View Documentation
               </Button>
             </div>
           </motion.div>
@@ -95,19 +100,18 @@ const HeroSection: React.FC = () => {
                   <div className="rounded bg-black/70 p-4 backdrop-blur-sm border border-[#00FF41]/10">
                     <pre className="text-xs text-[#00FF41] font-mono overflow-x-auto">
                       <code>
-                        $ kubectl apply -f devonn-ai-manifest.yaml<br />
-                        service/devonn-ai created<br />
-                        deployment.apps/devonn-ai created<br />
-                        ingress.networking/devonn-ai created<br />
-                        <span className="text-[#39FF14]">✓</span> Framework successfully deployed<br />
-                        <br />
-                        <motion.span
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          transition={{ duration: 0.3, repeat: Infinity, repeatType: "reverse" }}
-                        >
-                          _
-                        </motion.span>
+                        <TypewriterEffect 
+                          text={[
+                            "$ kubectl apply -f devonn-ai-manifest.yaml",
+                            "service/devonn-ai created",
+                            "deployment.apps/devonn-ai created",
+                            "ingress.networking/devonn-ai created",
+                            "✓ Framework successfully deployed"
+                          ]}
+                          speed={80}
+                          delay={1000}
+                          cursorClassName="text-[#00FF41]"
+                        />
                       </code>
                     </pre>
                   </div>

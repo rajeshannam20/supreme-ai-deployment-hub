@@ -1,11 +1,41 @@
 
 import React from 'react';
+import { motion } from 'framer-motion';
 import Container from '@/components/Container';
 import SectionHeading from '@/components/SectionHeading';
 import DocumentationTabs from '@/components/documentation/DocumentationTabs';
-import { motion } from 'framer-motion';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { BookOpen, Code, Server, Sparkles } from 'lucide-react';
 
 const Documentation: React.FC = () => {
+  const docTypes = [
+    { 
+      title: "Guides", 
+      description: "Step-by-step tutorials for common AI deployment scenarios", 
+      icon: <BookOpen className="h-5 w-5" />,
+      color: "bg-blue-500/10 text-blue-500 border-blue-500/20" 
+    },
+    { 
+      title: "API Reference", 
+      description: "Complete reference for the DEVONN.AI framework API", 
+      icon: <Code className="h-5 w-5" />,
+      color: "bg-purple-500/10 text-purple-500 border-purple-500/20" 
+    },
+    { 
+      title: "Deployment", 
+      description: "Infrastructure setup and deployment configuration", 
+      icon: <Server className="h-5 w-5" />,
+      color: "bg-amber-500/10 text-amber-500 border-amber-500/20" 
+    },
+    { 
+      title: "Examples", 
+      description: "Real-world examples of AI systems built with DEVONN.AI", 
+      icon: <Sparkles className="h-5 w-5" />,
+      color: "bg-green-500/10 text-green-500 border-green-500/20" 
+    }
+  ];
+
   return (
     <div className="py-16">
       <Container maxWidth="2xl">
@@ -18,15 +48,43 @@ const Documentation: React.FC = () => {
             tag="Documentation" 
             subheading="Comprehensive guides and reference materials for DEVONN.AI"
           >
-            DEVONN.AI Documentation
+            <div className="flex items-center gap-2">
+              DEVONN.AI Documentation
+              <Badge className="ml-2 bg-[#00FF41]/20 text-[#00FF41] border border-[#00FF41]/30 hover:bg-[#00FF41]/30">
+                v2.1.0
+              </Badge>
+            </div>
           </SectionHeading>
+        </motion.div>
+        
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+          className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"
+        >
+          {docTypes.map((type, i) => (
+            <Card key={i} className="border border-primary/10 bg-black/20 backdrop-blur-sm hover:border-primary/20 transition-colors">
+              <CardContent className="p-6">
+                <div className="flex items-start gap-3">
+                  <div className={`p-2 rounded-full ${type.color}`}>
+                    {type.icon}
+                  </div>
+                  <div>
+                    <h3 className="font-medium mb-1">{type.title}</h3>
+                    <p className="text-sm text-muted-foreground">{type.description}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
         </motion.div>
         
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-          className="mt-8"
+          transition={{ duration: 0.5, delay: 0.4 }}
+          className="mt-10 border border-primary/10 rounded-lg bg-black/20 backdrop-blur-sm"
         >
           <DocumentationTabs />
         </motion.div>

@@ -22,6 +22,7 @@ import AIFeatureShowcase from '@/components/index/AIFeatureShowcase';
 import AIVisualization from '@/components/index/AIVisualization';
 import VoiceEnabledAI from '@/components/index/VoiceEnabledAI';
 import MultiCloudDeployment from '@/components/index/MultiCloudDeployment';
+import PricingSection from '@/components/index/PricingSection';
 
 const Index = () => {
   const { scrollYProgress } = useScroll();
@@ -65,6 +66,7 @@ const Index = () => {
       <GettingStartedSteps />
       <KeyComponents />
       <AIFeatureShowcase />
+      <PricingSection />
       <LatestUpdates />
       <ArchitectureDiagram />
       <CaseStudies />
