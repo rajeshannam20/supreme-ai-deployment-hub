@@ -50,9 +50,14 @@ const Documentation: React.FC = () => {
           >
             <div className="flex items-center gap-2">
               DEVONN.AI Documentation
-              <Badge className="ml-2 bg-[#00FF41]/20 text-[#00FF41] border border-[#00FF41]/30 hover:bg-[#00FF41]/30">
-                v2.1.0
-              </Badge>
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                transition={{ duration: 0.2 }}
+              >
+                <Badge className="ml-2 bg-[#00FF41]/20 text-[#00FF41] border border-[#00FF41]/30 hover:bg-[#00FF41]/30">
+                  v2.1.0
+                </Badge>
+              </motion.div>
             </div>
           </SectionHeading>
         </motion.div>
@@ -64,19 +69,24 @@ const Documentation: React.FC = () => {
           className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"
         >
           {docTypes.map((type, i) => (
-            <Card key={i} className="border border-primary/10 bg-black/20 backdrop-blur-sm hover:border-primary/20 transition-colors">
-              <CardContent className="p-6">
-                <div className="flex items-start gap-3">
-                  <div className={`p-2 rounded-full ${type.color}`}>
-                    {type.icon}
+            <motion.div
+              key={i}
+              whileHover={{ y: -5, transition: { duration: 0.2 } }}
+            >
+              <Card className="border border-primary/10 bg-black/20 backdrop-blur-sm hover:border-primary/20 transition-colors h-full">
+                <CardContent className="p-6">
+                  <div className="flex items-start gap-3">
+                    <div className={`p-2 rounded-full ${type.color}`}>
+                      {type.icon}
+                    </div>
+                    <div>
+                      <h3 className="font-medium mb-1">{type.title}</h3>
+                      <p className="text-sm text-muted-foreground">{type.description}</p>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="font-medium mb-1">{type.title}</h3>
-                    <p className="text-sm text-muted-foreground">{type.description}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </motion.div>
           ))}
         </motion.div>
         

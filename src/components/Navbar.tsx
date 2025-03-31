@@ -64,6 +64,7 @@ const Navbar = ({
           isScrolled || !transparent 
             ? 'border-b border-[#00FF41]/20 bg-black/80 backdrop-blur-md' 
             : 'bg-transparent',
+          isScrolled && 'shadow-[0_0_15px_rgba(0,255,65,0.15)]',
           visible ? 'translate-y-0' : '-translate-y-full',
           className
         )}
@@ -98,6 +99,11 @@ const Navbar = ({
             </div>
           </div>
         </div>
+        
+        {/* Gradient border effect when scrolled */}
+        {isScrolled && (
+          <div className="h-[1px] bg-gradient-to-r from-transparent via-[#00FF41]/50 to-transparent w-full" />
+        )}
       </motion.header>
     </AnimatePresence>
   );
