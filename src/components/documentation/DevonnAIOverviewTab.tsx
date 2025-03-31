@@ -16,7 +16,10 @@ import {
   Terminal,
   Lock,
   Globe,
-  AlertCircle
+  AlertCircle,
+  Download,
+  ExternalLink,
+  Download as DownloadIcon
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
@@ -28,37 +31,44 @@ import { cn } from '@/lib/utils';
 const DevonnAIOverviewTab: React.FC = () => {
   return (
     <div className="space-y-8">
-      <section className="space-y-4">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <section>
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
           <div>
-            <h2 className="text-3xl font-bold tracking-tight mb-2 bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">Devonn.AI Project Overview</h2>
-            <p className="text-muted-foreground">
+            <h2 className="text-3xl font-bold tracking-tight mb-2 bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+              Devonn.AI Project Overview
+            </h2>
+            <p className="text-muted-foreground max-w-3xl">
               An intelligent, modular AI agent factory that builds other AIs, with all the components you need to launch, run, and expand.
             </p>
           </div>
-          <Badge variant="outline" className="px-4 py-2 text-sm font-medium border-2 border-primary/50 self-start md:self-auto">
-            Production Ready
-          </Badge>
+          <div className="flex gap-2 flex-wrap">
+            <Badge variant="outline" className="px-4 py-2 text-sm font-medium border-2 border-primary/50 self-start md:self-auto">
+              Production Ready
+            </Badge>
+            <Badge variant="default" className="px-4 py-2 text-sm font-medium self-start md:self-auto">
+              AI-Powered
+            </Badge>
+          </div>
         </div>
         
         <div className="relative overflow-hidden rounded-lg border border-border p-1 my-8">
           <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 via-indigo-500/10 to-purple-500/10 animate-pulse [animation-duration:5s]" />
           <div className="relative grid grid-cols-1 md:grid-cols-3 gap-0 divide-y md:divide-y-0 md:divide-x divide-border">
-            <div className="p-4 flex flex-col gap-2 items-center justify-center text-center">
+            <div className="p-6 flex flex-col gap-2 items-center justify-center text-center">
               <div className="bg-primary/10 p-3 rounded-full">
                 <Brain className="h-6 w-6 text-primary" />
               </div>
               <h3 className="font-semibold">AI-Powered</h3>
               <p className="text-muted-foreground text-sm">LangChain agents with multi-agent orchestration</p>
             </div>
-            <div className="p-4 flex flex-col gap-2 items-center justify-center text-center">
+            <div className="p-6 flex flex-col gap-2 items-center justify-center text-center">
               <div className="bg-primary/10 p-3 rounded-full">
                 <Server className="h-6 w-6 text-primary" />
               </div>
               <h3 className="font-semibold">Full-Stack</h3>
               <p className="text-muted-foreground text-sm">FastAPI, PostgreSQL, React, Zustand</p>
             </div>
-            <div className="p-4 flex flex-col gap-2 items-center justify-center text-center">
+            <div className="p-6 flex flex-col gap-2 items-center justify-center text-center">
               <div className="bg-primary/10 p-3 rounded-full">
                 <Shield className="h-6 w-6 text-primary" />
               </div>
@@ -77,14 +87,15 @@ const DevonnAIOverviewTab: React.FC = () => {
               </div>
               <div>
                 <CardTitle>Core Capabilities</CardTitle>
+                <CardDescription>Everything you need to build and deploy AI agents</CardDescription>
               </div>
             </CardHeader>
             <CardContent>
-              <ul className="space-y-2">
+              <ul className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-3">
                 {capabilities.map((capability, index) => (
                   <li key={index} className="flex items-start gap-2">
                     <capability.icon className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-                    <span>{capability.text}</span>
+                    <span className="text-sm">{capability.text}</span>
                   </li>
                 ))}
               </ul>
@@ -99,6 +110,7 @@ const DevonnAIOverviewTab: React.FC = () => {
               </div>
               <div>
                 <CardTitle>Project Components</CardTitle>
+                <CardDescription>Modular architecture for scalability</CardDescription>
               </div>
             </CardHeader>
             <CardContent>
@@ -109,7 +121,7 @@ const DevonnAIOverviewTab: React.FC = () => {
                       <component.icon className="h-4 w-4 text-primary" />
                       {component.title}
                     </h4>
-                    <ul className="list-disc pl-5 space-y-1 text-muted-foreground mt-1">
+                    <ul className="list-disc pl-5 space-y-1 text-muted-foreground mt-1 text-sm">
                       {component.items.map((item, idx) => (
                         <li key={idx}>{item}</li>
                       ))}
@@ -118,6 +130,51 @@ const DevonnAIOverviewTab: React.FC = () => {
                 ))}
               </div>
             </CardContent>
+          </Card>
+        </div>
+      </section>
+      
+      <section className="py-6 rounded-lg border bg-gradient-to-r from-blue-500/5 via-indigo-500/5 to-purple-500/5 my-8">
+        <div className="px-6">
+          <h3 className="text-xl font-bold mb-2">Download Everything</h3>
+          <p className="text-muted-foreground mb-4">Get all the components you need to build your AI agent factory</p>
+        </div>
+        
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 px-6">
+          <Card className="bg-background/80 backdrop-blur hover:bg-background transition-colors">
+            <CardHeader className="pb-2 pt-4">
+              <CardTitle className="text-base">Backend (FastAPI)</CardTitle>
+            </CardHeader>
+            <CardFooter>
+              <Button variant="outline" className="w-full" disabled>
+                <DownloadIcon className="mr-2 h-4 w-4" />
+                Download ZIP
+              </Button>
+            </CardFooter>
+          </Card>
+          
+          <Card className="bg-background/80 backdrop-blur hover:bg-background transition-colors">
+            <CardHeader className="pb-2 pt-4">
+              <CardTitle className="text-base">Frontend (React)</CardTitle>
+            </CardHeader>
+            <CardFooter>
+              <Button variant="outline" className="w-full" disabled>
+                <DownloadIcon className="mr-2 h-4 w-4" />
+                Download ZIP
+              </Button>
+            </CardFooter>
+          </Card>
+          
+          <Card className="bg-background/80 backdrop-blur hover:bg-background transition-colors">
+            <CardHeader className="pb-2 pt-4">
+              <CardTitle className="text-base">Environment + Docker</CardTitle>
+            </CardHeader>
+            <CardFooter>
+              <Button variant="outline" className="w-full" disabled>
+                <DownloadIcon className="mr-2 h-4 w-4" />
+                Download Files
+              </Button>
+            </CardFooter>
           </Card>
         </div>
       </section>
@@ -139,8 +196,9 @@ const DevonnAIOverviewTab: React.FC = () => {
                 <CardDescription className="pt-2">{step.description}</CardDescription>
               </CardHeader>
               <CardFooter className="pt-0">
-                <Button variant="outline" className="w-full mt-2">
+                <Button variant="outline" className="w-full mt-2 group">
                   Learn More
+                  <ExternalLink className="ml-2 h-3 w-3 opacity-70 group-hover:opacity-100 transition-opacity" />
                 </Button>
               </CardFooter>
             </Card>
@@ -153,26 +211,33 @@ const DevonnAIOverviewTab: React.FC = () => {
       <section>
         <h3 className="text-2xl font-bold tracking-tight mb-6 bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">Optional Enhancements</h3>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {optionalEnhancements.map((enhancement, index) => (
-            <div key={index} className="flex gap-4 p-5 border rounded-lg hover:border-primary/40 transition-colors duration-300">
-              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                <enhancement.icon className="h-5 w-5 text-primary" />
+            <div key={index} className="flex gap-4 p-5 border rounded-lg hover:border-primary/40 transition-colors duration-300 hover:bg-blue-50/5">
+              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                <enhancement.icon className="h-6 w-6 text-primary" />
               </div>
               <div>
-                <p className="font-medium mb-1">{enhancement.title}</p>
+                <p className="font-medium mb-2">{enhancement.title}</p>
                 <p className="text-sm text-muted-foreground">{enhancement.description}</p>
+                <Button variant="link" className="mt-2 h-auto p-0 text-primary/80 hover:text-primary" size="sm">
+                  Request Example
+                </Button>
               </div>
             </div>
           ))}
         </div>
         
         <div className="mt-12 text-center">
-          <div className="inline-block p-6 rounded-lg border border-border bg-gradient-to-r from-blue-500/5 via-indigo-500/5 to-purple-500/5">
-            <p className="text-lg font-medium bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-2">
+          <div className="inline-block p-8 rounded-lg border border-border bg-gradient-to-r from-blue-500/5 via-indigo-500/5 to-purple-500/5">
+            <p className="text-2xl font-medium bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-3">
               You've built a self-aware agent creation system
             </p>
-            <p className="text-muted-foreground">The factory is online. Ready for deployment.</p>
+            <p className="text-muted-foreground mb-4">The factory is online. Ready for deployment.</p>
+            <Button className="mt-4">
+              <Rocket className="mr-2 h-4 w-4" />
+              Launch Your First Agent
+            </Button>
           </div>
         </div>
       </section>
