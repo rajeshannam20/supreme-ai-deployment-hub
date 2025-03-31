@@ -1,7 +1,6 @@
 
 import React, { useEffect } from 'react';
 import { motion, useScroll, useSpring } from 'framer-motion';
-import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { toast } from 'sonner';
 
@@ -57,8 +56,6 @@ const Index = () => {
         className="fixed top-0 left-0 right-0 h-1 bg-primary z-50 origin-left"
         style={{ scaleX }}
       />
-      
-      <Navbar />
       
       <HeroSection />
       <AIVisualization />

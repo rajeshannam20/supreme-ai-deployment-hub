@@ -1,17 +1,19 @@
 
 import React from 'react';
+import { enhancementData } from './enhancements/enhancementData';
 import SectionHeader from './enhancements/SectionHeader';
 import EnhancementGrid from './enhancements/EnhancementGrid';
-import { enhancementData } from './enhancements/enhancementData';
 
 const OptionalEnhancementsSection: React.FC = () => {
   return (
-    <section>
-      <SectionHeader 
-        title="Optional Enhancements" 
-        description="Extend Devonn.AI's capabilities with these powerful add-on modules and integrations."
+    <section className="py-8">
+      <SectionHeader
+        title="Optional Enhancements"
+        description="Extend DEVONN.AI with these powerful optional modules to address specific needs of your implementation."
       />
-      <EnhancementGrid enhancements={enhancementData} />
+      <div className="mt-6">
+        <EnhancementGrid enhancements={enhancementData} />
+      </div>
     </section>
   );
 };

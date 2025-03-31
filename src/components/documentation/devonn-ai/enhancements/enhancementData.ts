@@ -1,19 +1,10 @@
 
-import React from 'react';
-import { Zap, Shield, Cpu, Server, Database, Activity } from 'lucide-react';
-
-export interface Enhancement {
-  id: string;
-  title: string;
-  description: string;
-  icon: React.ElementType;
-  tag: string;
-  status: "Recommended" | "Optional";
-}
+import { Shield, Zap, Cpu, Server, Database, Activity } from 'lucide-react';
+import { Enhancement } from './EnhancementCard';
 
 export const enhancementData: Enhancement[] = [
   {
-    id: 'advanced-security',
+    id: 'security',
     title: 'Advanced Security Module',
     description: 'Enhanced security features including advanced encryption, authentication, and role-based access control.',
     icon: Shield,
