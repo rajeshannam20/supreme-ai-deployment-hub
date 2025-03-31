@@ -7,6 +7,7 @@ import APIReferenceTab from './APIReferenceTab';
 import ExamplesTab from './ExamplesTab';
 import ProjectStructureTab from './ProjectStructureTab';
 import DomainConfigTab from './DomainConfigTab';
+import DevonnAIOverviewTab from './DevonnAIOverviewTab';
 import { LampDemo } from '@/components/ui/lamp-demo';
 import { AnimatedTextDemo } from '@/components/ui/animated-text-demo';
 import { GradientTracingDemo } from '@/components/ui/gradient-tracing-demo';
@@ -15,8 +16,9 @@ import { GlowingEffectDemo } from '@/components/ui/glowing-effect-demo';
 
 const DocumentationTabs: React.FC = () => {
   return (
-    <Tabs defaultValue="getting-started" className="w-full">
-      <TabsList className="grid grid-cols-11 mb-4">
+    <Tabs defaultValue="devonn-ai" className="w-full">
+      <TabsList className="grid grid-cols-12 mb-4">
+        <TabsTrigger value="devonn-ai">Devonn.AI</TabsTrigger>
         <TabsTrigger value="getting-started">Getting Started</TabsTrigger>
         <TabsTrigger value="guides">Guides</TabsTrigger>
         <TabsTrigger value="api">API Reference</TabsTrigger>
@@ -29,6 +31,10 @@ const DocumentationTabs: React.FC = () => {
         <TabsTrigger value="background-paths">Background Paths</TabsTrigger>
         <TabsTrigger value="glowing-effect">Glowing Effect</TabsTrigger>
       </TabsList>
+      
+      <TabsContent value="devonn-ai">
+        <DevonnAIOverviewTab />
+      </TabsContent>
       
       <TabsContent value="getting-started">
         <GettingStartedTab />
