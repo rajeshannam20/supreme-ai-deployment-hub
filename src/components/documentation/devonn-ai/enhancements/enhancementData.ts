@@ -1,49 +1,56 @@
 
 import React from 'react';
-import { BrainCircuit, Network, Zap, Workflow, CloudLightning, Rocket } from 'lucide-react';
-import { Enhancement } from './EnhancementCard';
+import { Zap, Shield, Cpu, Server, Database, Activity } from 'lucide-react';
+
+export interface Enhancement {
+  id: string;
+  title: string;
+  description: string;
+  icon: React.ElementType;
+  color: string;
+}
 
 export const enhancementData: Enhancement[] = [
   {
-    title: "Neural Network Extension",
-    description: "Expand capabilities with advanced neural network architectures for complex reasoning tasks.",
-    icon: <BrainCircuit className="w-5 h-5 text-primary" />,
-    tag: "Advanced AI",
-    status: "Recommended"
+    id: 'advanced-security',
+    title: 'Advanced Security Module',
+    description: 'Enhanced security features including advanced encryption, authentication, and role-based access control.',
+    icon: Shield,
+    color: 'from-red-500 to-red-700'
   },
   {
-    title: "Vector Database Integration",
-    description: "Connect to vector databases for semantic search and similarity matching across data sources.",
-    icon: <Network className="w-5 h-5 text-primary" />,
-    tag: "Data Storage",
-    status: "Optional"
+    id: 'performance',
+    title: 'Performance Accelerator',
+    description: 'Optimization toolkit for enhancing throughput and reducing latency in high-demand environments.',
+    icon: Zap,
+    color: 'from-amber-500 to-orange-700'
   },
   {
-    title: "Edge Deployment Package",
-    description: "Optimize for edge devices with compressed models and efficient runtime environments.",
-    icon: <Zap className="w-5 h-5 text-primary" />,
-    tag: "Deployment",
-    status: "Recommended"
+    id: 'gpu',
+    title: 'GPU Acceleration',
+    description: 'Seamless integration with GPU resources for faster model training and inference.',
+    icon: Cpu,
+    color: 'from-green-500 to-emerald-700'
   },
   {
-    title: "AutoML Pipeline",
-    description: "Implement automated model training and hyperparameter optimization for custom use cases.",
-    icon: <Workflow className="w-5 h-5 text-primary" />,
-    tag: "Workflow",
-    status: "Optional"
+    id: 'scaling',
+    title: 'Auto-Scaling System',
+    description: 'Intelligent resource management that scales based on demand patterns and workload analysis.',
+    icon: Server,
+    color: 'from-blue-500 to-indigo-700'
   },
   {
-    title: "Cloud Provider Connectors",
-    description: "Seamlessly deploy to AWS, Azure, GCP, and other major cloud platforms with pre-built templates.",
-    icon: <CloudLightning className="w-5 h-5 text-primary" />,
-    tag: "Infrastructure",
-    status: "Recommended"
+    id: 'integration',
+    title: 'Enterprise Integration Hub',
+    description: 'Connect with existing enterprise systems through pre-built connectors and customizable APIs.',
+    icon: Database,
+    color: 'from-purple-500 to-violet-700'
   },
   {
-    title: "Accelerated Compute Support",
-    description: "Utilize GPUs, TPUs, and other specialized hardware for faster inference and training.",
-    icon: <Rocket className="w-5 h-5 text-primary" />,
-    tag: "Performance",
-    status: "Optional"
-  },
+    id: 'analytics',
+    title: 'Advanced Analytics',
+    description: 'Comprehensive analytics dashboard for monitoring performance, usage patterns, and system health.',
+    icon: Activity,
+    color: 'from-pink-500 to-rose-700'
+  }
 ];
