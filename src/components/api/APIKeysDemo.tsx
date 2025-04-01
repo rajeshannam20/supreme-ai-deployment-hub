@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAPIKeys } from '@/hooks/useAPIKeys';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -14,17 +14,18 @@ import {
   Clipboard, 
   Clock,
   ShieldAlert,
-  RefreshCcw
+  RefreshCcw,
+  RotateCw
 } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, formatDistanceToNow } from 'date-fns';
 import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Badge } from '@/components/ui/badge';
 
 const APIKeysDemo: React.FC = () => {
   const { 
     availableAPIs, 
     hasAPIKey, 
-    getAPIKey, 
     makeAPIRequest, 
     isLoading, 
     getAPICredentials,
@@ -33,19 +34,31 @@ const APIKeysDemo: React.FC = () => {
     getMaskedAPIKey,
     copyAPIKeyToClipboard,
     getLastUsed,
-    setAPIKey
+    setAPIKey,
+    rotateKeys
   } = useAPIKeys();
   
   const [selectedAPI, setSelectedAPI] = useState<string>('');
   const [testResponse, setTestResponse] = useState<string>('');
   const [newApiKey, setNewApiKey] = useState<string>('');
   const [isUpdating, setIsUpdating] = useState(false);
+  const [isRotating, setIsRotating] = useState(false);
+
+  // Auto-select first API if available
+  useEffect(() => {
+    if (availableAPIs.length > 0 && !selectedAPI) {
+      setSelectedAPI(availableAPIs[0]);
+    }
+  }, [availableAPIs, selectedAPI]);
 
   const handleTestKey = async () => {
     if (!selectedAPI) return;
     
     const { endpoint } = getAPICredentials(selectedAPI);
-    if (!endpoint) return;
+    if (!endpoint) {
+      setTestResponse(JSON.stringify({ error: "No endpoint configured for this API" }, null, 2));
+      return;
+    }
     
     const result = await makeAPIRequest(selectedAPI, endpoint, { method: 'GET' });
     setTestResponse(JSON.stringify(result, null, 2));
@@ -59,16 +72,52 @@ const APIKeysDemo: React.FC = () => {
     setIsUpdating(false);
   };
 
+  const handleRotateKeys = async () => {
+    setIsRotating(true);
+    try {
+      await rotateKeys();
+      setIsRotating(false);
+    } catch (error) {
+      console.error('Error rotating keys:', error);
+      setIsRotating(false);
+    }
+  };
+
   const lastUsed = selectedAPI ? getLastUsed(selectedAPI) : undefined;
+  const lastUsedFormatted = lastUsed ? formatDistanceToNow(lastUsed, { addSuffix: true }) : undefined;
 
   return (
     <TooltipProvider>
-      <Card>
+      <Card className="border-2">
         <CardHeader>
-          <CardTitle>API Keys Management</CardTitle>
-          <CardDescription>
-            Securely access and manage your stored API keys
-          </CardDescription>
+          <div className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle>API Keys Management</CardTitle>
+              <CardDescription>
+                Securely access and manage your stored API keys
+              </CardDescription>
+            </div>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handleRotateKeys}
+                  disabled={isRotating}
+                >
+                  {isRotating ? (
+                    <Loader className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <RotateCw className="h-4 w-4 mr-2" />
+                  )}
+                  Rotate Keys
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                Re-encrypt all API keys for enhanced security
+              </TooltipContent>
+            </Tooltip>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="space-y-6">
@@ -103,7 +152,15 @@ const APIKeysDemo: React.FC = () => {
             
             {selectedAPI && (
               <div className="p-4 border rounded-md bg-secondary/10 space-y-4">
-                <h3 className="text-base font-medium">API: {selectedAPI}</h3>
+                <div className="flex items-center justify-between">
+                  <h3 className="text-base font-medium">API: {selectedAPI}</h3>
+                  
+                  {hasAPIKey(selectedAPI) && (
+                    <Badge variant="outline" className="bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400">
+                      Active
+                    </Badge>
+                  )}
+                </div>
                 
                 <div className="space-y-1">
                   <div className="flex items-center justify-between">
@@ -124,7 +181,7 @@ const APIKeysDemo: React.FC = () => {
                   {lastUsed && (
                     <div className="flex items-center text-xs text-muted-foreground mt-1">
                       <Clock className="h-3 w-3 mr-1" />
-                      <span>Last used: {format(lastUsed, 'MMM d, yyyy HH:mm')}</span>
+                      <span>Last used: {lastUsedFormatted} ({format(lastUsed, 'MMM d, yyyy HH:mm')})</span>
                     </div>
                   )}
                 </div>
@@ -178,6 +235,13 @@ const APIKeysDemo: React.FC = () => {
                         {getMaskedAPIKey(selectedAPI)}
                       </span>
                     </div>
+                    
+                    {isKeyVisible(selectedAPI) && (
+                      <p className="text-xs text-amber-500 flex items-center">
+                        <AlertCircle className="h-3 w-3 mr-1" />
+                        Key will be hidden automatically after 30 seconds
+                      </p>
+                    )}
                   </div>
                 )}
                 
