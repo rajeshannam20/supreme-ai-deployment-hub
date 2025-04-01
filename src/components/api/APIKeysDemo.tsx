@@ -7,14 +7,14 @@ import { Input } from '@/components/ui/input';
 import { Loader, Key, Check, AlertCircle } from 'lucide-react';
 
 const APIKeysDemo: React.FC = () => {
-  const { availableAPIs, hasAPIKey, getAPIKey, makeAPIRequest, isLoading } = useAPIKeys();
+  const { availableAPIs, hasAPIKey, getAPIKey, makeAPIRequest, isLoading, getAPICredentials } = useAPIKeys();
   const [selectedAPI, setSelectedAPI] = useState<string>('');
   const [testResponse, setTestResponse] = useState<string>('');
 
   const handleTestKey = async () => {
     if (!selectedAPI) return;
     
-    const { endpoint } = availableAPIs.find(api => api === selectedAPI) || {};
+    const { endpoint } = getAPICredentials(selectedAPI);
     if (!endpoint) return;
     
     const result = await makeAPIRequest(selectedAPI, endpoint, { method: 'GET' });
