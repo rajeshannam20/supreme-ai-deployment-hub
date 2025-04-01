@@ -8,6 +8,7 @@ import APIConnectionsTab from '@/components/api/APIConnectionsTab';
 import APIDocumentationTab from '@/components/api/APIDocumentationTab';
 import APIPlaygroundTab from '@/components/api/APIPlaygroundTab';
 import SavedResponsesTab from '@/components/api/SavedResponsesTab';
+import APIKeysDemo from '@/components/api/APIKeysDemo';
 import { useSavedResponses } from '@/hooks/useSavedResponses';
 
 const API: React.FC = () => {
@@ -32,8 +33,9 @@ const API: React.FC = () => {
         
         <div className="mt-8">
           <Tabs defaultValue="connections" className="w-full">
-            <TabsList className="grid w-full grid-cols-4">
+            <TabsList className="grid w-full grid-cols-5">
               <TabsTrigger value="connections">API Connections</TabsTrigger>
+              <TabsTrigger value="keys">API Keys</TabsTrigger>
               <TabsTrigger value="documentation">API Documentation</TabsTrigger>
               <TabsTrigger value="playground">API Playground</TabsTrigger>
               <TabsTrigger value="saved">Saved Responses</TabsTrigger>
@@ -41,6 +43,10 @@ const API: React.FC = () => {
             
             <TabsContent value="connections" className="mt-6">
               <APIConnectionsTab />
+            </TabsContent>
+            
+            <TabsContent value="keys" className="mt-6">
+              <APIKeysDemo />
             </TabsContent>
             
             <TabsContent value="documentation" className="mt-6">

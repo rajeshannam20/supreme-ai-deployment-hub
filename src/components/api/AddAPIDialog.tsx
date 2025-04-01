@@ -1,9 +1,10 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
 import {
   Dialog,
   DialogContent,
@@ -13,7 +14,7 @@ import {
   DialogFooter,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { Plus } from 'lucide-react';
+import { Plus, Shield } from 'lucide-react';
 import { NewAPIConfig } from '@/types/api';
 
 interface AddAPIDialogProps {
@@ -31,6 +32,8 @@ const AddAPIDialog: React.FC<AddAPIDialogProps> = ({
   onConfigChange,
   onAddAPI
 }) => {
+  const [secureStorage, setSecureStorage] = useState(true);
+
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogTrigger asChild>
@@ -69,7 +72,7 @@ const AddAPIDialog: React.FC<AddAPIDialogProps> = ({
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="api-key">API Key (Optional)</Label>
+            <Label htmlFor="api-key">API Key</Label>
             <Input 
               id="api-key" 
               type="password"
@@ -77,6 +80,14 @@ const AddAPIDialog: React.FC<AddAPIDialogProps> = ({
               onChange={(e) => onConfigChange({...newConfig, apiKey: e.target.value})}
               placeholder="Your API key"
             />
+            <div className="flex items-center space-x-2 mt-1">
+              <Shield className="h-4 w-4 text-amber-500" />
+              <p className="text-xs text-muted-foreground">
+                {secureStorage 
+                  ? "API key will be stored securely using encryption" 
+                  : "API key will be stored without encryption"}
+              </p>
+            </div>
           </div>
           
           <div className="space-y-2">
@@ -88,6 +99,15 @@ const AddAPIDialog: React.FC<AddAPIDialogProps> = ({
               placeholder="What this API is used for"
               rows={3}
             />
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <Switch 
+              id="secure-storage" 
+              checked={secureStorage} 
+              onCheckedChange={setSecureStorage} 
+            />
+            <Label htmlFor="secure-storage" className="cursor-pointer">Encrypt API key in storage</Label>
           </div>
         </div>
         
