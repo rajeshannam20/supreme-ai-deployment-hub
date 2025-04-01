@@ -1,10 +1,9 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { SpeechHandler } from '@/contexts/chat/SpeechHandler';
 import { Mic, MicOff, Volume2, AlertTriangle, Check } from 'lucide-react';
 import { toast } from 'sonner';
-import { useChat } from '@/contexts/ChatContext';
+import { useSafeChat } from '@/contexts/ChatContext';
 
 const VoiceEnabledAI: React.FC = () => {
   const [isListening, setIsListening] = useState(false);
@@ -13,7 +12,7 @@ const VoiceEnabledAI: React.FC = () => {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const speechHandlerRef = useRef<SpeechHandler | null>(null);
-  const { sendMessage, isSpeechSupported } = useChat();
+  const { sendMessage, isSpeechSupported } = useSafeChat();
   const supportStatus = isSpeechSupported();
 
   useEffect(() => {

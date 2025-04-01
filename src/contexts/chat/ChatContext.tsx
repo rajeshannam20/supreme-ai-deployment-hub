@@ -5,6 +5,7 @@ import { useAPI } from '../APIContext';
 import { ChatContextType } from './types';
 import { useChatState } from './ChatState';
 import { createChatActions } from './ChatActions';
+import { MockChatContext } from './mockChatProvider';
 
 // Create the context
 const ChatContext = createContext<ChatContextType | undefined>(undefined);

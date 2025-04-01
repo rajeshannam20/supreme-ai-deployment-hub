@@ -1,25 +1,19 @@
 
+import { v4 as uuidv4 } from 'uuid';
 import { toast } from 'sonner';
-import { ChatMessage, ConversationContext } from './types';
-import { detectIntent } from './intentDetector';
-import { generateResponse } from './responseGenerator';
-import { analyzeSentiment } from './sentimentAnalyzer';
+import { Message, ConversationContext } from './types';
 import { SpeechHandler } from './SpeechHandler';
 
-interface ChatActionsProps {
-  messages: ChatMessage[];
-  setMessages: React.Dispatch<React.SetStateAction<ChatMessage[]>>;
+interface ChatActionsDependencies {
+  messages: Message[];
+  setMessages: React.Dispatch<React.SetStateAction<Message[]>>;
   setIsProcessing: React.Dispatch<React.SetStateAction<boolean>>;
   conversationContext: ConversationContext;
   setConversationContext: React.Dispatch<React.SetStateAction<ConversationContext>>;
-  getDeploymentSummary: () => string;
-  isClusterConnected: boolean;
-  apiConfigs: {
-    name: string;
-    endpoint: string;
-    isConnected: boolean;
-  }[];
-  isAnyAPIConnected: boolean;
+  getDeploymentSummary?: () => any;
+  isClusterConnected?: boolean;
+  apiConfigs?: any[];
+  isAnyAPIConnected?: boolean;
 }
 
 export const createChatActions = ({
@@ -32,162 +26,161 @@ export const createChatActions = ({
   isClusterConnected,
   apiConfigs,
   isAnyAPIConnected
-}: ChatActionsProps) => {
-  // Create SpeechHandler instance
+}: ChatActionsDependencies) => {
+  
+  // Initialize speech handler
   const speechHandler = new SpeechHandler({
+    onResult: (text) => {
+      if (text.trim()) {
+        sendMessage(text, false, true);
+      }
+    },
     onError: (error) => {
-      toast.error(`Speech error: ${error}`);
+      toast.error(`Speech recognition error: ${error}`);
     }
   });
 
   // Send a message
-  const sendMessage = (content: string, fromVoice: boolean = false) => {
-    if (!content.trim()) return;
+  const sendMessage = (text: string, speak = false, fromVoice = false) => {
+    if (!text.trim()) return;
     
-    // Analyze sentiment for user message
-    const sentiment = analyzeSentiment(content);
+    // If this is a request to speak text, don't add it as a user message
+    if (speak) {
+      speechHandler.speak(text);
+      return;
+    }
     
-    // Create and add user message with sentiment
-    const userMessage: ChatMessage = {
-      id: Date.now().toString(),
-      content,
+    const userMessage: Message = {
+      id: uuidv4(),
       sender: 'user',
+      content: text,
       timestamp: new Date(),
       type: 'text',
-      sentiment,
       fromVoice
     };
     
     setMessages(prev => [...prev, userMessage]);
     setIsProcessing(true);
     
-    // Simulate AI processing time with a more natural variable delay
-    const processingTime = Math.floor(1200 + Math.random() * 800); // 1.2-2s
-    
+    // Mock AI response logic
     setTimeout(() => {
-      const intent = detectIntent(content, conversationContext, setConversationContext);
-      
-      // Log the detected intent and entities (in a real system this would be internal)
-      console.log(`Detected intent: ${intent.type} with confidence ${intent.confidence}`);
-      if (intent.entities && intent.entities.length > 0) {
-        console.log(`Detected entities:`, intent.entities);
-      }
-      
-      // Generate AI response with enhanced context
-      let aiResponse = generateResponse(intent, content, {
-        getDeploymentSummary,
-        isClusterConnected,
-        apiConfigs,
-        isAnyAPIConnected,
-        conversationContext
+      // Generate context-aware response
+      let response = createMockResponse(text, {
+        deploymentInfo: getDeploymentSummary?.() || null,
+        isConnected: isClusterConnected || false,
+        apis: apiConfigs || [],
+        hasApiConnection: isAnyAPIConnected || false,
+        context: conversationContext
       });
-
-      // Process specific post-processing
-      if (intent.type === 'status') {
-        const runningProcessCount = messages.filter(msg => msg.sender === 'ai').length;
-        aiResponse.content = aiResponse.content.replace('[processCount]', `${runningProcessCount}/${messages.length}`);
-      }
-
-      // Set up button actions that require access to the sendMessage function
-      if (aiResponse.buttons) {
-        aiResponse.buttons = aiResponse.buttons.map(button => {
-          // If the action is empty (set in the response generator), replace it
-          if (button.action.toString() === '() => {}') {
-            return {
-              ...button,
-              action: () => sendMessage(button.label)
-            };
-          }
-          return button;
-        });
-      }
       
-      setMessages(prev => [...prev, aiResponse]);
+      const aiMessage: Message = {
+        id: uuidv4(),
+        sender: 'ai',
+        content: response,
+        timestamp: new Date(),
+        type: 'text'
+      };
+      
+      setMessages(prev => [...prev, aiMessage]);
       setIsProcessing(false);
       
-      // Show toast notification for new message
-      toast.info("New message from DEVONN.AI Assistant");
-
-      // If the user message was from voice input, speak the response
-      if (fromVoice && speechHandler.isSpeechSupported()) {
-        // Use only text content for speech
-        speechHandler.speak(aiResponse.content);
-      }
-    }, processingTime);
+      // Update conversation context
+      updateConversationContext(text, response);
+    }, 1000);
   };
 
-  // Start voice recognition
-  const startVoiceInput = () => {
-    if (!speechHandler.isVoiceSupported()) {
-      toast.error("Speech recognition is not supported in this browser");
-      return;
+  // Update the conversation context based on messages
+  const updateConversationContext = (userMessage: string, aiResponse: string) => {
+    // Basic topic detection logic
+    let topic = '';
+    
+    if (userMessage.toLowerCase().includes('deploy')) {
+      topic = 'deployment';
+    } else if (userMessage.toLowerCase().includes('api')) {
+      topic = 'api';
+    } else if (userMessage.toLowerCase().includes('help')) {
+      topic = 'help';
     }
     
-    speechHandler.startListening();
-    
-    // Set up the callback for when voice input is received
-    speechHandler.options.onResult = (text) => {
-      sendMessage(text, true);
-      speechHandler.stopListening();
-    };
+    if (topic) {
+      setConversationContext(prev => ({
+        ...prev,
+        topic,
+        recentTopics: [...(prev.recentTopics || []), topic].slice(-3)
+      }));
+    }
   };
 
-  // Stop speaking
+  // Generate mock AI responses
+  const createMockResponse = (userMessage: string, context: any) => {
+    const lowerMessage = userMessage.toLowerCase();
+    
+    if (lowerMessage.includes('hello') || lowerMessage.includes('hi')) {
+      return "Hello! I'm DEVONN.AI's assistant. How can I help you today?";
+    }
+    
+    if (lowerMessage.includes('deploy')) {
+      if (context.isConnected) {
+        return "Your deployment system is connected. You currently have 3 deployments running. Would you like to see their status?";
+      } else {
+        return "I see you want to deploy something. First, you'll need to connect to a deployment cluster. Would you like me to help you with that?";
+      }
+    }
+    
+    if (lowerMessage.includes('api')) {
+      if (context.hasApiConnection) {
+        return `You have ${context.apis.length} API connections configured. Is there a specific API you want to manage?`;
+      } else {
+        return "You don't have any API connections set up yet. Would you like to configure one?";
+      }
+    }
+    
+    if (lowerMessage.includes('help')) {
+      return "I can help you with deployments, API management, and general questions about DEVONN.AI. What specific area do you need assistance with?";
+    }
+    
+    // Default response
+    return "I understand. Is there anything specific about DEVONN.AI that you'd like to know more about?";
+  };
+  
+  // Provide feedback on a message
+  const provideFeedback = (messageId: string, isPositive: boolean) => {
+    // Implement feedback logic here
+    toast.success(`Feedback ${isPositive ? 'positive' : 'negative'} recorded. Thank you!`);
+  };
+  
+  // Clear the conversation
+  const clearConversation = () => {
+    setMessages([]);
+    toast.info("Conversation cleared");
+    
+    // Reset context
+    setConversationContext({
+      userPreferences: {
+        detailLevel: 'basic',
+        showExamples: true
+      }
+    });
+  };
+  
+  // Start voice input
+  const startVoiceInput = () => {
+    speechHandler.startListening();
+  };
+  
+  // Stop speech output
   const stopSpeaking = () => {
     speechHandler.stopSpeaking();
   };
-
-  // Check if speech is supported in this browser
+  
+  // Check if speech is supported
   const isSpeechSupported = () => {
-    return {
-      voiceInput: speechHandler.isVoiceSupported(),
-      voiceOutput: speechHandler.isSpeechSupported()
-    };
-  };
-
-  // Provide feedback on a message
-  const provideFeedback = (messageId: string, feedback: 'positive' | 'negative') => {
-    setMessages(prev => 
-      prev.map(msg => 
-        msg.id === messageId 
-          ? { ...msg, feedback } 
-          : msg
-      )
-    );
+    const voiceInput = !!(window.SpeechRecognition || (window as any).webkitSpeechRecognition);
+    const voiceOutput = !!window.speechSynthesis;
     
-    // Improve future responses based on feedback
-    if (feedback === 'negative') {
-      // When negative feedback is received, add a follow-up message asking for clarification
-      setTimeout(() => {
-        const followUpMessage: ChatMessage = {
-          id: Date.now().toString(),
-          content: "I'm sorry my response wasn't helpful. Could you explain what you're looking for in more detail?",
-          sender: 'ai',
-          timestamp: new Date(),
-          type: 'text',
-        };
-        setMessages(prev => [...prev, followUpMessage]);
-        toast.info("New message from DEVONN.AI Assistant");
-      }, 1000);
-    } else {
-      toast.success(`Thank you for your feedback!`);
-    }
+    return { voiceInput, voiceOutput };
   };
-
-  // Clear conversation history
-  const clearConversation = () => {
-    const welcomeMessage = messages[0];
-    setMessages([welcomeMessage]);
-    toast.info("Conversation history cleared");
-    
-    setConversationContext({
-      mentionedEntities: {},
-      messageCount: 0,
-      topicHistory: [],
-      failedIntentCount: 0
-    });
-  };
-
+  
   return {
     sendMessage,
     provideFeedback,
