@@ -1,7 +1,8 @@
 
 import { useAPI } from '@/contexts/APIContext';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { toast } from 'sonner';
+import { Eye, EyeOff, ClipboardCopy } from 'lucide-react';
 
 /**
  * Custom hook for easily accessing and managing API keys
@@ -9,6 +10,45 @@ import { toast } from 'sonner';
 export const useAPIKeys = () => {
   const { getSecureAPIKey, apiConfigs, updateAPIKey } = useAPI();
   const [loading, setLoading] = useState<Record<string, boolean>>({});
+  const [visibleKeys, setVisibleKeys] = useState<Record<string, boolean>>({});
+  const [lastUsed, setLastUsed] = useState<Record<string, Date>>({});
+
+  // Load last used timestamps from localStorage
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('devonn_api_last_used');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        // Convert string dates back to Date objects
+        const dates: Record<string, Date> = {};
+        Object.keys(parsed).forEach(key => {
+          dates[key] = new Date(parsed[key]);
+        });
+        setLastUsed(dates);
+      }
+    } catch (error) {
+      console.error('Failed to load API usage history:', error);
+    }
+  }, []);
+
+  // Update last used timestamp when an API is used
+  const updateLastUsed = useCallback((apiName: string) => {
+    const now = new Date();
+    setLastUsed(prev => {
+      const updated = { ...prev, [apiName]: now };
+      try {
+        localStorage.setItem('devonn_api_last_used', JSON.stringify(
+          Object.entries(updated).reduce((acc, [key, value]) => {
+            acc[key] = value.toISOString();
+            return acc;
+          }, {} as Record<string, string>)
+        ));
+      } catch (error) {
+        console.error('Failed to save API usage history:', error);
+      }
+      return updated;
+    });
+  }, []);
 
   // Get a specific API key by name
   const getAPIKey = (name: string): string | undefined => {
@@ -35,6 +75,40 @@ export const useAPIKeys = () => {
     updateAPIKey(name, key);
   }, [updateAPIKey]);
 
+  // Toggle visibility of an API key
+  const toggleKeyVisibility = useCallback((name: string) => {
+    setVisibleKeys(prev => ({ ...prev, [name]: !prev[name] }));
+  }, []);
+
+  // Copy API key to clipboard
+  const copyAPIKeyToClipboard = useCallback((name: string) => {
+    const key = getSecureAPIKey(name);
+    if (key) {
+      navigator.clipboard.writeText(key)
+        .then(() => toast.success(`API key for ${name} copied to clipboard`))
+        .catch(() => toast.error('Failed to copy API key'));
+    } else {
+      toast.error(`No API key found for ${name}`);
+    }
+  }, [getSecureAPIKey]);
+
+  // Get masked API key for display
+  const getMaskedAPIKey = useCallback((name: string): string => {
+    if (visibleKeys[name]) {
+      return getSecureAPIKey(name) || '';
+    }
+    
+    const key = getSecureAPIKey(name);
+    if (!key) return '';
+    
+    // Show first 4 and last 4 characters, mask the rest
+    if (key.length <= 8) {
+      return '••••••••';
+    }
+    
+    return `${key.substring(0, 4)}${'•'.repeat(Math.min(key.length - 8, 20))}${key.substring(key.length - 4)}`;
+  }, [getSecureAPIKey, visibleKeys]);
+
   // Use an API key to make a request with proper headers
   const makeAPIRequest = useCallback(async (
     apiName: string, 
@@ -60,6 +134,9 @@ export const useAPIKeys = () => {
         headers
       });
       
+      // Update last used timestamp
+      updateLastUsed(apiName);
+      
       if (!response.ok) {
         throw new Error(`API request failed with status ${response.status}`);
       }
@@ -72,11 +149,21 @@ export const useAPIKeys = () => {
     } finally {
       setLoading(prev => ({ ...prev, [apiName]: false }));
     }
-  }, [getSecureAPIKey]);
+  }, [getSecureAPIKey, updateLastUsed]);
 
   // Get loading state for specific API
   const isLoading = (apiName: string): boolean => {
     return !!loading[apiName];
+  };
+
+  // Get last used timestamp for an API
+  const getLastUsed = (apiName: string): Date | undefined => {
+    return lastUsed[apiName];
+  };
+
+  // Check if key is currently visible
+  const isKeyVisible = (apiName: string): boolean => {
+    return !!visibleKeys[apiName];
   };
 
   return {
@@ -86,6 +173,11 @@ export const useAPIKeys = () => {
     makeAPIRequest,
     isLoading,
     getAPICredentials,
-    availableAPIs: apiConfigs.map(c => c.name)
+    availableAPIs: apiConfigs.map(c => c.name),
+    toggleKeyVisibility,
+    isKeyVisible,
+    getMaskedAPIKey,
+    copyAPIKeyToClipboard,
+    getLastUsed
   };
 };
