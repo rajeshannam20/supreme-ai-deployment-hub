@@ -44,7 +44,7 @@ export interface ConversationContext {
   topicHistory?: string[];
   mentionedEntities?: Record<string, string[]>;
   failedIntentCount?: number;
-  lastUserSentiment?: string;
+  lastUserSentiment?: 'positive' | 'negative' | 'neutral';
 }
 
 export interface Intent {
@@ -70,6 +70,20 @@ export interface FallbackStrategy {
 export interface ChatMessage {
   content: string;
   role: 'user' | 'assistant' | 'system';
+  id?: string;
+  sender?: 'user' | 'ai';
+  timestamp?: Date;
+  type?: 'text' | 'buttons' | 'links' | 'image';
+  buttons?: Array<{
+    id: string;
+    label: string;
+    action: () => void;
+  }>;
+  links?: Array<{
+    label: string;
+    url: string;
+  }>;
+  imageUrl?: string;
 }
 
 export interface ChatContextType {

@@ -31,15 +31,12 @@ export const generateResponse = (
   } = props;
   
   // Check if we should use fallback response
-  const fallbackResponse = getFallbackResponse(conversationContext.failedIntentCount);
+  const fallbackResponse = getFallbackResponse(conversationContext.failedIntentCount || 0);
   
   // Start with a default response
   let response: ChatMessage = {
-    id: Date.now().toString(),
-    sender: 'ai',
-    timestamp: new Date(),
-    type: 'text',
     content: fallbackResponse || "", // Use fallback if available
+    role: 'assistant'
   };
   
   // If using fallback, return early
@@ -62,7 +59,7 @@ export const generateResponse = (
       response.content = sentimentModifier + "Hello! Welcome to DEVONN.AI. I'm your AI assistant for deploying AI systems and managing API integrations. How can I help you today?";
       
       // If returning user (more than 5 messages), personalize greeting
-      if (conversationContext.messageCount > 5) {
+      if (conversationContext.messageCount && conversationContext.messageCount > 5) {
         response.content = "Welcome back! I'm ready to continue helping with your AI deployment and integration needs. What would you like to work on now?";
       }
       break;
