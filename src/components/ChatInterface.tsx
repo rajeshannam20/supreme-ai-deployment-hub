@@ -232,7 +232,7 @@ const ChatInterface: React.FC = () => {
                               className={`p-1 rounded-full hover:bg-background/10 ${
                                 message.feedback === 'positive' ? 'bg-green-100 text-green-600' : ''
                               }`}
-                              onClick={() => provideFeedback(message.id, 'positive')}
+                              onClick={() => provideFeedback(message.id, true)}
                               aria-label="Positive feedback"
                             >
                               <ThumbsUp className="h-3 w-3" />
@@ -241,7 +241,7 @@ const ChatInterface: React.FC = () => {
                               className={`p-1 rounded-full hover:bg-background/10 ${
                                 message.feedback === 'negative' ? 'bg-red-100 text-red-600' : ''
                               }`}
-                              onClick={() => provideFeedback(message.id, 'negative')}
+                              onClick={() => provideFeedback(message.id, false)}
                               aria-label="Negative feedback"
                             >
                               <ThumbsDown className="h-3 w-3" />
@@ -354,27 +354,27 @@ const ChatInterface: React.FC = () => {
                     <h4 className="font-medium text-sm">{process.name}</h4>
                   </div>
                   <span className="text-xs px-2 py-1 rounded-full bg-secondary">
-                    Priority: {process.priority}
+                    Priority: {process.priority || 'Normal'}
                   </span>
                 </div>
                 
                 <div className="space-y-2">
                   <div>
-                    <Label className="text-xs">CPU Usage: {Math.round(process.cpuUsage)}%</Label>
+                    <Label className="text-xs">CPU Usage: {Math.round(process.cpuUsage || 0)}%</Label>
                     <div className="h-1.5 w-full bg-secondary rounded-full overflow-hidden">
                       <div 
                         className="h-full bg-primary rounded-full" 
-                        style={{ width: `${process.cpuUsage}%` }}
+                        style={{ width: `${process.cpuUsage || 0}%` }}
                       ></div>
                     </div>
                   </div>
                   
                   <div>
-                    <Label className="text-xs">Memory: {Math.round(process.memoryUsage)} MB</Label>
+                    <Label className="text-xs">Memory: {Math.round(process.memoryUsage || 0)} MB</Label>
                     <div className="h-1.5 w-full bg-secondary rounded-full overflow-hidden">
                       <div 
                         className="h-full bg-blue-500 rounded-full" 
-                        style={{ width: `${Math.min(100, process.memoryUsage / 5)}%` }}
+                        style={{ width: `${Math.min(100, (process.memoryUsage || 0) / 5)}%` }}
                       ></div>
                     </div>
                   </div>

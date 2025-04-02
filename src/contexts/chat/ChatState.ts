@@ -10,7 +10,12 @@ export const useChatState = () => {
     userPreferences: {
       detailLevel: 'basic',
       showExamples: true
-    }
+    },
+    messageCount: 0,
+    topicHistory: [],
+    mentionedEntities: {},
+    failedIntentCount: 0,
+    lastUserSentiment: 'neutral'
   });
 
   return {
