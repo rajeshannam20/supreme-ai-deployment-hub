@@ -57,6 +57,9 @@ export const useAgentOperations = (
     }
   }, [setAgents, setAgentsByType, setLoading]);
   
+  // Alias for fetchAgents to match the name used in AgentManager.tsx
+  const refreshAgents = fetchAgents;
+  
   // Fetch agents by type
   const fetchAgentsByType = useCallback(async (type: AgentType) => {
     setLoading(true);
@@ -132,6 +135,7 @@ export const useAgentOperations = (
 
   return {
     fetchAgents,
+    refreshAgents,
     fetchAgentsByType,
     generateAgent,
     runAgent,
