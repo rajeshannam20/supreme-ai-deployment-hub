@@ -3,7 +3,7 @@ import axios from 'axios';
 import { Task, Agent, AgentResponse, AgentsListResponse, AgentRunResponse } from '@/types/agent';
 
 // Set base URL for API endpoints
-const API_BASE_URL = 'http://localhost:8000'; // Update this with your actual API URL
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 // Configure axios instance
 const api = axios.create({
