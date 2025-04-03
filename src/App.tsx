@@ -7,6 +7,7 @@ import Index from "./pages/Index";
 import DeploymentDashboard from "./pages/DeploymentDashboard";
 import APIManagement from "./pages/APIManagement";
 import Documentation from "./pages/Documentation";
+import DevonnDashboard from "./pages/DevonnDashboard";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
 import NotFound from "./pages/NotFound";
@@ -34,6 +35,7 @@ function App() {
                   <Route path="/api" element={<APIManagement />} />
                   <Route path="/documentation" element={<Documentation />} />
                   <Route path="/agents" element={<AgentDashboard />} />
+                  <Route path="/devonn" element={<DevonnDashboard />} />
                   <Route path="/about" element={<About />} />
                   <Route path="/contact" element={<Contact />} />
                   <Route path="/terms" element={<Terms />} />
