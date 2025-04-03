@@ -1,24 +1,27 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
 import { Task, Agent, AgentResponse } from "../types/agent";
-import { AgentService } from "../services/agentService";
+import { agentApi } from "../api/agentApi";
 
 export const useAgents = () => {
+  // State management
   const [agents, setAgents] = useState<Agent[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [generating, setGenerating] = useState<boolean>(false);
   const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
   const [lastResponse, setLastResponse] = useState<string | null>(null);
 
+  // Fetch agents on component mount
   useEffect(() => {
     fetchAgents();
   }, []);
 
-  const fetchAgents = async () => {
+  // Fetch all agents
+  const fetchAgents = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await AgentService.listAgents();
+      const response = await agentApi.listAgents();
       setAgents(response.agents);
     } catch (error) {
       console.error("Failed to fetch agents:", error);
@@ -26,13 +29,14 @@ export const useAgents = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const generateAgent = async (task: Task) => {
+  // Generate or use an existing agent
+  const generateAgent = useCallback(async (task: Task): Promise<AgentResponse> => {
     setGenerating(true);
     setLastResponse(null);
     try {
-      const response = await AgentService.generateAgent(task);
+      const response = await agentApi.generateAgent(task);
       setLastResponse(response.output);
       
       // If agent was newly created, refresh the agents list
@@ -54,13 +58,14 @@ export const useAgents = () => {
     } finally {
       setGenerating(false);
     }
-  };
+  }, [agents, fetchAgents]);
 
-  const runAgent = async (agentId: string, task: Task) => {
+  // Run an existing agent
+  const runAgent = useCallback(async (agentId: string, task: Task): Promise<AgentResponse> => {
     setLoading(true);
     setLastResponse(null);
     try {
-      const response = await AgentService.runAgent(agentId, task);
+      const response = await agentApi.runAgent(agentId, task);
       setLastResponse(response.output);
       return response;
     } catch (error) {
@@ -70,14 +75,17 @@ export const useAgents = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   return {
+    // State
     agents,
     loading,
     generating,
     selectedAgent,
     lastResponse,
+    
+    // Actions
     setSelectedAgent,
     generateAgent,
     runAgent,

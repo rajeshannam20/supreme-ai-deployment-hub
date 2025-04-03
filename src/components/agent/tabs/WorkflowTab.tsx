@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React from "react";
 import { Card, CardHeader, CardContent, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { GitGraph, Terminal, LineChart, Send } from "lucide-react";
 import { toast } from "sonner";
-import { AgentService } from "@/services/agentService";
+import { agentApi } from "@/api/agentApi";
 import yaml from 'js-yaml';
 
 interface WorkflowTabProps {
@@ -28,7 +28,7 @@ const WorkflowTab: React.FC<WorkflowTabProps> = ({
   const handleSubmitDAG = async () => {
     try {
       const parsedDAG = yaml.load(yamlDAG);
-      const response = await AgentService.submitDAG(parsedDAG);
+      const response = await agentApi.submitDAG(parsedDAG);
       setDagResponse(response);
       toast.success("DAG workflow submitted successfully");
     } catch (error: any) {

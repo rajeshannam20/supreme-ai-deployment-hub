@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,7 +9,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sparkles, Loader2, FileUp } from "lucide-react";
 import { Task } from "@/types/agent";
 import { toast } from "sonner";
-import { AgentService } from "@/services/agentService";
+import { agentApi } from "@/api/agentApi";
 
 interface CreateAgentTabProps {
   taskDescription: string;
@@ -79,7 +78,7 @@ const CreateAgentTab: React.FC<CreateAgentTabProps> = ({
     
     try {
       const token = localStorage.getItem("authToken") || "guest-token";
-      await AgentService.uploadTaskFile(file, token);
+      await agentApi.uploadTaskFile(file, token);
       toast.success("File uploaded successfully");
     } catch (error) {
       console.error("Error uploading file:", error);
