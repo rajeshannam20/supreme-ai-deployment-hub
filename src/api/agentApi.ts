@@ -1,5 +1,19 @@
+
 import axios from "axios";
-import { Task, Agent, AgentResponse, AgentsListResponse, AgentRunResponse } from "@/types/agent";
+import { 
+  Task, 
+  Agent, 
+  AgentResponse, 
+  AgentsListResponse, 
+  AgentRunResponse,
+  AgentType,
+  AgentMemory,
+  AgentMemorySearchParams,
+  Tool,
+  Skill,
+  DAGWorkflow,
+  DAGResponse
+} from "@/types/agent";
 
 // Set base URL for API endpoints
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
@@ -35,6 +49,26 @@ export const agentApi = {
     }
   },
   
+  // Get agents by type
+  listAgentsByType: async (type: AgentType): Promise<AgentsListResponse> => {
+    try {
+      const response = await apiClient.get(`/agents/type/${type}`);
+      return response.data;
+    } catch (error) {
+      return handleApiError(error, `Error fetching ${type} agents`);
+    }
+  },
+  
+  // Get agent details
+  getAgentDetails: async (agentId: string): Promise<Agent> => {
+    try {
+      const response = await apiClient.get(`/agents/${agentId}`);
+      return response.data;
+    } catch (error) {
+      return handleApiError(error, `Error fetching agent ${agentId}`);
+    }
+  },
+  
   // Generate a new agent or use existing one
   generateAgent: async (task: Task): Promise<AgentResponse> => {
     try {
@@ -62,12 +96,22 @@ export const agentApi = {
   },
   
   // Submit a DAG workflow
-  submitDAG: async (dag: any): Promise<any> => {
+  submitDAG: async (dag: DAGWorkflow): Promise<DAGResponse> => {
     try {
       const response = await apiClient.post("/dag-builder", dag);
       return response.data;
     } catch (error) {
       return handleApiError(error, "Error submitting DAG");
+    }
+  },
+  
+  // Get workflow status
+  getWorkflowStatus: async (workflowId: string): Promise<DAGResponse> => {
+    try {
+      const response = await apiClient.get(`/workflow/${workflowId}/status`);
+      return response.data;
+    } catch (error) {
+      return handleApiError(error, `Error fetching workflow status for ${workflowId}`);
     }
   },
   
@@ -98,4 +142,74 @@ export const agentApi = {
       return handleApiError(error, "Error fetching button config");
     }
   },
+  
+  // Get available agent tools
+  getAgentTools: async (): Promise<{ tools: Tool[] }> => {
+    try {
+      const response = await apiClient.get("/tools");
+      return response.data;
+    } catch (error) {
+      return handleApiError(error, "Error fetching tools");
+    }
+  },
+  
+  // Get agent-specific tools
+  getAgentSpecificTools: async (agentId: string): Promise<{ tools: Tool[] }> => {
+    try {
+      const response = await apiClient.get(`/agents/${agentId}/tools`);
+      return response.data;
+    } catch (error) {
+      return handleApiError(error, `Error fetching tools for agent ${agentId}`);
+    }
+  },
+  
+  // Save agent memory
+  saveAgentMemory: async (agentId: string, memory: Omit<AgentMemory, 'id'>): Promise<{ memory_id: string }> => {
+    try {
+      const response = await apiClient.post(`/agents/${agentId}/memory`, memory);
+      return response.data;
+    } catch (error) {
+      return handleApiError(error, `Error saving memory for agent ${agentId}`);
+    }
+  },
+  
+  // Retrieve agent memories
+  getAgentMemories: async (agentId: string, params?: AgentMemorySearchParams): Promise<{ memories: AgentMemory[] }> => {
+    try {
+      const response = await apiClient.get(`/agents/${agentId}/memory`, { params });
+      return response.data;
+    } catch (error) {
+      return handleApiError(error, `Error fetching memories for agent ${agentId}`);
+    }
+  },
+  
+  // Search agent memory
+  searchAgentMemory: async (params: AgentMemorySearchParams): Promise<{ memories: AgentMemory[] }> => {
+    try {
+      const response = await apiClient.get('/memory/search', { params });
+      return response.data;
+    } catch (error) {
+      return handleApiError(error, "Error searching agent memory");
+    }
+  },
+  
+  // Extract skills from text
+  extractSkills: async (text: string): Promise<{ skills: Skill[] }> => {
+    try {
+      const response = await apiClient.post('/skills/extract', { text });
+      return response.data;
+    } catch (error) {
+      return handleApiError(error, "Error extracting skills");
+    }
+  },
+  
+  // Create an agent with specific type and capabilities
+  createTypedAgent: async (agent: Omit<Agent, 'id'>): Promise<Agent> => {
+    try {
+      const response = await apiClient.post('/agents/create', agent);
+      return response.data;
+    } catch (error) {
+      return handleApiError(error, "Error creating typed agent");
+    }
+  }
 };
