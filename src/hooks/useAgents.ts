@@ -32,7 +32,7 @@ export const useAgents = () => {
   }, []);
 
   // Generate or use an existing agent
-  const generateAgent = useCallback(async (task: Task): Promise<AgentResponse> => {
+  const generateAgent = useCallback(async (task: Task): Promise<void> => {
     setGenerating(true);
     setLastResponse(null);
     try {
@@ -49,8 +49,6 @@ export const useAgents = () => {
           setSelectedAgent(newAgent);
         }
       }
-      
-      return response;
     } catch (error) {
       console.error("Failed to generate agent:", error);
       toast.error("Failed to generate agent");
@@ -61,13 +59,12 @@ export const useAgents = () => {
   }, [agents, fetchAgents]);
 
   // Run an existing agent
-  const runAgent = useCallback(async (agentId: string, task: Task): Promise<AgentResponse> => {
+  const runAgent = useCallback(async (agentId: string, task: Task): Promise<void> => {
     setLoading(true);
     setLastResponse(null);
     try {
       const response = await agentApi.runAgent(agentId, task);
       setLastResponse(response.output);
-      return response;
     } catch (error) {
       console.error(`Failed to run agent ${agentId}:`, error);
       toast.error("Failed to run agent");

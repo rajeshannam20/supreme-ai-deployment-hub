@@ -47,10 +47,16 @@ export const agentApi = {
   },
   
   // Run an existing agent with a task
-  runAgent: async (agentId: string, task: Task): Promise<AgentRunResponse> => {
+  runAgent: async (agentId: string, task: Task): Promise<AgentResponse> => {
     try {
       const response = await apiClient.post(`/run-agent/${agentId}`, task);
-      return response.data;
+      // Convert AgentRunResponse to AgentResponse format by adding required fields
+      const data: AgentResponse = {
+        ...response.data,
+        agent_id: agentId,
+        existing: true
+      };
+      return data;
     } catch (error) {
       return handleApiError(error, `Error running agent ${agentId}`);
     }
