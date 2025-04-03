@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect } from "react";
-import { useAgents } from "@/hooks/useAgents";
+import { useAgents } from "@/hooks/agents";
 import { Task, AgentResponse } from "@/types/agent";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RefreshCw } from "lucide-react";
