@@ -1,65 +1,48 @@
 
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { ThemeProvider } from "next-themes";
-import { TooltipProvider } from "@radix-ui/react-tooltip";
-import { Outlet, useLocation } from "react-router-dom";
-import { Toaster } from "sonner";
-
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import "./App.css";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
-import { DeploymentProvider } from "./contexts/DeploymentContext";
+import Index from "./pages/Index";
+import DeploymentDashboard from "./pages/DeploymentDashboard";
+import APIManagement from "./pages/APIManagement";
+import Documentation from "./pages/Documentation";
+import About from "./pages/About";
+import Contact from "./pages/Contact";
+import NotFound from "./pages/NotFound";
+import Terms from "./pages/Terms";
+import Privacy from "./pages/Privacy";
+import AgentDashboard from "./pages/AgentDashboard";
+import { Toaster } from "./components/ui/sonner";
 import { ChatProvider } from "./contexts/ChatContext";
-import { APIProvider } from "./contexts/APIContext";
-import ChatInterface from "./components/ChatInterface";
-import { MatrixRain } from "./components/ui/matrix-rain";
-import "./App.css";
+import { ThemeProvider } from 'next-themes';
 
-// Create a client
-const queryClient = new QueryClient();
-
-const App = () => {
-  const location = useLocation();
-  const isHome = location.pathname === '/';
-  
+function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <ThemeProvider defaultTheme="dark" enableSystem>
-        <TooltipProvider>
-          <DeploymentProvider>
-            <APIProvider>
-              <ChatProvider>
-                {/* Matrix Rain Background - present on all pages */}
-                <MatrixRain speed={0.8} density={0.4} opacity={0.2} />
-                
-                {/* Semi-transparent overlay for better readability */}
-                <div className="fixed inset-0 bg-black/80 -z-10"></div>
-                
-                <Toaster 
-                  theme="dark"
-                  toastOptions={{
-                    style: { 
-                      background: 'rgba(0, 0, 0, 0.8)',
-                      border: '1px solid rgba(0, 255, 65, 0.2)',
-                      color: 'white'
-                    }
-                  }}
-                />
-                <div className="min-h-screen flex flex-col bg-black text-white">
-                  <Navbar transparent={isHome} />
-                  <main className="flex-grow">
-                    <Outlet />
-                  </main>
-                  {/* Only show footer on non-home pages as home already has one */}
-                  {!isHome && <Footer />}
-                  <ChatInterface />
-                </div>
-              </ChatProvider>
-            </APIProvider>
-          </DeploymentProvider>
-        </TooltipProvider>
-      </ThemeProvider>
-    </QueryClientProvider>
+    <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+      <ChatProvider>
+        <Router>
+          <Navbar />
+          <main className="min-h-screen">
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/deployment" element={<DeploymentDashboard />} />
+              <Route path="/api" element={<APIManagement />} />
+              <Route path="/documentation" element={<Documentation />} />
+              <Route path="/agents" element={<AgentDashboard />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/contact" element={<Contact />} />
+              <Route path="/terms" element={<Terms />} />
+              <Route path="/privacy" element={<Privacy />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </main>
+          <Footer />
+        </Router>
+        <Toaster />
+      </ChatProvider>
+    </ThemeProvider>
   );
-};
+}
 
 export default App;
