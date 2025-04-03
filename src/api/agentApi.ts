@@ -1,4 +1,3 @@
-
 import axios from "axios";
 import { Task, Agent, AgentResponse, AgentsListResponse, AgentRunResponse } from "@/types/agent";
 
@@ -58,7 +57,7 @@ export const agentApi = {
       };
       return data;
     } catch (error) {
-      return handleApiError(error, "Error running agent ${agentId}");
+      return handleApiError(error, `Error running agent ${agentId}`);
     }
   },
   
