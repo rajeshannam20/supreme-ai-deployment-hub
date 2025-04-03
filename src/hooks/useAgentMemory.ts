@@ -1,8 +1,8 @@
 
 import { useState, useCallback } from 'react';
 import { AgentMemory, AgentMemorySearchParams } from '@/types/agent';
-import { agentApi } from '@/api/agentApi';
 import { toast } from 'sonner';
+import { AgentMemoryService } from '@/services/agent/memoryService';
 
 export const useAgentMemory = (agentId?: string) => {
   const [memories, setMemories] = useState<AgentMemory[]>([]);
@@ -19,12 +19,12 @@ export const useAgentMemory = (agentId?: string) => {
     
     setLoading(true);
     try {
-      const response = await agentApi.getAgentMemories(agentId, { 
+      const memories = await AgentMemoryService.getAgentMemories(agentId, { 
         ...params, 
         agent_id: agentId 
       });
-      setMemories(response.memories);
-      return response.memories;
+      setMemories(memories);
+      return memories;
     } catch (error) {
       console.error('Error fetching agent memories:', error);
       toast.error('Failed to fetch memories');
@@ -51,7 +51,7 @@ export const useAgentMemory = (agentId?: string) => {
         task_id: taskId
       };
       
-      const response = await agentApi.saveAgentMemory(agentId, memory);
+      const response = await AgentMemoryService.saveAgentMemory(agentId, memory);
       
       // Refresh memories list
       await fetchMemories();
@@ -76,9 +76,9 @@ export const useAgentMemory = (agentId?: string) => {
         agent_id: agentId
       };
       
-      const response = await agentApi.searchAgentMemory(params);
-      setSearchResults(response.memories);
-      return response.memories;
+      const memories = await AgentMemoryService.searchAgentMemory(params);
+      setSearchResults(memories);
+      return memories;
     } catch (error) {
       console.error('Error searching memories:', error);
       toast.error('Failed to search memories');

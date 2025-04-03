@@ -7,7 +7,7 @@ import {
   AgentResponse, 
   AgentType
 } from "@/types/agent";
-import { agentApi } from "@/api/agentApi";
+import { AgentCoreService } from "@/services/agent/coreService";
 
 /**
  * Hook with agent operations (fetch, create, run)
@@ -35,7 +35,7 @@ export const useAgentOperations = (
   const fetchAgents = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await agentApi.listAgents();
+      const response = await AgentCoreService.listAgents();
       setAgents(response.agents);
       
       // Organize agents by type
@@ -64,7 +64,7 @@ export const useAgentOperations = (
   const fetchAgentsByType = useCallback(async (type: AgentType) => {
     setLoading(true);
     try {
-      const response = await agentApi.listAgentsByType(type);
+      const response = await AgentCoreService.listAgentsByType(type);
       return response.agents;
     } catch (error) {
       console.error(`Failed to fetch ${type} agents:`, error);
@@ -80,7 +80,7 @@ export const useAgentOperations = (
     setGenerating(true);
     setLastResponse(null);
     try {
-      const response = await agentApi.generateAgent(task);
+      const response = await AgentCoreService.generateAgent(task);
       setLastResponse(response.output);
       
       // Refresh the agents list
@@ -101,7 +101,7 @@ export const useAgentOperations = (
     setLoading(true);
     setLastResponse(null);
     try {
-      const response = await agentApi.runAgent(agentId, task);
+      const response = await AgentCoreService.runAgent(agentId, task);
       setLastResponse(response.output);
       return response;
     } catch (error) {
@@ -117,7 +117,7 @@ export const useAgentOperations = (
   const createTypedAgent = useCallback(async (agent: Omit<Agent, 'id'>) => {
     setLoading(true);
     try {
-      const createdAgent = await agentApi.createTypedAgent(agent);
+      const createdAgent = await AgentCoreService.createTypedAgent(agent);
       
       // Refresh agent list
       await fetchAgents();

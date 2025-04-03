@@ -1,8 +1,8 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { Tool } from '@/types/agent';
-import { agentApi } from '@/api/agentApi';
 import { toast } from 'sonner';
+import { AgentToolsService } from '@/services/agent/toolsService';
 
 export const useAgentTools = (agentId?: string) => {
   const [availableTools, setAvailableTools] = useState<Tool[]>([]);
@@ -28,7 +28,7 @@ export const useAgentTools = (agentId?: string) => {
   const fetchAvailableTools = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await agentApi.getAgentTools();
+      const response = await AgentToolsService.getAgentTools();
       setAvailableTools(response.tools);
       return response.tools;
     } catch (error) {
@@ -46,7 +46,7 @@ export const useAgentTools = (agentId?: string) => {
     
     setAgentToolsLoading(true);
     try {
-      const response = await agentApi.getAgentSpecificTools(agentId);
+      const response = await AgentToolsService.getAgentSpecificTools(agentId);
       setAgentTools(response.tools);
       return response.tools;
     } catch (error) {

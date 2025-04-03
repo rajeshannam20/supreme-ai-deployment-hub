@@ -1,7 +1,7 @@
 
 import { useCallback } from "react";
 import { AgentMemory, AgentMemorySearchParams } from "@/types/agent";
-import { agentApi } from "@/api/agentApi";
+import { AgentMemoryService } from "@/services/agent/memoryService";
 
 /**
  * Hook for agent memory operations
@@ -18,9 +18,9 @@ export const useAgentMemory = (
   const fetchAgentMemories = useCallback(async (agentId: string) => {
     setMemoryLoading(true);
     try {
-      const response = await agentApi.getAgentMemories(agentId);
-      setAgentMemories(response.memories);
-      return response.memories;
+      const memories = await AgentMemoryService.getAgentMemories(agentId);
+      setAgentMemories(memories);
+      return memories;
     } catch (error) {
       console.error(`Failed to fetch memories for agent ${agentId}:`, error);
       return [];
@@ -33,8 +33,8 @@ export const useAgentMemory = (
   const searchAgentMemory = useCallback(async (query: string, agentId?: string) => {
     setMemoryLoading(true);
     try {
-      const response = await agentApi.searchAgentMemory({ query, agent_id: agentId });
-      return response.memories;
+      const memories = await AgentMemoryService.searchAgentMemory({ query, agent_id: agentId });
+      return memories;
     } catch (error) {
       console.error("Failed to search agent memory:", error);
       return [];
