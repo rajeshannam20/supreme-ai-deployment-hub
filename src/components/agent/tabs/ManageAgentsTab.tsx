@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Loader2, Send, List } from "lucide-react";
-import { Task, Agent } from "@/types/agent";
+import { Task, Agent, AgentResponse } from "@/types/agent";
 
 interface ManageAgentsTabProps {
   agents: Agent[];
@@ -20,7 +20,7 @@ interface ManageAgentsTabProps {
   setContext: (value: string) => void;
   includeContext: boolean;
   lastResponse: string | null;
-  runAgent: (agentId: string, task: Task) => Promise<void>;
+  runAgent: (agentId: string, task: Task) => Promise<AgentResponse>;
 }
 
 const ManageAgentsTab: React.FC<ManageAgentsTabProps> = ({

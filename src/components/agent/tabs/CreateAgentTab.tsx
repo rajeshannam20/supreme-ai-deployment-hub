@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sparkles, Loader2, FileUp } from "lucide-react";
-import { Task } from "@/types/agent";
+import { Task, AgentResponse } from "@/types/agent";
 import { toast } from "sonner";
 import { agentApi } from "@/api/agentApi";
 
@@ -24,7 +25,7 @@ interface CreateAgentTabProps {
   setFile: (file: File | null) => void;
   lastResponse: string | null;
   generating: boolean;
-  generateAgent: (task: Task) => Promise<void>;
+  generateAgent: (task: Task) => Promise<AgentResponse>;
   setActiveTab: (tab: string) => void;
 }
 

@@ -1,7 +1,7 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import { useAgents } from "@/hooks/useAgents";
-import { Task } from "@/types/agent";
+import { Task, AgentResponse } from "@/types/agent";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -105,7 +105,14 @@ steps:
               setFile={setFile}
               lastResponse={lastResponse}
               generating={generating}
-              generateAgent={generateAgent}
+              generateAgent={async (task: Task) => {
+                try {
+                  return await generateAgent(task);
+                } catch (error) {
+                  console.error("Error generating agent:", error);
+                  throw error;
+                }
+              }}
               setActiveTab={setActiveTab}
             />
           </TabsContent>
@@ -122,7 +129,14 @@ steps:
               setContext={setContext}
               includeContext={includeContext}
               lastResponse={lastResponse}
-              runAgent={runAgent}
+              runAgent={async (agentId: string, task: Task) => {
+                try {
+                  return await runAgent(agentId, task);
+                } catch (error) {
+                  console.error("Error running agent:", error);
+                  throw error;
+                }
+              }}
             />
           </TabsContent>
 
