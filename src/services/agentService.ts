@@ -1,58 +1,90 @@
 
-import { Task, Agent, AgentResponse, AgentsListResponse, AgentRunResponse, ButtonConfigResponse } from "../types/agent";
+import axios from 'axios';
+import { Task, Agent, AgentResponse, AgentsListResponse, AgentRunResponse } from '@/types/agent';
 
-const API_BASE_URL = "http://localhost:8000"; // Change this to your FastAPI server URL
+// Set base URL for API endpoints
+const API_BASE_URL = 'http://localhost:8000'; // Update this with your actual API URL
+
+// Configure axios instance
+const api = axios.create({
+  baseURL: API_BASE_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
 
 export const AgentService = {
-  generateAgent: async (task: Task): Promise<AgentResponse> => {
-    const response = await fetch(`${API_BASE_URL}/generate-agent`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(task),
-    });
-
-    if (!response.ok) {
-      throw new Error(`Error generating agent: ${response.statusText}`);
-    }
-
-    return await response.json();
-  },
-
+  // Get list of all agents
   listAgents: async (): Promise<AgentsListResponse> => {
-    const response = await fetch(`${API_BASE_URL}/agents`);
-
-    if (!response.ok) {
-      throw new Error(`Error listing agents: ${response.statusText}`);
+    try {
+      const response = await api.get('/agents');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching agents:', error);
+      throw error;
     }
-
-    return await response.json();
   },
-
+  
+  // Generate a new agent or use existing one
+  generateAgent: async (task: Task): Promise<AgentResponse> => {
+    try {
+      const response = await api.post('/generate-agent', task);
+      return response.data;
+    } catch (error) {
+      console.error('Error generating agent:', error);
+      throw error;
+    }
+  },
+  
+  // Run an existing agent with a task
   runAgent: async (agentId: string, task: Task): Promise<AgentRunResponse> => {
-    const response = await fetch(`${API_BASE_URL}/run-agent/${agentId}`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(task),
-    });
-
-    if (!response.ok) {
-      throw new Error(`Error running agent: ${response.statusText}`);
+    try {
+      const response = await api.post(`/run-agent/${agentId}`, task);
+      return response.data;
+    } catch (error) {
+      console.error(`Error running agent ${agentId}:`, error);
+      throw error;
     }
-
-    return await response.json();
   },
-
-  getButtonConfig: async (): Promise<ButtonConfigResponse> => {
-    const response = await fetch(`${API_BASE_URL}/ui/button`);
-
-    if (!response.ok) {
-      throw new Error(`Error getting button config: ${response.statusText}`);
+  
+  // Get UI button configuration
+  getButtonConfig: async () => {
+    try {
+      const response = await api.get('/ui/button');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching button config:', error);
+      throw error;
     }
-
-    return await response.json();
   },
+  
+  // Submit a DAG workflow
+  submitDAG: async (dag: any) => {
+    try {
+      const response = await api.post('/dag-builder', dag);
+      return response.data;
+    } catch (error) {
+      console.error('Error submitting DAG:', error);
+      throw error;
+    }
+  },
+  
+  // Upload a task file
+  uploadTaskFile: async (file: File, token: string) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    try {
+      const response = await api.post('/upload-task-file', formData, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error uploading task file:', error);
+      throw error;
+    }
+  }
 };
