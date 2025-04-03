@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
 import { 
@@ -95,7 +94,7 @@ export const useAgents = () => {
   }, []);
 
   // Generate or use an existing agent
-  const generateAgent = useCallback(async (task: Task): Promise<void> => {
+  const generateAgent = useCallback(async (task: Task) => {
     setGenerating(true);
     setLastResponse(null);
     try {
@@ -129,7 +128,7 @@ export const useAgents = () => {
   }, [agents, fetchAgents, selectedAgent]);
 
   // Run an existing agent
-  const runAgent = useCallback(async (agentId: string, task: Task): Promise<void> => {
+  const runAgent = useCallback(async (agentId: string, task: Task) => {
     setLoading(true);
     setLastResponse(null);
     try {

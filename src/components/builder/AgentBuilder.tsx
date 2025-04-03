@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -11,7 +10,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
 import { agentApi } from '@/api/agentApi';
 import { AgentType, Tool } from '@/types/agent';
-import { Loader2, Plus, Minus, Brain, Tool as ToolIcon } from 'lucide-react';
+import { Loader2, Plus, Minus, Brain, Wrench } from 'lucide-react';
 
 const agentTypes: { value: AgentType; label: string; description: string }[] = [
   { 
@@ -68,7 +67,6 @@ const AgentBuilder = () => {
   const [selectedTools, setSelectedTools] = useState<string[]>([]);
   const [isLoadingTools, setIsLoadingTools] = useState(false);
   
-  // Fetch available tools on component mount
   useEffect(() => {
     const fetchTools = async () => {
       setIsLoadingTools(true);
@@ -126,7 +124,6 @@ const AgentBuilder = () => {
       const result = await agentApi.createTypedAgent(agent);
       toast.success(`Agent "${result.name}" created successfully`);
       
-      // Reset form
       setAgentName('');
       setAgentDesc('');
       setAgentType('custom');
@@ -263,7 +260,7 @@ const AgentBuilder = () => {
                       </Label>
                       <p className="text-xs text-muted-foreground">{tool.description}</p>
                     </div>
-                    <ToolIcon className="h-4 w-4 text-primary" />
+                    <Wrench className="h-4 w-4 text-primary" />
                   </div>
                 ))}
                 {availableTools.length === 0 && (
