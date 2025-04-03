@@ -8,9 +8,11 @@ const AgentDashboard: React.FC = () => {
   return (
     <div>
       <SectionHeading
-        title="AI Agent Dashboard"
-        description="Create, manage, and run AI agents for your tasks"
-      />
+        tag="AI Agents"
+        subheading="Create, manage, and run AI agents for your tasks"
+      >
+        AI Agent Dashboard
+      </SectionHeading>
       <Container>
         <AgentManager />
       </Container>
