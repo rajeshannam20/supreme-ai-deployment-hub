@@ -2,7 +2,7 @@
 {
   "manifest_version": 3,
   "name": "Devonn.AI Assistant",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Access Devonn.AI agents and tools directly from your browser",
   "action": {
     "default_popup": "popup.html",
@@ -19,10 +19,11 @@
     "alarms"
   ],
   "host_permissions": [
-    "http://localhost:8000/*"
+    "http://*/*",
+    "https://*/*"
   ],
   "background": {
-    "service_worker": "background.js",
+    "service_worker": "src/extension/background.ts",
     "type": "module"
   },
   "options_ui": {
@@ -33,5 +34,8 @@
     "16": "icons/icon16.png",
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"
-  }
+  },
+  "author": "Devonn.AI Team",
+  "homepage_url": "https://devonn.ai/",
+  "offline_enabled": false
 }

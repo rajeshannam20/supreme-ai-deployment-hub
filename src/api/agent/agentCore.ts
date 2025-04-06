@@ -1,5 +1,4 @@
 
-import axios from "axios";
 import { 
   Task, 
   Agent, 
@@ -7,38 +6,44 @@ import {
   AgentsListResponse, 
   AgentType
 } from "@/types/agent";
-import { apiClient, handleApiError } from "../config";
+import { apiClient, handleApiError, withRetry } from "../core/apiClient";
 
 // Agent CRUD operations
 export const agentCoreApi = {
   // Get list of all agents
   listAgents: async (): Promise<AgentsListResponse> => {
-    try {
-      const response = await apiClient.get("/agents");
-      return response.data;
-    } catch (error) {
-      return handleApiError(error, "Error fetching agents");
-    }
+    return withRetry(async () => {
+      try {
+        const response = await apiClient.get("/agents");
+        return response.data;
+      } catch (error) {
+        return handleApiError(error, "Error fetching agents");
+      }
+    });
   },
   
   // Get agents by type
   listAgentsByType: async (type: AgentType): Promise<AgentsListResponse> => {
-    try {
-      const response = await apiClient.get(`/agents/type/${type}`);
-      return response.data;
-    } catch (error) {
-      return handleApiError(error, `Error fetching ${type} agents`);
-    }
+    return withRetry(async () => {
+      try {
+        const response = await apiClient.get(`/agents/type/${type}`);
+        return response.data;
+      } catch (error) {
+        return handleApiError(error, `Error fetching ${type} agents`);
+      }
+    });
   },
   
   // Get agent details
   getAgentDetails: async (agentId: string): Promise<Agent> => {
-    try {
-      const response = await apiClient.get(`/agents/${agentId}`);
-      return response.data;
-    } catch (error) {
-      return handleApiError(error, `Error fetching agent ${agentId}`);
-    }
+    return withRetry(async () => {
+      try {
+        const response = await apiClient.get(`/agents/${agentId}`);
+        return response.data;
+      } catch (error) {
+        return handleApiError(error, `Error fetching agent ${agentId}`);
+      }
+    });
   },
   
   // Generate a new agent or use existing one
@@ -69,12 +74,14 @@ export const agentCoreApi = {
   
   // Get UI button configuration
   getButtonConfig: async (): Promise<any> => {
-    try {
-      const response = await apiClient.get("/ui/button");
-      return response.data;
-    } catch (error) {
-      return handleApiError(error, "Error fetching button config");
-    }
+    return withRetry(async () => {
+      try {
+        const response = await apiClient.get("/ui/button");
+        return response.data;
+      } catch (error) {
+        return handleApiError(error, "Error fetching button config");
+      }
+    });
   },
   
   // Create an agent with specific type and capabilities
