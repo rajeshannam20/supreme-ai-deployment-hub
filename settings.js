@@ -27,19 +27,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Load settings from Chrome storage
 async function loadSettings() {
-  const data = await chrome.storage.local.get([
-    'apiUrl',
-    'userId',
-    'notifications'
-  ]);
-  
-  // Populate form with saved settings or defaults
-  apiUrlInput.value = data.apiUrl || defaultSettings.apiUrl;
-  userIdInput.value = data.userId || defaultSettings.userId;
-  
-  const notifications = data.notifications || defaultSettings.notifications;
-  notifyTaskComplete.checked = notifications.taskComplete !== false;
-  notifyErrors.checked = notifications.errors !== false;
+  try {
+    const data = await chrome.storage.local.get([
+      'apiUrl',
+      'userId',
+      'notifications'
+    ]);
+    
+    // Populate form with saved settings or defaults
+    apiUrlInput.value = data.apiUrl || defaultSettings.apiUrl;
+    userIdInput.value = data.userId || defaultSettings.userId;
+    
+    const notifications = data.notifications || defaultSettings.notifications;
+    notifyTaskComplete.checked = notifications.taskComplete !== false;
+    notifyErrors.checked = notifications.errors !== false;
+  } catch (error) {
+    console.error('Error loading settings:', error);
+    showErrorMessage('Failed to load settings. Please try again.');
+  }
 }
 
 // Save settings to Chrome storage
@@ -53,7 +58,19 @@ function saveSettings() {
     }
   };
   
+  // Validate URL format
+  if (!isValidUrl(settings.apiUrl)) {
+    showErrorMessage('Please enter a valid URL for the API endpoint.');
+    return;
+  }
+  
   chrome.storage.local.set(settings, () => {
+    if (chrome.runtime.lastError) {
+      console.error('Error saving settings:', chrome.runtime.lastError);
+      showErrorMessage('Failed to save settings: ' + chrome.runtime.lastError.message);
+      return;
+    }
+    
     // Show saved message
     const successMessage = document.createElement('div');
     successMessage.textContent = 'Settings saved successfully!';
@@ -69,6 +86,12 @@ function saveSettings() {
     setTimeout(() => {
       successMessage.remove();
     }, 3000);
+    
+    // Reset connection status after URL change
+    if (settings.apiUrl !== apiUrlInput.dataset.lastTestedUrl) {
+      connectionStatus.textContent = '';
+      connectionStatus.className = '';
+    }
   });
 }
 
@@ -80,21 +103,42 @@ async function testConnection() {
     return;
   }
   
+  // Validate URL format
+  if (!isValidUrl(apiUrl)) {
+    showConnectionStatus('Invalid URL format', false);
+    return;
+  }
+  
   connectionStatus.textContent = 'Testing connection...';
   connectionStatus.className = '';
+  testConnectionButton.disabled = true;
   
   try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+    
     const response = await fetch(`${apiUrl}/health-check`, {
-      method: 'GET'
+      method: 'GET',
+      signal: controller.signal
     });
+    
+    clearTimeout(timeoutId);
     
     if (response.ok) {
       showConnectionStatus('Connection successful!', true);
+      // Store the last successfully tested URL
+      apiUrlInput.dataset.lastTestedUrl = apiUrl;
     } else {
-      showConnectionStatus('Connection failed: Server error', false);
+      showConnectionStatus(`Connection failed: Server returned ${response.status}`, false);
     }
   } catch (error) {
-    showConnectionStatus(`Connection failed: ${error.message}`, false);
+    if (error.name === 'AbortError') {
+      showConnectionStatus('Connection timed out after 5 seconds', false);
+    } else {
+      showConnectionStatus(`Connection failed: ${error.message}`, false);
+    }
+  } finally {
+    testConnectionButton.disabled = false;
   }
 }
 
@@ -110,6 +154,24 @@ function showConnectionStatus(message, isSuccess) {
   }
 }
 
+// Show error message
+function showErrorMessage(message) {
+  const errorMessage = document.createElement('div');
+  errorMessage.textContent = message;
+  errorMessage.style.backgroundColor = '#fee2e2';
+  errorMessage.style.color = '#b91c1c';
+  errorMessage.style.padding = '10px';
+  errorMessage.style.borderRadius = '4px';
+  errorMessage.style.marginTop = '16px';
+  
+  document.querySelector('.settings-form').appendChild(errorMessage);
+  
+  // Remove message after 5 seconds
+  setTimeout(() => {
+    errorMessage.remove();
+  }, 5000);
+}
+
 // Reset settings to defaults
 function resetSettings() {
   if (confirm('Are you sure you want to reset all settings to default?')) {
@@ -118,8 +180,22 @@ function resetSettings() {
     notifyTaskComplete.checked = defaultSettings.notifications.taskComplete;
     notifyErrors.checked = defaultSettings.notifications.errors;
     
+    // Clear connection status
+    connectionStatus.textContent = '';
+    connectionStatus.className = '';
+    
     // Save default settings
     saveSettings();
+  }
+}
+
+// Validate URL format
+function isValidUrl(string) {
+  try {
+    new URL(string);
+    return true;
+  } catch (_) {
+    return false;
   }
 }
 
@@ -128,4 +204,11 @@ function setupEventListeners() {
   testConnectionButton.addEventListener('click', testConnection);
   saveButton.addEventListener('click', saveSettings);
   resetButton.addEventListener('click', resetSettings);
+  
+  // Add enter key support for API URL field
+  apiUrlInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+      testConnection();
+    }
+  });
 }

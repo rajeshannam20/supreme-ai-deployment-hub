@@ -1,380 +1,349 @@
 
-// Global variables
-let activeTab = 'agents';
-let selectedAgentId = null;
-let apiUrl = 'http://localhost:8000'; // Default API URL
-let agents = [];
-let memories = [];
-let tools = [];
-
 // DOM Elements
-const agentsList = document.getElementById('agents-list');
-const memoriesList = document.getElementById('memories-list');
-const toolsList = document.getElementById('tools-list');
-const taskInput = document.getElementById('task-description');
-const runTaskBtn = document.getElementById('run-task-btn');
-const searchInput = document.getElementById('memory-search');
-const searchBtn = document.getElementById('search-btn');
-const settingsBtn = document.getElementById('settings-btn');
-const connectionStatus = document.getElementById('connection-status');
-const tabButtons = document.querySelectorAll('.tab');
-const tabContents = document.querySelectorAll('.tab-content');
-
-// Initialize the extension
-document.addEventListener('DOMContentLoaded', async () => {
-  await loadSettings();
-  setupEventListeners();
-  switchTab('agents');
-  checkApiConnection();
-});
-
-// Load settings from Chrome storage
-async function loadSettings() {
-  const data = await chrome.storage.local.get(['apiUrl']);
-  if (data.apiUrl) {
-    apiUrl = data.apiUrl;
-  }
-}
-
-// Save settings to Chrome storage
-function saveSettings(settings) {
-  chrome.storage.local.set(settings);
-}
-
-// Check API connection
-async function checkApiConnection() {
-  try {
-    const response = await fetch(`${apiUrl}/health-check`, {
-      method: 'GET'
-    });
-    
-    if (response.ok) {
-      connectionStatus.textContent = 'Connected';
-      connectionStatus.classList.add('connected');
-      loadAgents();
-      loadTools();
-    } else {
-      throw new Error('API returned error');
-    }
-  } catch (error) {
-    connectionStatus.textContent = 'Connection failed';
-    connectionStatus.classList.add('error');
-    console.error('API connection error:', error);
-  }
-}
-
-// Setup event listeners
-function setupEventListeners() {
+document.addEventListener('DOMContentLoaded', function() {
   // Tab switching
-  tabButtons.forEach(button => {
-    button.addEventListener('click', () => {
-      switchTab(button.getAttribute('data-tab'));
+  const tabs = document.querySelectorAll('.tab');
+  const tabContents = document.querySelectorAll('.tab-content');
+  const agentsList = document.getElementById('agents-list');
+  const toolsList = document.getElementById('tools-list');
+  const memoriesList = document.getElementById('memories-list');
+  const taskDescription = document.getElementById('task-description');
+  const runTaskBtn = document.getElementById('run-task-btn');
+  const settingsBtn = document.getElementById('settings-btn');
+  const connectionStatus = document.getElementById('connection-status');
+  const agentsLoading = document.getElementById('agents-loading');
+  const toolsLoading = document.getElementById('tools-loading');
+  const memorySearch = document.getElementById('memory-search');
+  const searchBtn = document.getElementById('search-btn');
+  
+  let selectedAgentId = null;
+  
+  // Initialize
+  checkConnectionStatus();
+  loadAgents();
+  loadTools();
+  
+  // Tab switching functionality
+  tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      // Remove active class from all tabs and contents
+      tabs.forEach(t => t.classList.remove('active'));
+      tabContents.forEach(c => c.classList.remove('active'));
+      
+      // Add active class to clicked tab
+      tab.classList.add('active');
+      
+      // Show corresponding content
+      const tabId = tab.getAttribute('data-tab');
+      document.getElementById(`${tabId}-tab`).classList.add('active');
+      
+      // Load content based on tab
+      if (tabId === 'memory' && selectedAgentId) {
+        loadMemories(selectedAgentId);
+      }
     });
   });
-
+  
   // Run task button
-  runTaskBtn.addEventListener('click', runTask);
+  runTaskBtn.addEventListener('click', () => {
+    if (!selectedAgentId || !taskDescription.value.trim()) {
+      return;
+    }
+    
+    const task = {
+      agentId: selectedAgentId,
+      task: {
+        task_description: taskDescription.value.trim()
+      }
+    };
+    
+    runTaskBtn.disabled = true;
+    runTaskBtn.textContent = 'Running...';
+    
+    chrome.runtime.sendMessage(
+      { action: 'runTask', agentId: selectedAgentId, task: task.task },
+      response => {
+        runTaskBtn.disabled = false;
+        runTaskBtn.textContent = 'Run Task';
+        
+        if (response && response.success) {
+          showNotification('Task completed', response.result.output);
+        } else {
+          showNotification('Error', response.error || 'Failed to run task');
+        }
+      }
+    );
+  });
+  
+  // Settings button
+  settingsBtn.addEventListener('click', () => {
+    chrome.runtime.openOptionsPage();
+  });
+  
+  // Memory search
+  searchBtn.addEventListener('click', () => {
+    if (!memorySearch.value.trim()) return;
+    
+    searchMemories(memorySearch.value.trim());
+  });
+  
+  memorySearch.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+      searchBtn.click();
+    }
+  });
+  
+  // Load agents from API
+  function loadAgents() {
+    agentsLoading.style.display = 'block';
+    agentsList.innerHTML = '';
+    
+    chrome.storage.local.get(['apiUrl'], async function(result) {
+      const apiUrl = result.apiUrl || 'http://localhost:8000';
+      
+      try {
+        const response = await fetch(`${apiUrl}/agents`);
+        if (!response.ok) throw new Error(`HTTP error ${response.status}`);
+        
+        const data = await response.json();
+        
+        if (data.agents && data.agents.length > 0) {
+          data.agents.forEach(agent => {
+            const agentItem = createAgentItem(agent);
+            agentsList.appendChild(agentItem);
+          });
+          
+          // Enable task button if there are agents
+          runTaskBtn.disabled = false;
+        } else {
+          agentsList.innerHTML = '<p class="text-center text-gray-500">No agents available</p>';
+        }
+      } catch (error) {
+        console.error('Error loading agents:', error);
+        agentsList.innerHTML = `<p class="text-center text-red-500">Failed to load agents: ${error.message}</p>`;
+        updateConnectionStatus(false, `Error: ${error.message}`);
+      } finally {
+        agentsLoading.style.display = 'none';
+      }
+    });
+  }
+  
+  // Load tools from API
+  function loadTools() {
+    toolsLoading.style.display = 'block';
+    toolsList.innerHTML = '';
+    
+    chrome.storage.local.get(['apiUrl'], async function(result) {
+      const apiUrl = result.apiUrl || 'http://localhost:8000';
+      
+      try {
+        const response = await fetch(`${apiUrl}/tools`);
+        if (!response.ok) throw new Error(`HTTP error ${response.status}`);
+        
+        const data = await response.json();
+        
+        if (data.tools && data.tools.length > 0) {
+          data.tools.forEach(tool => {
+            const toolItem = createToolItem(tool);
+            toolsList.appendChild(toolItem);
+          });
+        } else {
+          toolsList.innerHTML = '<p class="text-center text-gray-500">No tools available</p>';
+        }
+      } catch (error) {
+        console.error('Error loading tools:', error);
+        toolsList.innerHTML = `<p class="text-center text-red-500">Failed to load tools: ${error.message}</p>`;
+      } finally {
+        toolsLoading.style.display = 'none';
+      }
+    });
+  }
+  
+  // Load memories for a specific agent
+  function loadMemories(agentId) {
+    memoriesList.innerHTML = '<p class="text-center">Loading memories...</p>';
+    
+    chrome.storage.local.get(['apiUrl'], async function(result) {
+      const apiUrl = result.apiUrl || 'http://localhost:8000';
+      
+      try {
+        const response = await fetch(`${apiUrl}/agents/${agentId}/memory`);
+        if (!response.ok) throw new Error(`HTTP error ${response.status}`);
+        
+        const data = await response.json();
+        
+        if (data.memories && data.memories.length > 0) {
+          memoriesList.innerHTML = '';
+          data.memories.forEach(memory => {
+            const memoryItem = createMemoryItem(memory);
+            memoriesList.appendChild(memoryItem);
+          });
+        } else {
+          memoriesList.innerHTML = '<p class="text-center text-gray-500">No memories found</p>';
+        }
+      } catch (error) {
+        console.error('Error loading memories:', error);
+        memoriesList.innerHTML = `<p class="text-center text-red-500">Failed to load memories: ${error.message}</p>`;
+      }
+    });
+  }
   
   // Search memories
-  searchBtn.addEventListener('click', searchMemories);
-  searchInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') {
-      searchMemories();
-    }
-  });
-
-  // Settings button
-  settingsBtn.addEventListener('click', openSettings);
-}
-
-// Switch between tabs
-function switchTab(tabName) {
-  activeTab = tabName;
-  
-  // Update tab buttons
-  tabButtons.forEach(button => {
-    if (button.getAttribute('data-tab') === tabName) {
-      button.classList.add('active');
-    } else {
-      button.classList.remove('active');
-    }
-  });
-
-  // Update tab content
-  tabContents.forEach(content => {
-    if (content.id === `${tabName}-tab`) {
-      content.classList.add('active');
-    } else {
-      content.classList.remove('active');
-    }
-  });
-
-  // Load content based on selected tab
-  if (tabName === 'agents' && agents.length === 0) {
-    loadAgents();
-  } else if (tabName === 'memory' && selectedAgentId) {
-    loadMemories(selectedAgentId);
-  } else if (tabName === 'tools' && tools.length === 0) {
-    loadTools();
-  }
-}
-
-// Load agents from API
-async function loadAgents() {
-  document.getElementById('agents-loading').style.display = 'block';
-  agentsList.innerHTML = '';
-  
-  try {
-    const response = await fetch(`${apiUrl}/agents/list`);
-    const data = await response.json();
-    agents = data.agents || [];
+  function searchMemories(query) {
+    memoriesList.innerHTML = '<p class="text-center">Searching...</p>';
     
-    renderAgentsList();
-  } catch (error) {
-    console.error('Error loading agents:', error);
-    agentsList.innerHTML = '<p class="error-message">Failed to load agents</p>';
-  } finally {
-    document.getElementById('agents-loading').style.display = 'none';
+    chrome.storage.local.get(['apiUrl'], async function(result) {
+      const apiUrl = result.apiUrl || 'http://localhost:8000';
+      
+      try {
+        const response = await fetch(`${apiUrl}/memory/search?query=${encodeURIComponent(query)}`);
+        if (!response.ok) throw new Error(`HTTP error ${response.status}`);
+        
+        const data = await response.json();
+        
+        if (data.memories && data.memories.length > 0) {
+          memoriesList.innerHTML = '';
+          data.memories.forEach(memory => {
+            const memoryItem = createMemoryItem(memory);
+            memoriesList.appendChild(memoryItem);
+          });
+        } else {
+          memoriesList.innerHTML = '<p class="text-center text-gray-500">No results found</p>';
+        }
+      } catch (error) {
+        console.error('Error searching memories:', error);
+        memoriesList.innerHTML = `<p class="text-center text-red-500">Search failed: ${error.message}</p>`;
+      }
+    });
   }
-}
-
-// Render agents list
-function renderAgentsList() {
-  agentsList.innerHTML = '';
   
-  if (agents.length === 0) {
-    agentsList.innerHTML = '<p>No agents found</p>';
-    return;
-  }
-
-  agents.forEach(agent => {
+  // Create agent list item
+  function createAgentItem(agent) {
     const agentItem = document.createElement('div');
     agentItem.className = 'agent-item';
-    if (agent.id === selectedAgentId) {
-      agentItem.classList.add('selected');
-    }
+    agentItem.dataset.id = agent.id;
     
-    agentItem.innerHTML = `
-      <div class="agent-name">${agent.name}</div>
-      <div class="agent-desc">${agent.desc || 'No description'}</div>
-    `;
+    const agentName = document.createElement('div');
+    agentName.className = 'agent-name';
+    agentName.textContent = agent.name;
+    
+    const agentDesc = document.createElement('div');
+    agentDesc.className = 'agent-desc';
+    agentDesc.textContent = agent.desc || 'No description available';
+    
+    agentItem.appendChild(agentName);
+    agentItem.appendChild(agentDesc);
     
     agentItem.addEventListener('click', () => {
-      selectAgent(agent.id);
+      // Remove selected class from all agents
+      document.querySelectorAll('.agent-item').forEach(item => {
+        item.classList.remove('selected');
+      });
+      
+      // Add selected class to clicked agent
+      agentItem.classList.add('selected');
+      selectedAgentId = agent.id;
+      
+      // Enable run task button
+      runTaskBtn.disabled = false;
     });
     
-    agentsList.appendChild(agentItem);
-  });
-
-  updateTaskButtonState();
-}
-
-// Select an agent
-function selectAgent(agentId) {
-  selectedAgentId = agentId;
-  
-  // Update UI
-  document.querySelectorAll('.agent-item').forEach(item => {
-    item.classList.remove('selected');
-  });
-  
-  document.querySelectorAll('.agent-item').forEach(item => {
-    const name = item.querySelector('.agent-name').textContent;
-    const agent = agents.find(a => a.name === name);
-    if (agent && agent.id === agentId) {
-      item.classList.add('selected');
-    }
-  });
-
-  // Enable run task button
-  updateTaskButtonState();
-  
-  // If on memory tab, load memories for selected agent
-  if (activeTab === 'memory') {
-    loadMemories(agentId);
-  }
-}
-
-// Update task button state
-function updateTaskButtonState() {
-  runTaskBtn.disabled = !selectedAgentId || !taskInput.value.trim();
-}
-
-// Run a task with the selected agent
-async function runTask() {
-  if (!selectedAgentId || !taskInput.value.trim()) {
-    return;
+    return agentItem;
   }
   
-  const task = {
-    user_id: 'extension-user',
-    task_description: taskInput.value.trim(),
-    context: 'Chrome Extension'
-  };
-  
-  runTaskBtn.disabled = true;
-  runTaskBtn.textContent = 'Running...';
-  
-  try {
-    const response = await fetch(`${apiUrl}/agents/run/${selectedAgentId}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(task)
-    });
-    
-    const result = await response.json();
-    
-    // Create a notification with the result
-    chrome.notifications.create({
-      type: 'basic',
-      iconUrl: 'icons/icon48.png',
-      title: 'Task Completed',
-      message: result.output || 'No output returned'
-    });
-    
-    // Clear task input
-    taskInput.value = '';
-  } catch (error) {
-    console.error('Error running task:', error);
-    chrome.notifications.create({
-      type: 'basic',
-      iconUrl: 'icons/icon48.png',
-      title: 'Task Failed',
-      message: 'Failed to run the task. Please check the console for details.'
-    });
-  } finally {
-    runTaskBtn.disabled = false;
-    runTaskBtn.textContent = 'Run Task';
-  }
-}
-
-// Load memories for an agent
-async function loadMemories(agentId) {
-  memoriesList.innerHTML = '<div class="loading-spinner">Loading memories...</div>';
-  
-  try {
-    const response = await fetch(`${apiUrl}/memories/${agentId}`);
-    const data = await response.json();
-    memories = data || [];
-    
-    renderMemoriesList();
-  } catch (error) {
-    console.error('Error loading memories:', error);
-    memoriesList.innerHTML = '<p class="error-message">Failed to load memories</p>';
-  }
-}
-
-// Render memories list
-function renderMemoriesList() {
-  memoriesList.innerHTML = '';
-  
-  if (memories.length === 0) {
-    memoriesList.innerHTML = '<p>No memories found</p>';
-    return;
-  }
-
-  memories.forEach(memory => {
-    const memoryItem = document.createElement('div');
-    memoryItem.className = 'memory-item';
-    
-    const timestamp = new Date(memory.timestamp).toLocaleString();
-    
-    memoryItem.innerHTML = `
-      <div class="memory-content">${memory.content}</div>
-      <div class="memory-meta">
-        <span>${memory.context || 'No context'}</span>
-        <span>${timestamp}</span>
-      </div>
-    `;
-    
-    memoriesList.appendChild(memoryItem);
-  });
-}
-
-// Search memories
-async function searchMemories() {
-  const query = searchInput.value.trim();
-  if (!query) return;
-  
-  memoriesList.innerHTML = '<div class="loading-spinner">Searching memories...</div>';
-  
-  try {
-    const params = new URLSearchParams({
-      query: query,
-      agent_id: selectedAgentId || ''
-    });
-    
-    const response = await fetch(`${apiUrl}/memories/search?${params}`);
-    const data = await response.json();
-    memories = data || [];
-    
-    renderMemoriesList();
-  } catch (error) {
-    console.error('Error searching memories:', error);
-    memoriesList.innerHTML = '<p class="error-message">Failed to search memories</p>';
-  }
-}
-
-// Load tools from API
-async function loadTools() {
-  document.getElementById('tools-loading').style.display = 'block';
-  toolsList.innerHTML = '';
-  
-  try {
-    const response = await fetch(`${apiUrl}/tools`);
-    const data = await response.json();
-    tools = data.tools || [];
-    
-    renderToolsList();
-  } catch (error) {
-    console.error('Error loading tools:', error);
-    toolsList.innerHTML = '<p class="error-message">Failed to load tools</p>';
-  } finally {
-    document.getElementById('tools-loading').style.display = 'none';
-  }
-}
-
-// Render tools list
-function renderToolsList() {
-  toolsList.innerHTML = '';
-  
-  if (tools.length === 0) {
-    toolsList.innerHTML = '<p>No tools found</p>';
-    return;
-  }
-
-  tools.forEach(tool => {
+  // Create tool list item
+  function createToolItem(tool) {
     const toolItem = document.createElement('div');
     toolItem.className = 'tool-item';
     
-    toolItem.innerHTML = `
-      <div class="agent-name">${tool.name}</div>
-      <div class="agent-desc">${tool.description || 'No description'}</div>
-    `;
+    const toolName = document.createElement('div');
+    toolName.className = 'agent-name'; // Reuse the same style
+    toolName.textContent = tool.name;
     
-    toolsList.appendChild(toolItem);
-  });
-}
-
-// Open settings dialog
-function openSettings() {
-  const currentApiUrl = apiUrl;
-  
-  const newApiUrl = prompt('Enter API URL:', currentApiUrl);
-  if (newApiUrl && newApiUrl !== currentApiUrl) {
-    apiUrl = newApiUrl;
-    saveSettings({ apiUrl });
+    const toolDesc = document.createElement('div');
+    toolDesc.className = 'agent-desc'; // Reuse the same style
+    toolDesc.textContent = tool.description || 'No description available';
     
-    // Reset connection status
-    connectionStatus.textContent = 'Not connected';
-    connectionStatus.classList.remove('connected', 'error');
+    toolItem.appendChild(toolName);
+    toolItem.appendChild(toolDesc);
     
-    // Check connection with new URL
-    checkApiConnection();
+    return toolItem;
   }
-}
-
-// Listen for task input changes
-taskInput.addEventListener('input', updateTaskButtonState);
+  
+  // Create memory list item
+  function createMemoryItem(memory) {
+    const memoryItem = document.createElement('div');
+    memoryItem.className = 'memory-item';
+    
+    const memoryContent = document.createElement('div');
+    memoryContent.className = 'memory-content';
+    memoryContent.textContent = memory.content;
+    
+    const memoryMeta = document.createElement('div');
+    memoryMeta.className = 'memory-meta';
+    
+    const memoryContext = document.createElement('span');
+    memoryContext.textContent = memory.context || 'No context';
+    
+    const memoryDate = document.createElement('span');
+    const date = new Date(memory.timestamp);
+    memoryDate.textContent = date.toLocaleString();
+    
+    memoryMeta.appendChild(memoryContext);
+    memoryMeta.appendChild(memoryDate);
+    
+    memoryItem.appendChild(memoryContent);
+    memoryItem.appendChild(memoryMeta);
+    
+    return memoryItem;
+  }
+  
+  // Check connection status
+  function checkConnectionStatus() {
+    chrome.storage.local.get(['apiUrl'], async function(result) {
+      const apiUrl = result.apiUrl || 'http://localhost:8000';
+      
+      try {
+        const response = await fetch(`${apiUrl}/health-check`, { 
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' }
+        });
+        
+        updateConnectionStatus(response.ok);
+      } catch (error) {
+        console.error('Connection check failed:', error);
+        updateConnectionStatus(false);
+      }
+    });
+  }
+  
+  // Update connection status display
+  function updateConnectionStatus(isConnected, message = '') {
+    if (isConnected) {
+      connectionStatus.textContent = 'Connected';
+      connectionStatus.classList.add('connected');
+      connectionStatus.classList.remove('error');
+    } else {
+      connectionStatus.textContent = message || 'Not connected';
+      connectionStatus.classList.add('error');
+      connectionStatus.classList.remove('connected');
+    }
+  }
+  
+  // Show notification
+  function showNotification(title, message) {
+    chrome.storage.local.get(['notifications'], function(result) {
+      const notificationSettings = result.notifications || { taskComplete: true, errors: true };
+      
+      if ((title.includes('Error') && notificationSettings.errors) || 
+          (!title.includes('Error') && notificationSettings.taskComplete)) {
+        chrome.notifications.create({
+          type: 'basic',
+          iconUrl: 'icons/icon48.png',
+          title: title,
+          message: message
+        });
+      }
+    });
+  }
+});
