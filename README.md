@@ -1,69 +1,56 @@
-# Welcome to your Lovable project
 
-## Project info
+# Devonn.AI Chrome Extension
 
-**URL**: https://lovable.dev/projects/b5eb8a4d-3709-4e3f-930c-ab5ab4b96560
+This Chrome extension allows you to interact with Devonn.AI agents, tools, and memory directly from your browser.
 
-## How can I edit this code?
+## Features
 
-There are several ways of editing your application.
+- Access and run Devonn.AI agents
+- Browse agent memories
+- Search through agent knowledge
+- View available tools
+- Quick access to Devonn.AI functionality
 
-**Use Lovable**
+## Installation
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/b5eb8a4d-3709-4e3f-930c-ab5ab4b96560) and start prompting.
+### Development Mode
 
-Changes made via Lovable will be committed automatically to this repo.
+1. Clone or download this repository
+2. Open Chrome and navigate to `chrome://extensions/`
+3. Enable "Developer mode" (toggle in the top-right corner)
+4. Click "Load unpacked" and select the folder containing the extension files
+5. The Devonn.AI extension should now be installed and visible in your extensions list
 
-**Use your preferred IDE**
+### Configuration
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+1. Click on the extension icon in your browser toolbar
+2. Click the "Settings" button at the bottom of the popup
+3. Enter your Devonn.AI API URL (default: http://localhost:8000)
+4. Click "Save Settings"
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+## Usage
 
-Follow these steps:
+1. Click on the Devonn.AI extension icon in your browser toolbar
+2. Select an agent from the list
+3. Type your task in the text area
+4. Click "Run Task" to execute
+5. Use the tabs to switch between Agents, Memory, and Tools
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+## Development
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+This extension is built with vanilla JavaScript, HTML, and CSS. The structure is as follows:
 
-# Step 3: Install the necessary dependencies.
-npm i
+- `manifest.json` - Extension configuration
+- `popup.html`, `popup.css`, `popup.js` - Main extension popup UI
+- `settings.html`, `settings.css`, `settings.js` - Settings page
+- `background.js` - Background service worker for notifications and updates
+- `icons/` - Extension icons
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
+## Requirements
 
-**Edit a file directly in GitHub**
+- Chrome browser (version 88 or later)
+- Running Devonn.AI backend API (default: http://localhost:8000)
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## License
 
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with .
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/b5eb8a4d-3709-4e3f-930c-ab5ab4b96560) and click on Share -> Publish.
-
-## I want to use a custom domain - is that possible?
-
-We don't support custom domains (yet). If you want to deploy your project under your own domain then we recommend using Netlify. Visit our docs for more details: [Custom domains](https://docs.lovable.dev/tips-tricks/custom-domain/)
+This project is licensed under the MIT License - see the LICENSE file for details.
