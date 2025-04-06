@@ -185,8 +185,15 @@ document.addEventListener('DOMContentLoaded', () => {
       connectionStatus.textContent = '';
       connectionStatus.className = '';
       
-      // Save default settings
-      saveSettings();
+      // Save default settings - pass the settings object to the function
+      saveSettings({
+        apiUrl: defaultSettings.apiUrl,
+        userId: defaultSettings.userId,
+        notifications: {
+          taskComplete: defaultSettings.notifications.taskComplete,
+          errors: defaultSettings.notifications.errors
+        }
+      });
     }
   }
 
