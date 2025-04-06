@@ -42,7 +42,7 @@ document.addEventListener('DOMContentLoaded', () => {
   /**
    * Save settings to Chrome storage
    */
-  async function saveSettings(): Promise<void> {
+  async function saveSettingsHandler(): Promise<void> {
     const settings: Partial<DevonnSettings> = {
       apiUrl: apiUrlInput.value.trim(),
       userId: userIdInput.value.trim(),
@@ -207,7 +207,7 @@ document.addEventListener('DOMContentLoaded', () => {
    */
   function setupEventListeners(): void {
     testConnectionButton.addEventListener('click', testConnection);
-    saveButton.addEventListener('click', saveSettings);
+    saveButton.addEventListener('click', saveSettingsHandler);
     resetButton.addEventListener('click', resetSettings);
     
     // Add enter key support for API URL field

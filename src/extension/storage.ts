@@ -35,7 +35,7 @@ export const getSettings = async <K extends keyof DevonnSettings>(
 ): Promise<Pick<DevonnSettings, K extends keyof DevonnSettings ? K : never>> => {
   return new Promise((resolve) => {
     if (keys && keys.length > 0) {
-      chrome.storage.local.get(keys, (result) => {
+      chrome.storage.local.get(keys as string[], (result) => {
         resolve(result as Pick<DevonnSettings, K extends keyof DevonnSettings ? K : never>);
       });
     } else {
