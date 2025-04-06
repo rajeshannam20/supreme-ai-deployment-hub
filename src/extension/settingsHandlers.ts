@@ -151,6 +151,11 @@ export function resetSettings(
         taskComplete: defaultSettings.notifications.taskComplete,
         errors: defaultSettings.notifications.errors
       }
+    }).then(() => {
+      showSuccessMessage('Settings reset to default values', document.querySelector('.settings-form') as Element);
+    }).catch(error => {
+      console.error('Error saving default settings:', error);
+      showErrorMessage(`Failed to reset settings: ${error}`, document.querySelector('.settings-form') as Element);
     });
   }
 }
