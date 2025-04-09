@@ -1,0 +1,137 @@
+
+name: Devonn.AI CI/CD Pipeline
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        default: 'development'
+        type: choice
+        options:
+          - development
+          - staging
+          - production
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Run linter
+        run: npm run lint || echo "No linting configured"
+      
+      - name: Run unit tests
+        run: npm run test:extension
+      
+      - name: Run E2E tests
+        run: npm run test:e2e
+        
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: test-results
+          path: test-results/
+          
+  build:
+    name: Build
+    needs: test
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        environment: [development, staging, production]
+        include:
+          - environment: development
+            api_url: 'http://localhost:8000'
+          - environment: staging
+            api_url: 'https://staging-api.devonn.ai'
+          - environment: production
+            api_url: 'https://api.devonn.ai'
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Set environment variables
+        run: |
+          echo "API_URL=${{ matrix.api_url }}" >> $GITHUB_ENV
+          echo "ENVIRONMENT=${{ matrix.environment }}" >> $GITHUB_ENV
+      
+      - name: Build extension
+        run: npm run build
+      
+      - name: Package extension
+        run: |
+          cd dist
+          zip -r ../devonn-ai-${{ matrix.environment }}.zip *
+      
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: devonn-ai-${{ matrix.environment }}-extension
+          path: devonn-ai-${{ matrix.environment }}.zip
+  
+  deploy:
+    name: Deploy
+    needs: build
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: 
+      name: ${{ github.event.inputs.environment || (github.ref == 'refs/heads/main' && 'production' || 'development') }}
+    steps:
+      - name: Download build artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: devonn-ai-${{ github.event.inputs.environment || (github.ref == 'refs/heads/main' && 'production' || 'development') }}-extension
+      
+      - name: Set up Chrome Web Store CLI
+        run: npm install -g chrome-webstore-upload-cli
+      
+      - name: Upload to Chrome Web Store
+        if: ${{ github.event.inputs.environment == 'production' || github.ref == 'refs/heads/main' }}
+        run: |
+          webstore upload --source devonn-ai-${{ github.event.inputs.environment || 'production' }}.zip \
+            --extension-id ${{ secrets.CHROME_EXTENSION_ID }} \
+            --client-id ${{ secrets.CHROME_CLIENT_ID }} \
+            --client-secret ${{ secrets.CHROME_CLIENT_SECRET }} \
+            --refresh-token ${{ secrets.CHROME_REFRESH_TOKEN }}
+      
+      - name: Publish to Chrome Web Store
+        if: ${{ github.event.inputs.environment == 'production' || github.ref == 'refs/heads/main' }}
+        run: |
+          webstore publish \
+            --extension-id ${{ secrets.CHROME_EXTENSION_ID }} \
+            --client-id ${{ secrets.CHROME_CLIENT_ID }} \
+            --client-secret ${{ secrets.CHROME_CLIENT_SECRET }} \
+            --refresh-token ${{ secrets.CHROME_REFRESH_TOKEN }}
+      
+      - name: Create GitHub Release
+        if: ${{ github.event.inputs.environment == 'production' || github.ref == 'refs/heads/main' }}
+        uses: softprops/action-gh-release@v1
+        with:
+          files: devonn-ai-${{ github.event.inputs.environment || 'production' }}.zip
+          name: Release ${{ github.ref_name }}
+          tag_name: v${{ github.run_number }}
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
