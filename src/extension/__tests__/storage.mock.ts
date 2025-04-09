@@ -8,7 +8,8 @@ const mockSettings: DevonnSettings = {
   notifications: {
     taskComplete: true,
     errors: true
-  }
+  },
+  lastCheck: Date.now() // Adding the missing lastCheck property
 };
 
 // Mock storage implementation
