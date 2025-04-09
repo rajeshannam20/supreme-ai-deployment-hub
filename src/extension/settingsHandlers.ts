@@ -1,6 +1,6 @@
 
 import { DevonnSettings, getSettings, saveSettings, defaultSettings } from './storage';
-import { isValidUrl } from './settingsValidation';
+import { isValidUrl, isValidEmail, isValidApiKey, isEmptyString } from './settingsValidation';
 import { showConnectionStatus, showErrorMessage, showSuccessMessage } from './settingsUI';
 
 /**
@@ -38,20 +38,35 @@ export async function saveSettingsHandler(
   notifyErrors: HTMLInputElement,
   connectionStatus: HTMLDivElement
 ): Promise<void> {
+  const apiUrl = apiUrlInput.value.trim();
+  const userId = userIdInput.value.trim();
+  
+  // Validate inputs
+  if (isEmptyString(apiUrl)) {
+    showErrorMessage('API URL cannot be empty.', document.querySelector('.settings-form') as Element);
+    return;
+  }
+  
+  // Validate URL format
+  if (!isValidUrl(apiUrl)) {
+    showErrorMessage('Please enter a valid URL for the API endpoint.', document.querySelector('.settings-form') as Element);
+    return;
+  }
+  
+  // Check if userId looks like an email - if so, validate it
+  if (userId.includes('@') && !isValidEmail(userId)) {
+    showErrorMessage('Please enter a valid email address for User ID.', document.querySelector('.settings-form') as Element);
+    return;
+  }
+  
   const settings: Partial<DevonnSettings> = {
-    apiUrl: apiUrlInput.value.trim(),
-    userId: userIdInput.value.trim(),
+    apiUrl,
+    userId,
     notifications: {
       taskComplete: notifyTaskComplete.checked,
       errors: notifyErrors.checked
     }
   };
-  
-  // Validate URL format
-  if (!isValidUrl(settings.apiUrl!)) {
-    showErrorMessage('Please enter a valid URL for the API endpoint.', document.querySelector('.settings-form') as Element);
-    return;
-  }
   
   try {
     await saveSettings(settings);

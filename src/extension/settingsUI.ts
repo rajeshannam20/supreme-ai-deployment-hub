@@ -21,7 +21,11 @@ export function showConnectionStatus(message: string, isSuccess: boolean, connec
  * Show error message
  */
 export function showErrorMessage(message: string, parentElement: Element): void {
+  // Remove any existing messages first
+  removeExistingMessages(parentElement);
+  
   const errorMessage = document.createElement('div');
+  errorMessage.className = 'status-message error-message';
   errorMessage.textContent = message;
   errorMessage.style.backgroundColor = '#fee2e2';
   errorMessage.style.color = '#b91c1c';
@@ -41,7 +45,11 @@ export function showErrorMessage(message: string, parentElement: Element): void 
  * Show success message
  */
 export function showSuccessMessage(message: string, parentElement: Element): void {
+  // Remove any existing messages first
+  removeExistingMessages(parentElement);
+  
   const successMessage = document.createElement('div');
+  successMessage.className = 'status-message success-message';
   successMessage.textContent = message;
   successMessage.style.backgroundColor = '#d1fae5';
   successMessage.style.color = '#065f46';
@@ -55,4 +63,36 @@ export function showSuccessMessage(message: string, parentElement: Element): voi
   setTimeout(() => {
     successMessage.remove();
   }, 3000);
+}
+
+/**
+ * Show warning message
+ */
+export function showWarningMessage(message: string, parentElement: Element): void {
+  // Remove any existing messages first
+  removeExistingMessages(parentElement);
+  
+  const warningMessage = document.createElement('div');
+  warningMessage.className = 'status-message warning-message';
+  warningMessage.textContent = message;
+  warningMessage.style.backgroundColor = '#fef3c7';
+  warningMessage.style.color = '#92400e';
+  warningMessage.style.padding = '10px';
+  warningMessage.style.borderRadius = '4px';
+  warningMessage.style.marginTop = '16px';
+  
+  parentElement.appendChild(warningMessage);
+  
+  // Remove message after 4 seconds
+  setTimeout(() => {
+    warningMessage.remove();
+  }, 4000);
+}
+
+/**
+ * Remove existing status messages
+ */
+function removeExistingMessages(parentElement: Element): void {
+  const existingMessages = parentElement.querySelectorAll('.status-message');
+  existingMessages.forEach(message => message.remove());
 }
