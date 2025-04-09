@@ -46,6 +46,37 @@ This extension is built with vanilla JavaScript, HTML, and CSS. The structure is
 - `background.js` - Background service worker for notifications and updates
 - `icons/` - Extension icons
 
+## Testing
+
+We use Jest and Playwright for testing. To run the tests:
+
+```bash
+# Run all tests
+npm test
+
+# Run tests with watch mode
+npm run test:watch
+
+# Run only extension tests
+npm run test:extension
+
+# Run end-to-end tests
+npm run test:e2e
+
+# Run tests with coverage reports
+npm run test:coverage
+```
+
+For more detailed testing information, please see the [Testing Documentation](./TESTING.md).
+
+## Documentation
+
+Complete documentation for the extension and API is available in the following locations:
+
+- [Extension Documentation](./src/extension/DOCUMENTATION.md) - Information about the Chrome extension
+- [API Reference](https://devonn.ai/api) - Full API documentation
+- [Deployment Guides](https://devonn.ai/documentation) - Guides for deploying in various environments
+
 ## Requirements
 
 - Chrome browser (version 88 or later)
@@ -54,3 +85,4 @@ This extension is built with vanilla JavaScript, HTML, and CSS. The structure is
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
+

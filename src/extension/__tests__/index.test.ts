@@ -2,6 +2,7 @@
 import './settingsValidation.test';
 import './settingsUI.test';
 import './settingsHandlers.test';
+import './settingsDocumentation.test';
 
 // This file imports all the test files so they can be run together
 // Add any new test files here when they're created
