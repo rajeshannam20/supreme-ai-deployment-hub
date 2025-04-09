@@ -7,7 +7,9 @@ describe('Chrome Extension Settings Documentation', () => {
     apiUrl: 'API URL for connecting to the Devonn.AI backend',
     userId: 'User identifier for authentication',
     notifications: 'Notification preferences configuration',
-    lastCheck: 'Timestamp of the last check for updates'
+    lastCheck: 'Timestamp of the last check for updates',
+    connectionStatus: 'Boolean flag indicating if the extension is currently connected',
+    wasDisconnected: 'Boolean flag indicating if the extension was disconnected previously'
   };
   
   it('should have documentation for all settings properties', () => {
@@ -19,6 +21,8 @@ describe('Chrome Extension Settings Documentation', () => {
     expect(settingsKeys).toContain('userId');
     expect(settingsKeys).toContain('notifications');
     expect(settingsKeys).toContain('lastCheck');
+    expect(settingsKeys).toContain('connectionStatus');
+    expect(settingsKeys).toContain('wasDisconnected');
   });
   
   it('should document notification preferences', () => {
