@@ -8,6 +8,7 @@ import { kubernetesConfigYaml } from './kubernetes';
 import { variablesConfigYaml } from './variables';
 import { outputsConfigYaml } from './outputs';
 import { securityConfigYaml } from './security';
+import { serviceMeshYaml } from './service-mesh';
 
 // Combine all Terraform configuration sections
 export const terraformManifestYaml = `${commonConfigYaml}
@@ -22,6 +23,9 @@ ${kubernetesConfigYaml}
 
 ${securityConfigYaml}
 
+${serviceMeshYaml}
+
 ${variablesConfigYaml}
 
 ${outputsConfigYaml}`;
+
