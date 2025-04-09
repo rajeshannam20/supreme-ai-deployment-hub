@@ -9,44 +9,75 @@ export const terraformManifestYaml = `# --- Step 5: AWS EKS Deployment with Terr
 #    $ aws configure
 # 3. Run the following commands in the directory containing these Terraform files:
 #    $ terraform init
-#    $ terraform plan -out=tfplan
+#    $ terraform plan -out=tfplan -var-file="environments/\${ENV:-prod}.tfvars"
 #    $ terraform apply tfplan
+
+# Recommended: Use S3 backend for team collaboration
+# terraform {
+#   backend "s3" {
+#     bucket = "devonn-terraform-state"
+#     key    = "terraform.tfstate"
+#     region = "us-west-2"
+#     dynamodb_table = "terraform-locks"
+#     encrypt = true
+#   }
+# }
+
+# Define the AWS provider and region
+provider "aws" {
+  region = var.aws_region
+  default_tags {
+    tags = {
+      Project     = "DevonnAI"
+      Environment = var.environment
+      ManagedBy   = "Terraform"
+      Owner       = "DevOps"
+    }
+  }
+}
 
 # 1. VPC Configuration
 module "vpc" {
   source  = "terraform-aws-modules/vpc/aws"
   version = "5.1.0"
 
-  name = "devonn-vpc"
-  cidr = "10.0.0.0/16"
-  azs             = ["us-west-2a", "us-west-2b"]
-  private_subnets = ["10.0.1.0/24", "10.0.2.0/24"]
-  public_subnets  = ["10.0.101.0/24", "10.0.102.0/24"]
+  name = "devonn-vpc-\${var.environment}"
+  cidr = var.vpc_cidr
+  azs             = var.availability_zones
+  private_subnets = var.private_subnet_cidrs
+  public_subnets  = var.public_subnet_cidrs
 
   enable_nat_gateway = true
-  single_nat_gateway = true
+  single_nat_gateway = var.environment != "production"  # Use multiple NAT gateways in production
   enable_dns_hostnames = true
-  tags = {
-    Project = "DevonnAI"
-    Environment = "Production"
+  
+  # EKS requires specific tags on subnets for load balancer discovery
+  private_subnet_tags = {
+    "kubernetes.io/cluster/devonn-eks-\${var.environment}" = "shared"
+    "kubernetes.io/role/internal-elb" = "1"
+  }
+  
+  public_subnet_tags = {
+    "kubernetes.io/cluster/devonn-eks-\${var.environment}" = "shared"
+    "kubernetes.io/role/elb" = "1"
   }
 }
 
 # 2. EKS Cluster Configuration
 module "eks" {
   source          = "terraform-aws-modules/eks/aws"
-  cluster_name    = "devonn-eks"
+  cluster_name    = "devonn-eks-\${var.environment}"
   cluster_version = "1.29"
   subnets         = module.vpc.private_subnets
   vpc_id          = module.vpc.vpc_id
 
   node_groups = {
     dev_nodes = {
-      desired_capacity = 2
-      max_capacity     = 4
-      min_capacity     = 1
-      instance_types = ["t3.medium"]
-      disk_size      = 50
+      desired_capacity = var.node_desired_capacity
+      max_capacity     = var.node_max_capacity
+      min_capacity     = var.node_min_capacity
+      instance_types   = var.node_instance_types
+      disk_size        = var.node_disk_size
     }
   }
 
@@ -56,10 +87,32 @@ module "eks" {
   # CloudWatch Logs for the EKS control plane
   cluster_enabled_log_types = ["api", "audit", "authenticator", "controllerManager", "scheduler"]
   
-  tags = {
-    Project = "DevonnAI"
-    Environment = "Production"
+  # Security groups
+  cluster_security_group_additional_rules = {
+    egress_all = {
+      description      = "Cluster all egress"
+      protocol         = "-1"
+      from_port        = 0
+      to_port          = 0
+      type             = "egress"
+      cidr_blocks      = ["0.0.0.0/0"]
+    }
   }
+  
+  # Encryption for EKS secrets
+  cluster_encryption_config = [
+    {
+      provider_key_arn = aws_kms_key.eks.arn
+      resources        = ["secrets"]
+    }
+  ]
+}
+
+# KMS key for EKS secrets encryption
+resource "aws_kms_key" "eks" {
+  description             = "EKS Secret Encryption Key"
+  deletion_window_in_days = 7
+  enable_key_rotation     = true
 }
 
 # 3. RDS PostgreSQL Configuration
@@ -67,13 +120,13 @@ module "rds" {
   source  = "terraform-aws-modules/rds/aws"
   version = "5.2.2"
 
-  identifier = "devonn-postgres"
+  identifier = "devonn-postgres-\${var.environment}"
   engine     = "postgres"
   engine_version = "14.9"
-  instance_class = "db.t3.micro"
+  instance_class = var.db_instance_class
 
-  allocated_storage = 20
-  max_allocated_storage = 50
+  allocated_storage = var.db_allocated_storage
+  max_allocated_storage = var.db_max_allocated_storage
   storage_encrypted = true
 
   name     = "devonndb"
@@ -90,10 +143,12 @@ module "rds" {
   backup_window           = "03:00-06:00"
   maintenance_window      = "Mon:00:00-Mon:03:00"
 
-  tags = {
-    Project = "DevonnAI"
-    Environment = "Production"
-  }
+  # Enhanced monitoring
+  monitoring_interval = 60
+  monitoring_role_name = "devonn-rds-monitoring-role-\${var.environment}"
+  
+  # Deletion protection in production
+  deletion_protection = var.environment == "production"
 }
 
 # 4. IAM OIDC Provider for EKS
@@ -104,7 +159,7 @@ resource "aws_iam_openid_connect_provider" "eks" {
 }
 
 # 5. Connect to your EKS cluster after provisioning
-# Run: aws eks update-kubeconfig --name devonn-eks --region us-west-2
+# Run: aws eks update-kubeconfig --name devonn-eks-\${var.environment} --region \${var.aws_region}
 # This will update your kubeconfig file with the new cluster information
 
 # 6. Kubernetes Secrets and ConfigMaps
@@ -144,20 +199,104 @@ resource "aws_iam_openid_connect_provider" "eks" {
 #         with:
 #           aws-access-key-id: \${{ secrets.AWS_ACCESS_KEY_ID }}
 #           aws-secret-access-key: \${{ secrets.AWS_SECRET_ACCESS_KEY }}
-#           aws-region: us-west-2
+#           aws-region: \${{ secrets.AWS_REGION }}
 #       - name: Build and Push Docker Images
 #         run: |
-#           aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin \${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-west-2.amazonaws.com
-#           docker build -t \${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-west-2.amazonaws.com/devonn-backend:latest -f Dockerfile.backend .
-#           docker build -t \${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-west-2.amazonaws.com/devonn-frontend:latest -f Dockerfile.frontend .
-#           docker push \${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-west-2.amazonaws.com/devonn-backend:latest
-#           docker push \${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-west-2.amazonaws.com/devonn-frontend:latest
+#           aws ecr get-login-password --region \${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin \${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.\${{ secrets.AWS_REGION }}.amazonaws.com
+#           docker build -t \${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.\${{ secrets.AWS_REGION }}.amazonaws.com/devonn-backend:latest -f Dockerfile.backend .
+#           docker build -t \${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.\${{ secrets.AWS_REGION }}.amazonaws.com/devonn-frontend:latest -f Dockerfile.frontend .
+#           docker push \${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.\${{ secrets.AWS_REGION }}.amazonaws.com/devonn-backend:latest
+#           docker push \${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.\${{ secrets.AWS_REGION }}.amazonaws.com/devonn-frontend:latest
 #       - name: Deploy to EKS
 #         run: |
-#           aws eks update-kubeconfig --name devonn-eks --region us-west-2
+#           aws eks update-kubeconfig --name devonn-eks-\${{ secrets.ENVIRONMENT }} --region \${{ secrets.AWS_REGION }}
 #           kubectl apply -f k8s/
 
 # 9. Variables and Outputs
+variable "aws_region" {
+  description = "AWS region to deploy resources"
+  type        = string
+  default     = "us-west-2"
+}
+
+variable "environment" {
+  description = "Environment name (dev, staging, production)"
+  type        = string
+  default     = "prod"
+}
+
+variable "vpc_cidr" {
+  description = "CIDR block for the VPC"
+  type        = string
+  default     = "10.0.0.0/16"
+}
+
+variable "availability_zones" {
+  description = "List of availability zones to use"
+  type        = list(string)
+  default     = ["us-west-2a", "us-west-2b"]
+}
+
+variable "private_subnet_cidrs" {
+  description = "List of private subnet CIDR blocks"
+  type        = list(string)
+  default     = ["10.0.1.0/24", "10.0.2.0/24"]
+}
+
+variable "public_subnet_cidrs" {
+  description = "List of public subnet CIDR blocks"
+  type        = list(string)
+  default     = ["10.0.101.0/24", "10.0.102.0/24"]
+}
+
+variable "node_desired_capacity" {
+  description = "Desired number of worker nodes"
+  type        = number
+  default     = 2
+}
+
+variable "node_max_capacity" {
+  description = "Maximum number of worker nodes"
+  type        = number
+  default     = 4
+}
+
+variable "node_min_capacity" {
+  description = "Minimum number of worker nodes"
+  type        = number
+  default     = 1
+}
+
+variable "node_instance_types" {
+  description = "EC2 instance types for worker nodes"
+  type        = list(string)
+  default     = ["t3.medium"]
+}
+
+variable "node_disk_size" {
+  description = "Disk size for worker nodes in GB"
+  type        = number
+  default     = 50
+}
+
+variable "db_instance_class" {
+  description = "RDS instance class"
+  type        = string
+  default     = "db.t3.micro"
+}
+
+variable "db_allocated_storage" {
+  description = "Allocated storage for RDS instance in GB"
+  type        = number
+  default     = 20
+}
+
+variable "db_max_allocated_storage" {
+  description = "Maximum allocated storage for RDS instance in GB"
+  type        = number
+  default     = 50
+}
+
 variable "db_password" {
   description = "Password for the RDS database"
   type        = string
@@ -184,4 +323,27 @@ output "rds_instance_address" {
   description = "The address of the RDS instance"
   value       = module.rds.db_instance_address
   sensitive   = true
-}`;
+}
+
+output "connection_instructions" {
+  description = "Instructions to connect to the cluster"
+  value       = "Run: aws eks update-kubeconfig --name devonn-eks-\${var.environment} --region \${var.aws_region}"
+}
+
+# Example tfvars file structure (create these in environments/prod.tfvars, environments/staging.tfvars, etc)
+# aws_region = "us-west-2"
+# environment = "prod"
+# vpc_cidr = "10.0.0.0/16"
+# availability_zones = ["us-west-2a", "us-west-2b"]
+# private_subnet_cidrs = ["10.0.1.0/24", "10.0.2.0/24"]
+# public_subnet_cidrs = ["10.0.101.0/24", "10.0.102.0/24"]
+# node_desired_capacity = 2
+# node_max_capacity = 4
+# node_min_capacity = 1
+# node_instance_types = ["t3.medium"]
+# node_disk_size = 50
+# db_instance_class = "db.t3.micro"
+# db_allocated_storage = 20
+# db_max_allocated_storage = 50
+# db_password = "CHANGE_ME_IN_PROD"`;
+
