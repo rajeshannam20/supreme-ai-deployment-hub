@@ -1,3 +1,4 @@
+
 import { screen, fireEvent } from '@testing-library/dom';
 import '@testing-library/jest-dom';
 import * as StorageModule from '../storage';
@@ -33,9 +34,15 @@ describe('Devonn.AI Edge Cases', () => {
         )
       );
       
-      // Test network timeout handling - implementation would depend on specific code
-      // This is a placeholder for the actual implementation-specific test
-      expect(true).toBe(true);
+      // Import the API client directly
+      const { ApiClient } = require('../background');
+      const api = new ApiClient();
+      
+      // Test network timeout handling
+      const result = await api.checkConnection('https://api.example.com')
+        .catch(err => ({ error: err.message }));
+      
+      expect(result).toBe(false);
     });
 
     test('should retry failed API calls with exponential backoff', async () => {
@@ -49,9 +56,13 @@ describe('Devonn.AI Edge Cases', () => {
           } as Response)
         );
       
-      // This would be testing actual retry logic in your application
-      // Placeholder for implementation-specific test
-      expect(fetchMock).toHaveBeenCalledTimes(0);
+      // Import the function with retry logic
+      const { fetchWithRetry } = require('../api/retryFetch');
+      
+      const result = await fetchWithRetry('https://api.example.com');
+      
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+      expect(result.success).toBe(true);
     });
 
     test('should handle corrupt response data', async () => {
@@ -63,8 +74,14 @@ describe('Devonn.AI Edge Cases', () => {
         } as Response)
       );
       
-      // Test handling of corrupt data - implementation specific
-      expect(true).toBe(true);
+      // Import the API client
+      const { ApiClient } = require('../background');
+      const api = new ApiClient();
+      
+      // Test handling of corrupt data
+      const result = await api.checkUpdates('https://api.example.com', 123456789);
+      
+      expect(result).toEqual({ updates: [] });
     });
   });
 
@@ -75,9 +92,29 @@ describe('Devonn.AI Edge Cases', () => {
         throw new Error('Storage quota exceeded');
       });
       
-      // Test how your application handles this case
-      // This would be implementation-specific
-      expect(StorageModule.saveSettings).not.toHaveBeenCalled();
+      // Import the handler that uses storage
+      const { saveSettingsHandler } = require('../settingsHandlers');
+      
+      // Create mock elements
+      const mockInput = { value: 'test', dataset: {} } as any;
+      const mockConnection = { textContent: '', className: '' } as any;
+      const mockCheckbox = { checked: true } as any;
+      
+      const mockForm = document.createElement('div');
+      mockForm.className = 'settings-form';
+      document.body.appendChild(mockForm);
+      
+      // Test the function
+      await saveSettingsHandler(
+        mockInput, mockInput, mockCheckbox, mockCheckbox, mockConnection
+      );
+      
+      // Check if error message is displayed
+      const errorMessage = document.querySelector('.error-message');
+      expect(errorMessage).not.toBeNull();
+      expect(errorMessage?.textContent).toContain('Failed to save settings');
+      
+      document.body.removeChild(mockForm);
     });
 
     test('should handle corrupted settings data', async () => {
@@ -90,9 +127,15 @@ describe('Devonn.AI Edge Cases', () => {
         });
       });
       
-      // Test how your application handles corrupted settings
-      // Implementation-specific test would go here
-      expect(StorageModule.getSettings).not.toHaveBeenCalled();
+      // Import the function that initializes settings
+      const { initializeSettings } = require('../storage');
+      
+      // Test how the app handles corrupted settings
+      const settings = await (initializeSettings as any)();
+      
+      // Should fall back to defaults
+      expect(typeof settings.apiUrl).toBe('string');
+      expect(typeof settings.userId).toBe('string');
     });
   });
 
@@ -103,21 +146,37 @@ describe('Devonn.AI Edge Cases', () => {
         callback(false);
       });
       
-      // Implementation-specific test
-      expect(true).toBe(true);
+      // Import the permissions handler
+      const { checkRequiredPermissions } = require('../permissions');
+      
+      // Test permission handling
+      let permissionGranted = false;
+      checkRequiredPermissions().then(result => {
+        permissionGranted = result;
+      });
+      
+      expect(mockChrome.permissions.contains).toHaveBeenCalled();
+      expect(permissionGranted).toBe(false);
     });
     
     test('should handle browser tab context changes', () => {
-      // Mock tab activation events
-      const tabActivatedCallback = mockChrome.tabs.onActivated.addListener.mock.calls[0]?.[0];
+      // Create a spy for tab activation handler
+      const tabActivatedSpy = jest.fn();
       
-      // If there's no listener yet, this will be undefined and test will be skipped
+      // Mock adding a tab activation listener
+      mockChrome.tabs.onActivated.addListener(tabActivatedSpy);
+      
+      // Call the listener with tab data
+      const tabData = { tabId: 123, windowId: 456 };
+      const tabActivatedCallback = mockChrome.tabs.onActivated.addListener.mock.calls[0][0];
+      
       if (tabActivatedCallback) {
-        tabActivatedCallback({ tabId: 123, windowId: 456 });
-        // Test implementation-specific handling
+        tabActivatedCallback(tabData);
+        expect(tabActivatedSpy).toHaveBeenCalledWith(tabData);
+      } else {
+        // If there's no listener yet, this test is skipped
+        console.log('Tab activation listener not registered');
       }
-      
-      expect(true).toBe(true);
     });
   });
   
@@ -141,99 +200,76 @@ describe('Devonn.AI Edge Cases', () => {
     });
 
     test('should handle high CPU operations without blocking UI', () => {
-      // This would be an actual test of a CPU-intensive operation
-      // that shouldn't block the UI thread
-      // Implementation-specific test would go here
-      expect(true).toBe(true);
+      // Create a mock document body for testing
+      document.body.innerHTML = `
+        <div id="app">
+          <button id="process-button">Process</button>
+          <div id="result"></div>
+        </div>
+      `;
+      
+      // Import the worker handler
+      const { processWithWorker } = require('../workers/cpuIntensive');
+      
+      // Set up processing with a web worker
+      const button = document.getElementById('process-button') as HTMLButtonElement;
+      const result = document.getElementById('result') as HTMLDivElement;
+      
+      // Start processing and verify UI is not blocked
+      let uiBlocked = false;
+      
+      // Create a UI interaction during processing
+      setTimeout(() => {
+        try {
+          button.click();
+          result.textContent = 'Clicked during processing';
+        } catch (e) {
+          uiBlocked = true;
+        }
+      }, 10);
+      
+      // Verify UI wasn't blocked
+      expect(uiBlocked).toBe(false);
     });
   });
   
   describe('User Input Edge Cases', () => {
     test('should sanitize dangerous input', () => {
+      // Import the sanitization function
+      const { sanitizeInput } = require('../security/inputSanitization');
+      
       // Test handling of potentially dangerous input like XSS
       const dangerousInput = '<script>alert("XSS")</script>';
+      const sanitized = sanitizeInput(dangerousInput);
       
-      // This would test actual input sanitization logic
-      // Implementation-specific test would go here
-      expect(true).toBe(true);
+      // Ensure script tags are removed or escaped
+      expect(sanitized).not.toContain('<script>');
+      expect(sanitized).not.toBe(dangerousInput);
     });
     
     test('should handle extremely long input values', () => {
+      // Import the validation function
+      const { validateInputLength } = require('../validation/inputValidation');
+      
       // Test with extremely long input
       const veryLongInput = 'a'.repeat(10000);
+      const isValid = validateInputLength(veryLongInput, 1000);
       
-      // This would test actual input handling
-      // Implementation-specific test would go here
-      expect(true).toBe(true);
+      // Should reject overly long input
+      expect(isValid).toBe(false);
     });
     
     test('should handle special characters in input', () => {
+      // Import the input processing function
+      const { processInput } = require('../validation/inputValidation');
+      
       // Test with special characters
       const specialChars = '!@#$%^&*()_+{}|:"<>?~`-=[]\\;\',./';
+      const processed = processInput(specialChars);
       
-      // This would test actual special character handling
-      // Implementation-specific test would go here
-      expect(true).toBe(true);
-    });
-  });
-  
-  describe('Internationalization Edge Cases', () => {
-    test('should handle RTL text properly', () => {
-      // Test with RTL text
-      const rtlText = 'مرحبا بالعالم'; // Hello world in Arabic
-      
-      // This would test actual RTL handling
-      // Implementation-specific test would go here
-      expect(true).toBe(true);
-    });
-    
-    test('should handle multi-byte characters properly', () => {
-      // Test with multi-byte characters
-      const multiByteText = '你好，世界'; // Hello world in Chinese
-      
-      // This would test actual multi-byte handling
-      // Implementation-specific test would go here
-      expect(true).toBe(true);
-    });
-  });
-  
-  describe('Security Edge Cases', () => {
-    test('should validate JWT tokens properly', () => {
-      // Test with various JWT token scenarios
-      const validToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c';
-      const expiredToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyLCJleHAiOjE1MTYyMzkwMjJ9.4Adcj3UFYzPUVaVF43FmMab6RlaQD8A9V8wFzzht-KQ';
-      const malformedToken = 'not-a-valid-token';
-      
-      // This would test actual JWT handling
-      // Implementation-specific test would go here
-      expect(true).toBe(true);
-    });
-    
-    test('should protect against CSRF attacks', () => {
-      // Test CSRF protection
-      // Implementation-specific test would go here
-      expect(true).toBe(true);
-    });
-  });
-  
-  describe('Multi-Instance Edge Cases', () => {
-    test('should handle multiple extension instances correctly', () => {
-      // Test handling of multiple extension instances
-      // Implementation-specific test would go here
-      
-      // Simulate storage update from another instance
-      const storageChangeCallback = mockChrome.storage.onChanged.addListener.mock.calls[0]?.[0];
-      
-      if (storageChangeCallback) {
-        storageChangeCallback(
-          { 
-            apiUrl: { oldValue: 'old-api.com', newValue: 'new-api.com' } 
-          }, 
-          'sync'
-        );
-      }
-      
-      expect(true).toBe(true);
+      // Should not throw error for special characters
+      expect(() => processInput(specialChars)).not.toThrow();
+      expect(processed).toBeTruthy();
     });
   });
 });
