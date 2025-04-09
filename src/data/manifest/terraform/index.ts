@@ -7,6 +7,7 @@ import { rdsConfigYaml } from './rds';
 import { kubernetesConfigYaml } from './kubernetes';
 import { variablesConfigYaml } from './variables';
 import { outputsConfigYaml } from './outputs';
+import { securityConfigYaml } from './security';
 
 // Combine all Terraform configuration sections
 export const terraformManifestYaml = `${commonConfigYaml}
@@ -18,6 +19,8 @@ ${eksConfigYaml}
 ${rdsConfigYaml}
 
 ${kubernetesConfigYaml}
+
+${securityConfigYaml}
 
 ${variablesConfigYaml}
 
