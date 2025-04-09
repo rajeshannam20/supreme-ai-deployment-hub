@@ -34,6 +34,15 @@ interface Chrome {
       message: string;
     }) => void;
   };
+  permissions: {
+    contains: (permissions: PermissionRequest, callback: (result: boolean) => void) => void;
+    request: (permissions: PermissionRequest, callback: (granted: boolean) => void) => void;
+  };
+}
+
+interface PermissionRequest {
+  permissions?: string[];
+  origins?: string[];
 }
 
 declare var chrome: Chrome;
