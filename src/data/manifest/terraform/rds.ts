@@ -55,6 +55,15 @@ module "rds" {
   
   # Parameter group for PostgreSQL optimizations
   parameter_group_name = var.environment == "production" ? aws_db_parameter_group.postgres_production[0].name : null
+
+  # Enhanced disaster recovery for production
+  enabled_cloudwatch_logs_exports = var.environment == "production" ? ["postgresql", "upgrade"] : []
+  
+  # Reserved instances configuration through tagging
+  tags = {
+    ReservedInstance = var.environment == "production" ? "eligible" : "not-eligible"
+    BackupStrategy = var.environment == "production" ? "cross-region" : "standard"
+  }
 }
 
 # Production-optimized parameter group (only created for production environment)
@@ -93,4 +102,68 @@ resource "aws_db_parameter_group" "postgres_production" {
     name  = "log_min_duration_statement"
     value = "1000" # Log queries taking more than 1 second
   }
+  
+  parameter {
+    name  = "wal_buffers"
+    value = "16MB"
+  }
+  
+  parameter {
+    name  = "checkpoint_timeout"
+    value = "15"
+  }
+}
+
+# Read replica for production environment to improve read performance and act as failover standby
+resource "aws_db_instance" "postgres_read_replica" {
+  count = var.environment == "production" ? 1 : 0
+  
+  identifier           = "devonn-postgres-replica-\${var.environment}"
+  replicate_source_db  = module.rds.db_instance_id
+  instance_class       = var.db_replica_instance_class
+  
+  publicly_accessible  = false
+  skip_final_snapshot  = true
+  apply_immediately    = false
+  
+  # Performance settings
+  monitoring_interval = 30
+  monitoring_role_arn = module.rds.enhanced_monitoring_iam_role_arn
+  
+  tags = {
+    Name = "Devonn RDS Read Replica"
+    Type = "ReadReplica"
+  }
+}
+
+# DB Event Subscription to get notified about important RDS events
+resource "aws_db_event_subscription" "default" {
+  count     = var.environment == "production" ? 1 : 0
+  name      = "devonn-rds-event-subscription"
+  sns_topic = aws_sns_topic.db_events[0].arn
+  
+  source_type = "db-instance"
+  source_ids  = [module.rds.db_instance_id]
+  
+  event_categories = [
+    "availability",
+    "deletion",
+    "failover",
+    "failure",
+    "low storage",
+    "maintenance",
+    "notification",
+    "recovery"
+  ]
+  
+  tags = {
+    Name = "Devonn RDS Event Subscription"
+  }
+}
+
+# SNS Topic for RDS Events
+resource "aws_sns_topic" "db_events" {
+  count = var.environment == "production" ? 1 : 0
+  name  = "devonn-rds-events-\${var.environment}"
 }`;
+

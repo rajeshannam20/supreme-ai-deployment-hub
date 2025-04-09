@@ -196,4 +196,376 @@ resource "aws_iam_role_policy_attachment" "config_policy_attachment" {
   count      = var.environment == "production" ? 1 : 0
   role       = aws_iam_role.config_role[0].name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSConfigRole"
+}
+
+# --- NEW SECURITY ENHANCEMENTS ---
+
+# 1. AWS GuardDuty for threat detection (production only)
+resource "aws_guardduty_detector" "devonn_guardduty" {
+  count    = var.environment == "production" ? 1 : 0
+  enable   = true
+  finding_publishing_frequency = "ONE_HOUR"
+  
+  datasources {
+    s3_logs {
+      enable = true
+    }
+    kubernetes {
+      audit_logs {
+        enable = true
+      }
+    }
+    malware_protection {
+      scan_ec2_instance_with_findings {
+        ebs_volumes {
+          enable = true
+        }
+      }
+    }
+  }
+}
+
+# 2. AWS Security Hub to manage security posture
+resource "aws_securityhub_account" "devonn_securityhub" {
+  count = var.environment == "production" ? 1 : 0
+}
+
+# Enable Security Hub standards
+resource "aws_securityhub_standards_subscription" "cis_aws_foundations" {
+  count          = var.environment == "production" ? 1 : 0
+  standards_arn  = "arn:aws:securityhub:\${var.aws_region}::standards/cis-aws-foundations-benchmark/v/1.2.0"
+  depends_on     = [aws_securityhub_account.devonn_securityhub]
+}
+
+resource "aws_securityhub_standards_subscription" "aws_foundational" {
+  count          = var.environment == "production" ? 1 : 0
+  standards_arn  = "arn:aws:securityhub:\${var.aws_region}::standards/aws-foundational-security-best-practices/v/1.0.0"
+  depends_on     = [aws_securityhub_account.devonn_securityhub]
+}
+
+# 3. Network ACLs for additional network security
+resource "aws_network_acl" "private_nacl" {
+  count      = var.environment == "production" ? 1 : 0
+  vpc_id     = module.vpc.vpc_id
+  subnet_ids = module.vpc.private_subnets
+  
+  # Allow all outbound traffic
+  egress {
+    protocol   = "-1"
+    rule_no    = 100
+    action     = "allow"
+    cidr_block = "0.0.0.0/0"
+    from_port  = 0
+    to_port    = 0
+  }
+  
+  # Allow inbound traffic from VPC CIDR
+  ingress {
+    protocol   = "-1"
+    rule_no    = 100
+    action     = "allow"
+    cidr_block = var.vpc_cidr
+    from_port  = 0
+    to_port    = 0
+  }
+  
+  # Allow established connections
+  ingress {
+    protocol   = "tcp"
+    rule_no    = 110
+    action     = "allow"
+    cidr_block = "0.0.0.0/0"
+    from_port  = 1024
+    to_port    = 65535
+  }
+  
+  tags = {
+    Name        = "devonn-private-nacl-\${var.environment}"
+    Environment = var.environment
+  }
+}
+
+resource "aws_network_acl" "public_nacl" {
+  count      = var.environment == "production" ? 1 : 0
+  vpc_id     = module.vpc.vpc_id
+  subnet_ids = module.vpc.public_subnets
+  
+  # Allow all outbound traffic
+  egress {
+    protocol   = "-1"
+    rule_no    = 100
+    action     = "allow"
+    cidr_block = "0.0.0.0/0"
+    from_port  = 0
+    to_port    = 0
+  }
+  
+  # Allow inbound HTTP
+  ingress {
+    protocol   = "tcp"
+    rule_no    = 100
+    action     = "allow"
+    cidr_block = "0.0.0.0/0"
+    from_port  = 80
+    to_port    = 80
+  }
+  
+  # Allow inbound HTTPS
+  ingress {
+    protocol   = "tcp"
+    rule_no    = 110
+    action     = "allow"
+    cidr_block = "0.0.0.0/0"
+    from_port  = 443
+    to_port    = 443
+  }
+  
+  # Allow ephemeral ports for established connections
+  ingress {
+    protocol   = "tcp"
+    rule_no    = 120
+    action     = "allow"
+    cidr_block = "0.0.0.0/0"
+    from_port  = 1024
+    to_port    = 65535
+  }
+  
+  tags = {
+    Name        = "devonn-public-nacl-\${var.environment}"
+    Environment = var.environment
+  }
+}
+
+# 4. Enhanced monitoring with custom CloudWatch dashboards and SNS
+resource "aws_cloudwatch_dashboard" "devonn_dashboard" {
+  count          = var.environment == "production" ? 1 : 0
+  dashboard_name = "devonn-\${var.environment}-monitoring"
+  
+  dashboard_body = <<EOF
+{
+  "widgets": [
+    {
+      "type": "metric",
+      "x": 0,
+      "y": 0,
+      "width": 12,
+      "height": 6,
+      "properties": {
+        "metrics": [
+          ["AWS/EKS", "cluster_failed_node_count", "ClusterName", "devonn-eks-\${var.environment}"],
+          ["AWS/EKS", "node_cpu_utilization", "ClusterName", "devonn-eks-\${var.environment}"]
+        ],
+        "period": 300,
+        "stat": "Average",
+        "region": "\${var.aws_region}",
+        "title": "EKS Cluster Health"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 12,
+      "y": 0,
+      "width": 12,
+      "height": 6,
+      "properties": {
+        "metrics": [
+          ["AWS/RDS", "CPUUtilization", "DBInstanceIdentifier", "devonn-postgres-\${var.environment}"],
+          ["AWS/RDS", "FreeStorageSpace", "DBInstanceIdentifier", "devonn-postgres-\${var.environment}"],
+          ["AWS/RDS", "DatabaseConnections", "DBInstanceIdentifier", "devonn-postgres-\${var.environment}"]
+        ],
+        "period": 300,
+        "stat": "Average",
+        "region": "\${var.aws_region}",
+        "title": "RDS Database Metrics"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 0,
+      "y": 6,
+      "width": 12,
+      "height": 6,
+      "properties": {
+        "metrics": [
+          ["AWS/Lambda", "Invocations", "FunctionName", "devonn-api-handler"],
+          ["AWS/Lambda", "Errors", "FunctionName", "devonn-api-handler"],
+          ["AWS/Lambda", "Duration", "FunctionName", "devonn-api-handler"]
+        ],
+        "period": 300,
+        "stat": "Sum",
+        "region": "\${var.aws_region}",
+        "title": "API Lambda Function"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 12,
+      "y": 6,
+      "width": 12,
+      "height": 6,
+      "properties": {
+        "metrics": [
+          ["AWS/NetworkELB", "HealthyHostCount", "LoadBalancer", "app/devonn-nlb/\${var.environment}"],
+          ["AWS/NetworkELB", "UnHealthyHostCount", "LoadBalancer", "app/devonn-nlb/\${var.environment}"],
+          ["AWS/NetworkELB", "RequestCount", "LoadBalancer", "app/devonn-nlb/\${var.environment}"]
+        ],
+        "period": 300,
+        "stat": "Average",
+        "region": "\${var.aws_region}",
+        "title": "Load Balancer Health"
+      }
+    }
+  ]
+}
+EOF
+}
+
+# 5. Create SNS Topic for Alerts
+resource "aws_sns_topic" "alerts_topic" {
+  count  = var.environment == "production" ? 1 : 0
+  name   = "devonn-alerts-\${var.environment}"
+}
+
+# 6. Add CloudWatch Alarms with SNS Integration
+resource "aws_cloudwatch_metric_alarm" "rds_cpu_alarm" {
+  count               = var.environment == "production" ? 1 : 0
+  alarm_name          = "devonn-rds-cpu-high-\${var.environment}"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = 2
+  metric_name         = "CPUUtilization"
+  namespace           = "AWS/RDS"
+  period              = 300
+  statistic           = "Average"
+  threshold           = 80
+  alarm_description   = "RDS CPU utilization is too high"
+  alarm_actions       = [aws_sns_topic.alerts_topic[0].arn]
+  ok_actions          = [aws_sns_topic.alerts_topic[0].arn]
+  
+  dimensions = {
+    DBInstanceIdentifier = "devonn-postgres-\${var.environment}"
+  }
+}
+
+resource "aws_cloudwatch_metric_alarm" "rds_storage_alarm" {
+  count               = var.environment == "production" ? 1 : 0
+  alarm_name          = "devonn-rds-storage-low-\${var.environment}"
+  comparison_operator = "LessThanThreshold"
+  evaluation_periods  = 1
+  metric_name         = "FreeStorageSpace"
+  namespace           = "AWS/RDS"
+  period              = 300
+  statistic           = "Average"
+  threshold           = 10737418240  # 10GB in bytes
+  alarm_description   = "RDS free storage space is critically low"
+  alarm_actions       = [aws_sns_topic.alerts_topic[0].arn]
+  ok_actions          = [aws_sns_topic.alerts_topic[0].arn]
+  
+  dimensions = {
+    DBInstanceIdentifier = "devonn-postgres-\${var.environment}"
+  }
+}
+
+resource "aws_cloudwatch_metric_alarm" "eks_node_failure_alarm" {
+  count               = var.environment == "production" ? 1 : 0
+  alarm_name          = "devonn-eks-node-failure-\${var.environment}"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = 1
+  metric_name         = "cluster_failed_node_count"
+  namespace           = "AWS/EKS"
+  period              = 300
+  statistic           = "Maximum"
+  threshold           = 0
+  alarm_description   = "EKS cluster has failed nodes"
+  alarm_actions       = [aws_sns_topic.alerts_topic[0].arn]
+  ok_actions          = [aws_sns_topic.alerts_topic[0].arn]
+  
+  dimensions = {
+    ClusterName = "devonn-eks-\${var.environment}"
+  }
+}
+
+# 7. Cross-region replication for RDS instance
+resource "aws_db_instance_automated_backups_replication" "rds_backup_replication" {
+  count                      = var.environment == "production" ? 1 : 0
+  source_db_instance_arn     = module.rds.db_instance_arn
+  retention_period           = 7
+  kms_key_id                 = aws_kms_key.rds_backup_key[0].arn
+}
+
+# 8. KMS Key for RDS backup encryption
+resource "aws_kms_key" "rds_backup_key" {
+  count                   = var.environment == "production" ? 1 : 0
+  description             = "KMS key for RDS backup encryption"
+  deletion_window_in_days = 30
+  enable_key_rotation     = true
+}
+
+# 9. Implement auto-scaling for EKS node groups with cost optimization
+resource "aws_autoscaling_policy" "scale_down_policy" {
+  count                  = var.environment == "production" ? 1 : 0
+  name                   = "devonn-eks-scale-down-\${var.environment}"
+  autoscaling_group_name = module.eks.eks_managed_node_groups["dev_nodes"].node_group_autoscaling_group_names[0]
+  adjustment_type        = "ChangeInCapacity"
+  scaling_adjustment     = -1
+  cooldown               = 300
+}
+
+resource "aws_autoscaling_policy" "scale_up_policy" {
+  count                  = var.environment == "production" ? 1 : 0
+  name                   = "devonn-eks-scale-up-\${var.environment}"
+  autoscaling_group_name = module.eks.eks_managed_node_groups["dev_nodes"].node_group_autoscaling_group_names[0]
+  adjustment_type        = "ChangeInCapacity"
+  scaling_adjustment     = 1
+  cooldown               = 300
+}
+
+# 10. CloudWatch Alarm for Scale Down
+resource "aws_cloudwatch_metric_alarm" "cpu_low_alarm" {
+  count               = var.environment == "production" ? 1 : 0
+  alarm_name          = "devonn-eks-cpu-low-\${var.environment}"
+  comparison_operator = "LessThanThreshold"
+  evaluation_periods  = 3
+  metric_name         = "node_cpu_utilization"
+  namespace           = "AWS/EKS"
+  period              = 300
+  statistic           = "Average"
+  threshold           = 30
+  alarm_description   = "Average CPU utilization is lower than 30%"
+  alarm_actions       = [aws_autoscaling_policy.scale_down_policy[0].arn]
+  
+  dimensions = {
+    ClusterName = "devonn-eks-\${var.environment}"
+  }
+}
+
+# 11. CloudWatch Alarm for Scale Up
+resource "aws_cloudwatch_metric_alarm" "cpu_high_alarm" {
+  count               = var.environment == "production" ? 1 : 0
+  alarm_name          = "devonn-eks-cpu-high-\${var.environment}"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = 2
+  metric_name         = "node_cpu_utilization"
+  namespace           = "AWS/EKS"
+  period              = 300
+  statistic           = "Average"
+  threshold           = 70
+  alarm_description   = "Average CPU utilization is higher than 70%"
+  alarm_actions       = [aws_autoscaling_policy.scale_up_policy[0].arn]
+  
+  dimensions = {
+    ClusterName = "devonn-eks-\${var.environment}"
+  }
+}
+
+# 12. Resource Tagging Strategy for Cost Allocation
+resource "aws_default_tags" {
+  tags = {
+    Project     = "devonn-ai"
+    Environment = var.environment
+    ManagedBy   = "terraform"
+    CostCenter  = "engineering"
+    Application = "devonn-\${var.environment}"
+    Owner       = "devops-team"
+  }
 }`;
+
