@@ -12,6 +12,34 @@ const mockSettings: DevonnSettings = {
   lastCheck: Date.now() // Adding the missing lastCheck property
 };
 
+// Mock chrome APIs for testing
+export const mockChrome = {
+  storage: {
+    local: {
+      get: jest.fn((keys, callback) => {
+        callback({ settings: mockSettings });
+      }),
+      set: jest.fn((items, callback) => {
+        if (callback) callback();
+      })
+    },
+    onChanged: {
+      addListener: jest.fn()
+    }
+  },
+  permissions: {
+    contains: jest.fn()
+  },
+  tabs: {
+    onActivated: {
+      addListener: jest.fn()
+    }
+  },
+  runtime: {
+    lastError: undefined
+  }
+};
+
 // Mock storage implementation
 export const mockChromeStorage = {
   get: jest.fn((keys, callback) => {
@@ -24,23 +52,13 @@ export const mockChromeStorage = {
 
 // Setup chrome storage mock
 export function setupChromeStorageMock() {
-  Object.defineProperty(global, 'chrome', {
-    value: {
-      storage: {
-        local: mockChromeStorage
-      },
-      runtime: {
-        lastError: undefined
-      }
-    },
-    writable: true
-  });
-
-  return mockChromeStorage;
+  return mockChrome;
 }
 
 // Reset mock between tests
 export function resetChromeStorageMock() {
   mockChromeStorage.get.mockClear();
   mockChromeStorage.set.mockClear();
+  mockChrome.storage.local.get.mockClear();
+  mockChrome.storage.local.set.mockClear();
 }

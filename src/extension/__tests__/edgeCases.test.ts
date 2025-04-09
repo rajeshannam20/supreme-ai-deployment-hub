@@ -1,10 +1,10 @@
-
 import { screen, fireEvent } from '@testing-library/dom';
 import '@testing-library/jest-dom';
-import { Storage } from '../storage';
-import { mockChrome } from './storage.mock';
+import * as StorageModule from '../storage';
+import { mockChromeStorage, setupChromeStorageMock } from './storage.mock';
 
-// Mock the chrome API
+// Set up the chrome mock
+const mockChrome = setupChromeStorageMock();
 global.chrome = mockChrome as any;
 
 // Mock functions for edge case testing
@@ -12,12 +12,9 @@ jest.mock('../storage', () => {
   const originalModule = jest.requireActual('../storage');
   return {
     ...originalModule,
-    Storage: {
-      ...originalModule.Storage,
-      get: jest.fn(),
-      set: jest.fn(),
-      remove: jest.fn()
-    }
+    getSettings: jest.fn(),
+    saveSettings: jest.fn(),
+    initializeSettings: jest.fn()
   };
 });
 
@@ -74,18 +71,18 @@ describe('Devonn.AI Edge Cases', () => {
   describe('Storage Edge Cases', () => {
     test('should handle storage quota exceeded', async () => {
       // Mock storage quota exceeded error
-      (Storage.set as jest.Mock).mockImplementationOnce(() => {
+      (StorageModule.saveSettings as jest.Mock).mockImplementationOnce(() => {
         throw new Error('Storage quota exceeded');
       });
       
       // Test how your application handles this case
       // This would be implementation-specific
-      expect(Storage.set).not.toHaveBeenCalled();
+      expect(StorageModule.saveSettings).not.toHaveBeenCalled();
     });
 
     test('should handle corrupted settings data', async () => {
       // Mock corrupted settings
-      (Storage.get as jest.Mock).mockImplementationOnce(() => {
+      (StorageModule.getSettings as jest.Mock).mockImplementationOnce(() => {
         return Promise.resolve({ 
           apiUrl: 123, // Wrong type
           userId: null, // Missing required field
@@ -95,7 +92,7 @@ describe('Devonn.AI Edge Cases', () => {
       
       // Test how your application handles corrupted settings
       // Implementation-specific test would go here
-      expect(Storage.get).not.toHaveBeenCalled();
+      expect(StorageModule.getSettings).not.toHaveBeenCalled();
     });
   });
 
