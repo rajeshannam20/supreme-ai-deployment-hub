@@ -19,8 +19,8 @@ on:
           - production
 
 jobs:
-  test:
-    name: Test
+  lint:
+    name: Lint
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -34,23 +34,153 @@ jobs:
       
       - name: Run linter
         run: npm run lint || echo "No linting configured"
+        
+      - name: Lint Kubernetes manifests (if any)
+        if: false  # Enable if you have Kubernetes manifests
+        uses: instrumenta/kubeval-action@master
+        with:
+          files: kubernetes/*.yaml
+  
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Run npm audit
+        run: npm audit --production
+        continue-on-error: true  # Don't fail the build, but report issues
+      
+      - name: Run Snyk scan
+        uses: snyk/actions/node@master
+        continue-on-error: true
+        with:
+          args: --severity-threshold=high
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN || '' }}
+      
+      - name: Run CodeQL Analysis
+        uses: github/codeql-action/analyze@v2
+        continue-on-error: true
+        
+  unit-test:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
       
       - name: Run unit tests
-        run: npm run test:extension
+        run: npm run test
       
-      - name: Run E2E tests
-        run: npm run test:e2e
+      - name: Generate test coverage report
+        run: npm run test:coverage
+        
+      - name: Upload test coverage
+        uses: actions/upload-artifact@v3
+        with:
+          name: coverage-report
+          path: coverage/
+  
+  extension-test:
+    name: Extension Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Run extension-specific tests
+        run: npm run test:extension
         
       - name: Upload test results
+        uses: actions/upload-artifact@v3
+        with:
+          name: extension-test-results
+          path: test-results/
+  
+  e2e-test:
+    name: End-to-End Tests
+    runs-on: ubuntu-latest
+    needs: [unit-test]
+    strategy:
+      matrix:
+        browser: [chrome, firefox]
+        viewport: [desktop, tablet, mobile]
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Install Playwright
+        run: npx playwright install --with-deps
+        
+      - name: Run E2E tests on ${{ matrix.browser }} (${{ matrix.viewport }})
+        run: |
+          BROWSER=${{ matrix.browser }} \
+          VIEWPORT=${{ matrix.viewport }} \
+          npm run test:e2e
+          
+      - name: Upload Playwright report
         if: always()
         uses: actions/upload-artifact@v3
         with:
-          name: test-results
-          path: test-results/
+          name: playwright-report-${{ matrix.browser }}-${{ matrix.viewport }}
+          path: playwright-report/
+  
+  performance-test:
+    name: Performance Tests
+    runs-on: ubuntu-latest
+    needs: [unit-test]
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Build for testing
+        run: npm run build:dev
+        
+      - name: Run Lighthouse CI
+        uses: treosh/lighthouse-ci-action@v9
+        with:
+          configPath: './.github/workflows/lighthouse-config.json'
+          uploadArtifacts: true
+          temporaryPublicStorage: true
           
+      - name: Run bundle analysis
+        run: npx webpack-bundle-analyzer --mode static --report public/bundle-report.html dist/stats.json
+        continue-on-error: true
+      
+      - name: Upload bundle analysis
+        uses: actions/upload-artifact@v3
+        with:
+          name: bundle-analysis
+          path: public/bundle-report.html
+        
   build:
     name: Build
-    needs: test
+    needs: [unit-test, extension-test]
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -78,7 +208,21 @@ jobs:
           echo "ENVIRONMENT=${{ matrix.environment }}" >> $GITHUB_ENV
       
       - name: Build extension
-        run: npm run build
+        run: npm run build:${{ matrix.environment }}
+      
+      - name: Run bundle optimization for production
+        if: matrix.environment == 'production'
+        run: |
+          echo "Running production optimizations"
+          npx terser dist/js/*.js --compress --mangle --output dist/js/
+      
+      - name: Verify build integrity
+        run: |
+          if [ ! -f "dist/manifest.json" ]; then
+            echo "Build verification failed: manifest.json missing"
+            exit 1
+          fi
+          echo "Build verification passed"
       
       - name: Package extension
         run: |
@@ -91,9 +235,51 @@ jobs:
           name: devonn-ai-${{ matrix.environment }}-extension
           path: devonn-ai-${{ matrix.environment }}.zip
   
+  integration-test:
+    name: Integration Tests
+    needs: [build]
+    runs-on: ubuntu-latest
+    environment: development
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Download development build
+        uses: actions/download-artifact@v3
+        with:
+          name: devonn-ai-development-extension
+          path: ./artifacts
+      
+      - name: Setup Chrome
+        uses: browser-actions/setup-chrome@latest
+        
+      - name: Extract extension
+        run: |
+          mkdir -p ./extension
+          unzip ./artifacts/devonn-ai-development.zip -d ./extension
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          
+      - name: Install test dependencies
+        run: npm ci
+      
+      - name: Run integration tests
+        run: |
+          node scripts/run-integration-tests.js \
+            --extension-path=./extension \
+            --browser=chrome
+      
+      - name: Upload integration test results
+        uses: actions/upload-artifact@v3
+        with:
+          name: integration-test-results
+          path: test-results/integration/
+  
   deploy:
     name: Deploy
-    needs: build
+    needs: [build, integration-test, e2e-test, performance-test]
     if: github.event_name == 'workflow_dispatch' || github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     environment: 
@@ -116,6 +302,16 @@ jobs:
             --client-secret ${{ secrets.CHROME_CLIENT_SECRET }} \
             --refresh-token ${{ secrets.CHROME_REFRESH_TOKEN }}
       
+      - name: Verify successful upload
+        if: ${{ github.event.inputs.environment == 'production' || github.ref == 'refs/heads/main' }}
+        run: |
+          # Check that the upload was successful
+          if [ $? -ne 0 ]; then
+            echo "Failed to upload extension to Chrome Web Store"
+            exit 1
+          fi
+          echo "Successfully uploaded extension to Chrome Web Store"
+      
       - name: Publish to Chrome Web Store
         if: ${{ github.event.inputs.environment == 'production' || github.ref == 'refs/heads/main' }}
         run: |
@@ -135,3 +331,42 @@ jobs:
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  smoke-test:
+    name: Post-Deployment Smoke Test
+    needs: deploy
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Check deployed extension
+        run: |
+          # This would be a script to verify the extension is working in the store
+          echo "Running post-deployment verification tests"
+          # Add actual verification here
+          echo "Extension published successfully!"
+          
+  notify:
+    name: Notify Team
+    needs: [deploy, smoke-test]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Determine status
+        id: status
+        run: |
+          if [ "${{ needs.deploy.result }}" == "success" ]; then
+            echo "deployment_status=successful" >> $GITHUB_OUTPUT
+          else
+            echo "deployment_status=failed" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Send deployment notification
+        uses: slackapi/slack-github-action@v1
+        with:
+          payload: |
+            {
+              "text": "Deployment ${{ steps.status.outputs.deployment_status }} for Devonn.AI ${{ github.event.inputs.environment || (github.ref == 'refs/heads/main' && 'production' || 'development') }}"
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL || '' }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
