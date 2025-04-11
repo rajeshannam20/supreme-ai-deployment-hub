@@ -12,6 +12,7 @@ import { GitRepository, gitService } from '@/services/gitService';
 import { getRepositories, saveRepository, deleteRepository } from '@/extension/gitStorage';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import GitVisualization from './GitVisualization';
 
 export const GitRepositoryManager = () => {
   const [repositories, setRepositories] = useState<GitRepository[]>([]);
@@ -23,6 +24,7 @@ export const GitRepositoryManager = () => {
   const [commitMessage, setCommitMessage] = useState('');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isPushDialogOpen, setIsPushDialogOpen] = useState(false);
+  const [activeRepositoryId, setActiveRepositoryId] = useState<string | null>(null);
   
   // Load repositories on component mount
   useEffect(() => {
@@ -100,6 +102,9 @@ export const GitRepositoryManager = () => {
       try {
         await deleteRepository(repositoryId);
         await loadRepositories();
+        if (activeRepositoryId === repositoryId) {
+          setActiveRepositoryId(null);
+        }
         toast.success('Repository removed successfully');
       } catch (error) {
         console.error('Error deleting repository:', error);
@@ -107,6 +112,21 @@ export const GitRepositoryManager = () => {
       }
     }
   };
+  
+  const handleRepositorySelect = (repoId: string) => {
+    setActiveRepositoryId(repoId === activeRepositoryId ? null : repoId);
+  };
+  
+  const handleUpdateRepository = async (updatedRepo: GitRepository) => {
+    try {
+      await saveRepository(updatedRepo);
+      await loadRepositories();
+    } catch (error) {
+      console.error('Error updating repository:', error);
+    }
+  };
+  
+  const activeRepository = repositories.find(repo => repo.id === activeRepositoryId);
   
   return (
     <Card className="shadow-md">
@@ -179,10 +199,10 @@ export const GitRepositoryManager = () => {
         ) : (
           <div className="space-y-4">
             {repositories.map((repo) => (
-              <Card key={repo.id} className="border-border">
+              <Card key={repo.id} className={`border-border ${activeRepositoryId === repo.id ? 'border-primary' : ''}`}>
                 <CardHeader className="py-3">
                   <div className="flex justify-between items-center">
-                    <div>
+                    <div className="cursor-pointer" onClick={() => handleRepositorySelect(repo.id)}>
                       <CardTitle className="text-base flex items-center gap-2">
                         <GitBranch className="h-4 w-4" />
                         {repo.name}
@@ -202,7 +222,7 @@ export const GitRepositoryManager = () => {
                         <GitPullRequest className="h-3 w-3 mr-2" />
                         Pull
                       </Button>
-                      <Dialog open={isPushDialogOpen} onOpenChange={setIsPushDialogOpen}>
+                      <Dialog open={isPushDialogOpen && selectedRepo?.id === repo.id} onOpenChange={setIsPushDialogOpen}>
                         <DialogTrigger asChild>
                           <Button 
                             variant="outline" 
@@ -247,6 +267,13 @@ export const GitRepositoryManager = () => {
                     </div>
                   </div>
                 </CardContent>
+                
+                {activeRepositoryId === repo.id && (
+                  <GitVisualization 
+                    repository={repo}
+                    onUpdateRepository={handleUpdateRepository}
+                  />
+                )}
               </Card>
             ))}
           </div>
