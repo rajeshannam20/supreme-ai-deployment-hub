@@ -28,4 +28,3 @@ ${serviceMeshYaml}
 ${variablesConfigYaml}
 
 ${outputsConfigYaml}`;
-
