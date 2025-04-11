@@ -14,5 +14,7 @@ resource "aws_appmesh_mesh" "devonn_mesh" {
   tags = {
     Environment = var.environment
     Project     = "devonn"
+    GitRepo     = "devonn-infra"
+    GitBranch   = "main"
   }
 }`;
