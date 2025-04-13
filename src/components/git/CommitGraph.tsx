@@ -29,7 +29,7 @@ const CommitGraph: React.FC<CommitGraphProps> = ({
   
   return (
     <div className="border rounded-md p-2 bg-background mb-4">
-      <ScrollArea className="h-[300px] w-full" orientation="horizontal">
+      <ScrollArea className="h-[300px] w-full">
         <div className="min-w-[800px] relative p-2">
           {/* Vertical timeline */}
           <div className="absolute left-6 top-0 bottom-0 w-0.5 bg-border"></div>
