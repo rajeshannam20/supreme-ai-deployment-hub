@@ -57,7 +57,6 @@ export const GitRepositoryManager = () => {
   const refreshAllRepositories = async () => {
     setIsRefreshing(true);
     try {
-      // Refresh each repository sequentially
       for (const repo of repositories) {
         await handlePullChanges(repo);
       }
@@ -67,6 +66,7 @@ export const GitRepositoryManager = () => {
   };
 
   const handleOpenAddDialog = () => {
+    window.dispatchEvent(new Event('openAddRepoDialog'));
     setIsAddDialogOpen(true);
   };
 

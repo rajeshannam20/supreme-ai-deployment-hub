@@ -5,16 +5,28 @@ import AddRepositoryDialog from '../AddRepositoryDialog';
 interface AddRepositoryDialogContainerProps {
   loading: boolean;
   onCloneRepository: (url: string, branch: string, token: string) => Promise<boolean>;
+  onOpenAddDialog?: () => void;
 }
 
 const AddRepositoryDialogContainer: React.FC<AddRepositoryDialogContainerProps> = ({ 
   loading, 
-  onCloneRepository 
+  onCloneRepository,
+  onOpenAddDialog
 }) => {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [newRepoUrl, setNewRepoUrl] = useState('');
   const [newRepoBranch, setNewRepoBranch] = useState('main');
   const [newRepoToken, setNewRepoToken] = useState('');
+
+  // If onOpenAddDialog is provided, use it to control dialog open state
+  React.useEffect(() => {
+    if (onOpenAddDialog) {
+      const handleOpen = () => setIsAddDialogOpen(true);
+      // This is a simple event emitter pattern
+      window.addEventListener('openAddRepoDialog', handleOpen);
+      return () => window.removeEventListener('openAddRepoDialog', handleOpen);
+    }
+  }, [onOpenAddDialog]);
 
   const handleCloneRepository = async () => {
     const success = await onCloneRepository(newRepoUrl, newRepoBranch, newRepoToken);
