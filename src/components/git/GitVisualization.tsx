@@ -6,7 +6,7 @@ import BranchesView from './BranchesView';
 import ComparisonView from './ComparisonView';
 import { CreateBranchDialog } from './dialogs/CreateBranchDialog';
 import { MergeBranchDialog } from './dialogs/MergeBranchDialog';
-import { CompareBranchesDialog } from './dialogs/CompareBranchesDialog';
+import CompareBranchesDialog from './dialogs/CompareBranchesDialog';
 import { useBranchOperations, useCompareOperations } from '@/hooks/git';
 
 interface GitVisualizationProps {
@@ -93,8 +93,8 @@ const GitVisualization: React.FC<GitVisualizationProps> = ({ repository, onUpdat
       <CreateBranchDialog 
         isOpen={isCreateBranchDialogOpen}
         onOpenChange={setIsCreateBranchDialogOpen}
-        branchName={newBranchName}
-        setBranchName={setNewBranchName}
+        newBranchName={newBranchName}
+        setNewBranchName={setNewBranchName}
         onCreateBranch={handleCreateBranch}
       />
 
@@ -112,6 +112,9 @@ const GitVisualization: React.FC<GitVisualizationProps> = ({ repository, onUpdat
         isOpen={isCompareDialogOpen}
         onOpenChange={setIsCompareDialogOpen}
         branches={branches}
+        currentBranch={repository.branch}
+        repository={repository}
+        loading={loadingBranches}
         onCompareBranches={handleCompareBranches}
       />
     </div>
