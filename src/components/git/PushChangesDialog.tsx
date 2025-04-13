@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,7 +11,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { GitRepository } from '@/services/git';
-import { GitCommit, GitHub } from 'lucide-react';
+import { GitCommit, Github } from 'lucide-react';
 
 interface PushChangesDialogProps {
   isOpen: boolean;
@@ -43,7 +42,7 @@ const PushChangesDialog = ({
       <DialogContent>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            {isGitHub ? <GitHub className="h-5 w-5" /> : <GitCommit className="h-5 w-5" />}
+            {isGitHub ? <Github className="h-5 w-5" /> : <GitCommit className="h-5 w-5" />}
             Push Changes to {isGitHub ? 'GitHub' : 'Git'}
           </DialogTitle>
           <DialogDescription>

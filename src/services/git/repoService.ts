@@ -1,4 +1,3 @@
-
 import { toast } from 'sonner';
 import { GitRepository } from './types';
 
@@ -100,17 +99,11 @@ export const repoService = {
         throw new Error("GitHub API rate limit exceeded");
       }
       
-      // Update repository object with GitHub specific information
+      // Update repository object with new status information
       const updatedRepo: GitRepository = {
         ...repository,
         lastSynced: new Date(),
-        status: 'synced',
-        lastCommit: {
-          hash: `commit_${Date.now().toString(16)}`,
-          message,
-          author: 'Current User',
-          date: new Date(),
-        }
+        status: 'synced'
       };
       
       toast.success(`Changes pushed to ${repository.name} on GitHub`);
@@ -147,4 +140,3 @@ export const repoService = {
     }
   },
 };
-

@@ -1,8 +1,7 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardContent } from '@/components/ui/card';
-import { GitBranch, GitPullRequest, GitCommit, Trash2, RefreshCw, Check, GitHub } from 'lucide-react';
+import { GitBranch, GitPullRequest, GitCommit, Trash2, RefreshCw, Check, Github } from 'lucide-react';
 import { GitRepository } from '@/services/git';
 
 interface RepositoryListItemProps {
@@ -33,7 +32,7 @@ const RepositoryListItem = ({
         <div className="flex justify-between items-center">
           <div className="cursor-pointer" onClick={() => onRepositorySelect(repo.id)}>
             <div className="text-base flex items-center gap-2 font-medium">
-              {isGitHub ? <GitHub className="h-4 w-4" /> : <GitBranch className="h-4 w-4" />}
+              {isGitHub ? <Github className="h-4 w-4" /> : <GitBranch className="h-4 w-4" />}
               {repo.name}
             </div>
             <div className="text-xs truncate max-w-64 text-muted-foreground">
@@ -58,7 +57,7 @@ const RepositoryListItem = ({
               onClick={() => onSelectForPush(repo)}
             >
               {isGitHub ? 
-                <GitHub className="h-3 w-3 mr-2" /> : 
+                <Github className="h-3 w-3 mr-2" /> : 
                 <GitCommit className="h-3 w-3 mr-2" />
               }
               Push
