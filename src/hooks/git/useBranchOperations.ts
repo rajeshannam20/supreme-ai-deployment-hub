@@ -77,13 +77,15 @@ export function useBranchOperations(repository: GitRepository, onUpdateRepositor
 
   const confirmMergeBranch = async () => {
     try {
-      // The gitService.mergeBranch method is missing, so we need to implement it
-      // For now, we'll simulate the merge process
-      const result = await simulateMergeBranch(repository, branchToMerge, repository.branch);
+      // Use the proper mergeBranch method from gitService
+      const updatedRepo = await gitService.mergeBranch(repository, branchToMerge, repository.branch);
       
       toast.success(`Branch ${branchToMerge} merged successfully into ${repository.branch}`);
       setIsMergeBranchDialogOpen(false);
       setBranchToMerge('');
+      
+      // Update repository with the result of the merge
+      onUpdateRepository(updatedRepo);
       
       // Refresh branches after merge
       await loadBranches();
@@ -93,18 +95,6 @@ export function useBranchOperations(repository: GitRepository, onUpdateRepositor
       toast.error(`Failed to merge branch: ${error instanceof Error ? error.message : 'Unknown error'}`);
       return false;
     }
-  };
-  
-  // Helper function to simulate branch merging (until gitService.mergeBranch is implemented)
-  const simulateMergeBranch = async (
-    repository: GitRepository, 
-    sourceBranch: string, 
-    targetBranch: string
-  ): Promise<boolean> => {
-    console.log(`Merging branch ${sourceBranch} into ${targetBranch}`);
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 800));
-    return true;
   };
   
   return {

@@ -128,5 +128,38 @@ export const branchService = {
       toast.error(`Failed to switch branch: ${error instanceof Error ? error.message : 'Unknown error'}`);
       throw error;
     }
+  },
+
+  /**
+   * Merge a branch into another branch
+   * @param repository Repository to perform merge in
+   * @param sourceBranch Name of the branch to merge from
+   * @param targetBranch Name of the branch to merge into
+   */
+  mergeBranch: async (repository: GitRepository, sourceBranch: string, targetBranch: string): Promise<GitRepository> => {
+    try {
+      // Simulate API call to merge branches
+      console.log(`Merging branch ${sourceBranch} into ${targetBranch} in repository: ${repository.name}`);
+      await new Promise(resolve => setTimeout(resolve, 1200));
+
+      // Check for simulated merge conflicts (random 10% chance)
+      if (Math.random() < 0.1) {
+        throw new Error(`Merge conflict detected between ${sourceBranch} and ${targetBranch}`);
+      }
+
+      // Update repository object
+      const updatedRepo: GitRepository = {
+        ...repository,
+        lastSynced: new Date(),
+        status: 'synced'
+      };
+
+      return updatedRepo;
+    } catch (error) {
+      console.error('Error merging branches:', error);
+      toast.error(`Failed to merge branches: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw error;
+    }
   }
 };
+
