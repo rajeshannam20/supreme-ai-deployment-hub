@@ -1,7 +1,8 @@
+
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardContent } from '@/components/ui/card';
-import { GitBranch, GitPullRequest, GitCommit, Trash2, RefreshCw, Check } from 'lucide-react';
+import { GitBranch, GitPullRequest, GitCommit, Trash2, RefreshCw, Check, GitHub } from 'lucide-react';
 import { GitRepository } from '@/services/git';
 
 interface RepositoryListItemProps {
@@ -23,13 +24,16 @@ const RepositoryListItem = ({
   onSelectForPush,
   onDeleteRepository
 }: RepositoryListItemProps) => {
+  // Check if this is a GitHub repository
+  const isGitHub = repo.url.includes('github.com');
+  
   return (
     <Card key={repo.id} className={`border-border ${activeRepositoryId === repo.id ? 'border-primary' : ''}`}>
       <CardHeader className="py-3">
         <div className="flex justify-between items-center">
           <div className="cursor-pointer" onClick={() => onRepositorySelect(repo.id)}>
             <div className="text-base flex items-center gap-2 font-medium">
-              <GitBranch className="h-4 w-4" />
+              {isGitHub ? <GitHub className="h-4 w-4" /> : <GitBranch className="h-4 w-4" />}
               {repo.name}
             </div>
             <div className="text-xs truncate max-w-64 text-muted-foreground">
@@ -50,10 +54,13 @@ const RepositoryListItem = ({
             <Button
               variant="outline"
               size="sm"
-              className="h-8 px-3"
+              className={`h-8 px-3 ${isGitHub ? "text-[#2da44e]" : ""}`}
               onClick={() => onSelectForPush(repo)}
             >
-              <GitCommit className="h-3 w-3 mr-2" />
+              {isGitHub ? 
+                <GitHub className="h-3 w-3 mr-2" /> : 
+                <GitCommit className="h-3 w-3 mr-2" />
+              }
               Push
             </Button>
             <Button

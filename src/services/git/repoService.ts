@@ -75,29 +75,49 @@ export const repoService = {
   },
   
   /**
-   * Push changes to a repository
+   * Push changes to a GitHub repository
    * @param repository Repository to push changes to
    * @param message Commit message
    */
   pushChanges: async (repository: GitRepository, message: string): Promise<GitRepository> => {
     try {
-      // Simulate API call to push changes
-      console.log(`Pushing changes for repository: ${repository.name}, branch: ${repository.branch}`);
+      // Simulate API call to push changes to GitHub
+      console.log(`Pushing changes to GitHub repository: ${repository.name}, branch: ${repository.branch}`);
       console.log(`Commit message: ${message}`);
-      await new Promise(resolve => setTimeout(resolve, 1200));
       
-      // Update repository object
+      // Check if we have an access token for GitHub authentication
+      if (repository.accessToken) {
+        console.log("Using authenticated GitHub push");
+      } else {
+        console.log("Using unauthenticated GitHub push");
+      }
+      
+      // Simulate network delay and GitHub API interaction
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      // Check for simulated errors (randomly fail 10% of pushes to show error handling)
+      if (Math.random() < 0.1) {
+        throw new Error("GitHub API rate limit exceeded");
+      }
+      
+      // Update repository object with GitHub specific information
       const updatedRepo: GitRepository = {
         ...repository,
         lastSynced: new Date(),
-        status: 'synced'
+        status: 'synced',
+        lastCommit: {
+          hash: `commit_${Date.now().toString(16)}`,
+          message,
+          author: 'Current User',
+          date: new Date(),
+        }
       };
       
-      toast.success(`Changes pushed to ${repository.name}`);
+      toast.success(`Changes pushed to ${repository.name} on GitHub`);
       return updatedRepo;
     } catch (error) {
-      console.error('Error pushing changes:', error);
-      toast.error(`Failed to push changes: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      console.error('Error pushing changes to GitHub:', error);
+      toast.error(`GitHub push failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
       throw error;
     }
   },
@@ -127,3 +147,4 @@ export const repoService = {
     }
   },
 };
+

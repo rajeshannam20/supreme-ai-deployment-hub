@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import PushChangesDialog from '../PushChangesDialog';
 import { GitRepository } from '@/services/git';
@@ -22,10 +23,17 @@ const PushChangesDialogContainer: React.FC<PushChangesDialogContainerProps> = ({
   const handlePushChanges = async () => {
     if (!selectedRepo) return;
     
+    // Check if it's a GitHub repository
+    const isGitHub = selectedRepo.url.includes('github.com');
+    console.log(`Preparing to push to ${isGitHub ? 'GitHub' : 'Git'} repository: ${selectedRepo.name}`);
+    
     const success = await onPushChanges(selectedRepo, commitMessage);
     if (success) {
       setCommitMessage('');
       onClose();
+      
+      // Log success information
+      console.log(`Successfully pushed changes to ${isGitHub ? 'GitHub' : 'Git'} repository: ${selectedRepo.name}`);
     }
   };
 
