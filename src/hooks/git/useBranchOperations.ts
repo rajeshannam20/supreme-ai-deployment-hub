@@ -16,10 +16,7 @@ export function useBranchOperations(repository: GitRepository, onUpdateRepositor
     try {
       const branchList = await gitService.getBranches(repository);
       setBranches(branchList);
-      onUpdateRepository({
-        ...repository,
-        // No need to update repository here as it's just loading branches
-      });
+      // No need to update repository here as it's just loading branches
     } catch (error) {
       console.error('Error loading branches:', error);
       toast.error(`Failed to load branches: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -80,11 +77,11 @@ export function useBranchOperations(repository: GitRepository, onUpdateRepositor
 
   const confirmMergeBranch = async () => {
     try {
-      // The mergeBranch method doesn't exist in gitService, so we need to adapt
-      // For now, we'll simulate a successful merge
-      await new Promise(resolve => setTimeout(resolve, 800)); // Simulate API call
+      // The gitService.mergeBranch method is missing, so we need to implement it
+      // For now, we'll simulate the merge process
+      const result = await simulateMergeBranch(repository, branchToMerge, repository.branch);
       
-      toast.success(`Branch ${branchToMerge} merged successfully`);
+      toast.success(`Branch ${branchToMerge} merged successfully into ${repository.branch}`);
       setIsMergeBranchDialogOpen(false);
       setBranchToMerge('');
       
@@ -96,6 +93,18 @@ export function useBranchOperations(repository: GitRepository, onUpdateRepositor
       toast.error(`Failed to merge branch: ${error instanceof Error ? error.message : 'Unknown error'}`);
       return false;
     }
+  };
+  
+  // Helper function to simulate branch merging (until gitService.mergeBranch is implemented)
+  const simulateMergeBranch = async (
+    repository: GitRepository, 
+    sourceBranch: string, 
+    targetBranch: string
+  ): Promise<boolean> => {
+    console.log(`Merging branch ${sourceBranch} into ${targetBranch}`);
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 800));
+    return true;
   };
   
   return {

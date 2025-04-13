@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { GitBranch, GitRepository, GitBranch as Branch } from '@/services/git';
+import { GitRepository, GitBranch } from '@/services/git';
 import BranchesView from './BranchesView';
 import ComparisonView from './ComparisonView';
 import { CreateBranchDialog } from './dialogs/CreateBranchDialog';
