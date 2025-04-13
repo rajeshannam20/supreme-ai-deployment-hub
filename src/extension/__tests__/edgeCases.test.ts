@@ -2,7 +2,7 @@
 import { screen, fireEvent } from '@testing-library/dom';
 import '@testing-library/jest-dom';
 import * as StorageModule from '../storage';
-import { mockChromeStorage, setupChromeStorageMock } from './storage.mock';
+import { setupChromeStorageMock, mockChromeStorage } from './storage.mock';
 
 // Set up the chrome mock
 const mockChrome = setupChromeStorageMock();
