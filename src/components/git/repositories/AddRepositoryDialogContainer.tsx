@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import AddRepositoryDialog from '../AddRepositoryDialog';
 
 interface AddRepositoryDialogContainerProps {
@@ -19,7 +19,7 @@ const AddRepositoryDialogContainer: React.FC<AddRepositoryDialogContainerProps> 
   const [newRepoToken, setNewRepoToken] = useState('');
 
   // If onOpenAddDialog is provided, use it to control dialog open state
-  React.useEffect(() => {
+  useEffect(() => {
     if (onOpenAddDialog) {
       const handleOpen = () => setIsAddDialogOpen(true);
       // This is a simple event emitter pattern
