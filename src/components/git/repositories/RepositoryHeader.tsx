@@ -13,6 +13,7 @@ interface RepositoryHeaderProps {
   repositoriesCount: number;
   onRefreshAll: () => void;
   onCloneRepository: (url: string, branch: string, token: string) => Promise<boolean>;
+  onOpenAddDialog?: () => void;
 }
 
 const RepositoryHeader: React.FC<RepositoryHeaderProps> = ({
@@ -20,7 +21,8 @@ const RepositoryHeader: React.FC<RepositoryHeaderProps> = ({
   isRefreshing,
   repositoriesCount,
   onRefreshAll,
-  onCloneRepository
+  onCloneRepository,
+  onOpenAddDialog
 }) => {
   return (
     <div className="flex justify-between items-center">
@@ -73,6 +75,7 @@ const RepositoryHeader: React.FC<RepositoryHeaderProps> = ({
         <AddRepositoryDialogContainer
           loading={loading}
           onCloneRepository={onCloneRepository}
+          onOpenAddDialog={onOpenAddDialog}
         />
       </div>
     </div>

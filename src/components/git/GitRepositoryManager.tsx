@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { useGitRepositories } from '@/hooks/useGitRepositories';
@@ -30,6 +29,7 @@ export const GitRepositoryManager = () => {
   const [repoToDelete, setRepoToDelete] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   
   const handleOpenPushDialog = (repo: GitRepository) => {
     handleSelectForPush(repo);
@@ -66,7 +66,10 @@ export const GitRepositoryManager = () => {
     }
   };
 
-  // Filter repositories based on search query
+  const handleOpenAddDialog = () => {
+    setIsAddDialogOpen(true);
+  };
+
   const filteredRepositories = repositories.filter(repo => 
     repo.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
     repo.url.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -82,6 +85,7 @@ export const GitRepositoryManager = () => {
           repositoriesCount={repositories.length}
           onRefreshAll={refreshAllRepositories}
           onCloneRepository={handleCloneRepository}
+          onOpenAddDialog={handleOpenAddDialog}
         />
       </CardHeader>
       <CardContent>
@@ -98,6 +102,7 @@ export const GitRepositoryManager = () => {
           onSelectForPush={handleOpenPushDialog}
           onDeleteRepository={handleConfirmDelete}
           onUpdateRepository={handleUpdateRepository}
+          onAddRepository={handleOpenAddDialog}
         />
       </CardContent>
       

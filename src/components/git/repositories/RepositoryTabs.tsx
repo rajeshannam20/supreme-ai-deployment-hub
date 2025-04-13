@@ -21,6 +21,7 @@ interface RepositoryTabsProps {
   onSelectForPush: (repo: GitRepository) => void;
   onDeleteRepository: (repoId: string) => void;
   onUpdateRepository: (repo: GitRepository) => void;
+  onAddRepository?: () => void;
 }
 
 const RepositoryTabs: React.FC<RepositoryTabsProps> = ({
@@ -35,7 +36,8 @@ const RepositoryTabs: React.FC<RepositoryTabsProps> = ({
   onPullChanges,
   onSelectForPush,
   onDeleteRepository,
-  onUpdateRepository
+  onUpdateRepository,
+  onAddRepository
 }) => {
   return (
     <Tabs defaultValue="repositories">
@@ -64,7 +66,7 @@ const RepositoryTabs: React.FC<RepositoryTabsProps> = ({
           </div>
         )}
         
-        {repositories.length === 0 && <EmptyRepositoryState />}
+        {repositories.length === 0 && <EmptyRepositoryState onAddRepository={onAddRepository} />}
         
         <RepositorySection
           repositories={filteredRepositories}
