@@ -1,6 +1,5 @@
-
 import React from 'react';
-import { GitBranch, GitCompareArrow, FileText } from 'lucide-react';
+import { GitBranch, GitCompareArrows, FileText } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -32,7 +31,7 @@ const ComparisonView: React.FC<ComparisonViewProps> = ({
     <Card>
       <CardHeader className="pb-3">
         <CardTitle className="text-lg font-medium flex items-center gap-2">
-          <GitCompareArrow className="h-5 w-5" />
+          <GitCompareArrows className="h-5 w-5" />
           Branch Comparison
         </CardTitle>
         <div className="flex items-center text-sm mt-2">

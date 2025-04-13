@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -10,7 +9,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { GitBranch, GitCompareArrow } from 'lucide-react';
+import { GitBranch, GitCompareArrows } from 'lucide-react';
 import { GitRepository, GitBranch as Branch } from '@/services/git';
 import { Label } from '@/components/ui/label';
 
@@ -36,15 +35,12 @@ const CompareBranchesDialog: React.FC<CompareBranchesDialogProps> = ({
   const [sourceBranch, setSourceBranch] = useState(currentBranch);
   const [targetBranch, setTargetBranch] = useState('');
   
-  // Update source branch when current branch changes
   useEffect(() => {
     setSourceBranch(currentBranch);
   }, [currentBranch]);
   
-  // Update target branch when branches change
   useEffect(() => {
     if (branches.length > 0 && !targetBranch) {
-      // Select a default target branch different from source
       const otherBranch = branches.find(branch => 
         !branch.isRemote && branch.name !== sourceBranch
       );
@@ -52,13 +48,11 @@ const CompareBranchesDialog: React.FC<CompareBranchesDialogProps> = ({
       if (otherBranch) {
         setTargetBranch(otherBranch.name);
       } else if (branches.length > 1) {
-        // If no suitable branch found but there's more than one branch
         setTargetBranch(branches[0].name === sourceBranch ? branches[1].name : branches[0].name);
       }
     }
   }, [branches, sourceBranch, targetBranch]);
   
-  // Filter branches to show only local branches
   const localBranches = branches.filter(branch => !branch.isRemote);
   
   const handleCompare = () => {
@@ -74,7 +68,7 @@ const CompareBranchesDialog: React.FC<CompareBranchesDialogProps> = ({
       <DialogContent>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <GitCompareArrow className="h-5 w-5" />
+            <GitCompareArrows className="h-5 w-5" />
             Compare Branches
           </DialogTitle>
           <DialogDescription>
@@ -108,7 +102,7 @@ const CompareBranchesDialog: React.FC<CompareBranchesDialogProps> = ({
           
           <div className="flex justify-center">
             <div className="bg-muted rounded-full p-2">
-              <GitCompareArrow className="h-5 w-5" />
+              <GitCompareArrows className="h-5 w-5" />
             </div>
           </div>
           

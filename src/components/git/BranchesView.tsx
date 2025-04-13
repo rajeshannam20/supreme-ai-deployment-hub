@@ -1,9 +1,8 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { GitBranch, GitMerge, Plus, GitCompareArrow } from 'lucide-react';
+import { GitBranch, GitMerge, Plus, GitCompareArrows } from 'lucide-react';
 import { GitRepository, GitBranch as Branch } from '@/services/git';
 
 interface BranchesViewProps {
@@ -52,7 +51,7 @@ const BranchesView: React.FC<BranchesViewProps> = ({
             </Button>
             {onCompareBranches && (
               <Button variant="outline" size="sm" onClick={onCompareBranches}>
-                <GitCompareArrow className="h-4 w-4 mr-1" />
+                <GitCompareArrows className="h-4 w-4 mr-1" />
                 Compare
               </Button>
             )}
