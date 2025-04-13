@@ -1,13 +1,17 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { useGitRepositories } from '@/hooks/useGitRepositories';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { Search } from 'lucide-react';
+import { Search, HelpCircle } from 'lucide-react';
 import AddRepositoryDialogContainer from './repositories/AddRepositoryDialogContainer';
 import PushChangesDialogContainer from './repositories/PushChangesDialogContainer';
 import RepositorySection from './repositories/RepositorySection';
 import { GitRepository } from '@/services/git';
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import GitDocumentation from './GitDocumentation';
 
 export const GitRepositoryManager = () => {
   const {
@@ -69,35 +73,52 @@ export const GitRepositoryManager = () => {
             <CardTitle>Git Repositories</CardTitle>
             <CardDescription>Manage your Git repositories and sync changes</CardDescription>
           </div>
-          <AddRepositoryDialogContainer
-            loading={loading}
-            onCloneRepository={handleCloneRepository}
-          />
-        </div>
-        
-        {/* Repository search */}
-        <div className="mt-4 relative">
-          <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search repositories..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-8"
-          />
+          <div className="flex gap-2">
+            <AddRepositoryDialogContainer
+              loading={loading}
+              onCloneRepository={handleCloneRepository}
+            />
+          </div>
         </div>
       </CardHeader>
       <CardContent>
-        <RepositorySection
-          repositories={filteredRepositories}
-          activeRepositoryId={activeRepositoryId}
-          loading={loading}
-          activeRepository={activeRepository}
-          onRepositorySelect={handleRepositorySelect}
-          onPullChanges={handlePullChanges}
-          onSelectForPush={handleOpenPushDialog}
-          onDeleteRepository={handleConfirmDelete}
-          onUpdateRepository={handleUpdateRepository}
-        />
+        <Tabs defaultValue="repositories">
+          <TabsList className="mb-4">
+            <TabsTrigger value="repositories">Repositories</TabsTrigger>
+            <TabsTrigger value="documentation" className="flex items-center gap-1">
+              <HelpCircle className="h-4 w-4" />
+              Documentation
+            </TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="repositories">
+            <div className="mb-4 relative">
+              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search repositories..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-8"
+              />
+            </div>
+            
+            <RepositorySection
+              repositories={filteredRepositories}
+              activeRepositoryId={activeRepositoryId}
+              loading={loading}
+              activeRepository={activeRepository}
+              onRepositorySelect={handleRepositorySelect}
+              onPullChanges={handlePullChanges}
+              onSelectForPush={handleOpenPushDialog}
+              onDeleteRepository={handleConfirmDelete}
+              onUpdateRepository={handleUpdateRepository}
+            />
+          </TabsContent>
+          
+          <TabsContent value="documentation">
+            <GitDocumentation />
+          </TabsContent>
+        </Tabs>
       </CardContent>
       
       <PushChangesDialogContainer
