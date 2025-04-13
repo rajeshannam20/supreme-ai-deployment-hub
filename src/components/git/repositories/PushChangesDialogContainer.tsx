@@ -1,7 +1,6 @@
-
 import React, { useState } from 'react';
 import PushChangesDialog from '../PushChangesDialog';
-import { GitRepository } from '@/services/gitService';
+import { GitRepository } from '@/services/git';
 
 interface PushChangesDialogContainerProps {
   selectedRepo: GitRepository | null;

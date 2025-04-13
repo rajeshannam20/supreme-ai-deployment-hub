@@ -3,7 +3,7 @@ import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { GitRepository } from '@/services/gitService';
+import { GitRepository } from '@/services/git';
 import CommitHistoryView from './CommitHistoryView';
 import BranchesView from './BranchesView';
 import DiffView from './DiffView';

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,7 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { GitRepository } from '@/services/gitService';
+import { GitRepository } from '@/services/git';
 
 interface PushChangesDialogProps {
   isOpen: boolean;

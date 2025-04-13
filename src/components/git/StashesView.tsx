@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { GitStashEntry, GitRepository } from '@/services/gitService';
+import { GitStashEntry, GitRepository } from '@/services/git';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Archive, Trash2, ArrowDownToLine, Plus } from 'lucide-react';

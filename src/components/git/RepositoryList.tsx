@@ -2,7 +2,7 @@
 import React from 'react';
 import { AlertCircle } from 'lucide-react';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import { GitRepository } from '@/services/gitService';
+import { GitRepository } from '@/services/git';
 import RepositoryListItem from './RepositoryListItem';
 
 interface RepositoryListProps {

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -8,7 +7,7 @@ import { Search } from 'lucide-react';
 import AddRepositoryDialogContainer from './repositories/AddRepositoryDialogContainer';
 import PushChangesDialogContainer from './repositories/PushChangesDialogContainer';
 import RepositorySection from './repositories/RepositorySection';
-import { GitRepository } from '@/services/gitService';
+import { GitRepository } from '@/services/git';
 
 export const GitRepositoryManager = () => {
   const {

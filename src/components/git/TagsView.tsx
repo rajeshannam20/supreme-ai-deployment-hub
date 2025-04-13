@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { GitTag, GitRepository } from '@/services/gitService';
+import { GitTag, GitRepository } from '@/services/git';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tag, Trash2, Plus, Calendar } from 'lucide-react';

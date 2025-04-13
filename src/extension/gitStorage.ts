@@ -1,6 +1,5 @@
-
 import { v4 as uuidv4 } from 'uuid';
-import { GitRepository } from '../services/gitService';
+import { GitRepository } from '../services/git';
 
 // Define the storage key
 const GIT_REPOS_STORAGE_KEY = 'devonn_git_repositories';

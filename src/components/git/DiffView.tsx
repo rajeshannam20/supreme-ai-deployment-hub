@@ -1,11 +1,10 @@
-
 import React from 'react';
 import { FileCode, Plus, Minus, FileText } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
-import { GitDiff, GitCommit } from '@/services/gitService';
+import { GitDiff, GitCommit } from '@/services/git';
 
 interface DiffViewProps {
   commit?: GitCommit;

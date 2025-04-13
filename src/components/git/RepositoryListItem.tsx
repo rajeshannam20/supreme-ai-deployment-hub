@@ -1,9 +1,8 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardContent } from '@/components/ui/card';
 import { GitBranch, GitPullRequest, GitCommit, Trash2, RefreshCw, Check } from 'lucide-react';
-import { GitRepository } from '@/services/gitService';
+import { GitRepository } from '@/services/git';
 
 interface RepositoryListItemProps {
   repo: GitRepository;

@@ -1,7 +1,6 @@
-
 import React from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { GitCommit, GitBranch as Branch } from '@/services/gitService';
+import { GitCommit, GitBranch as Branch } from '@/services/git';
 
 interface CommitGraphProps {
   commits: GitCommit[];

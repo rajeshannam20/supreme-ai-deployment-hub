@@ -9,7 +9,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { GitCommit as Commit, GitRepository, GitBranch as Branch } from '@/services/gitService';
+import { GitCommit as Commit, GitRepository, GitBranch as Branch } from '@/services/git';
 import CommitGraph from './CommitGraph';
 import CommitFilter, { CommitFilterOptions } from './CommitFilter';
 

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { format } from 'date-fns';
 import { GitBranch, GitMerge, Check, Cloud, ArrowUpDown } from 'lucide-react';
@@ -7,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { GitBranch as Branch, GitRepository } from '@/services/gitService';
+import { GitBranch as Branch, GitRepository } from '@/services/git';
 
 interface BranchesViewProps {
   repository: GitRepository;

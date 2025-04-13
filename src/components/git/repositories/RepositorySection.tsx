@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { GitRepository } from '@/services/gitService';
+import { GitRepository } from '@/services/git';
 import RepositoryList from '../RepositoryList';
 import GitVisualization from '../GitVisualization';
 
