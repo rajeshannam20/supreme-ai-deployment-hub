@@ -5,6 +5,7 @@ import { useGitRepositories } from '@/hooks/useGitRepositories';
 import AddRepositoryDialogContainer from './repositories/AddRepositoryDialogContainer';
 import PushChangesDialogContainer from './repositories/PushChangesDialogContainer';
 import RepositorySection from './repositories/RepositorySection';
+import { GitRepository } from '@/services/gitService';
 
 export const GitRepositoryManager = () => {
   const {
