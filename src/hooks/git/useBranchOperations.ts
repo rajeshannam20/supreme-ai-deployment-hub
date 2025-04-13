@@ -74,13 +74,7 @@ export function useBranchOperations(repository: GitRepository, onUpdateRepositor
   };
   
   const handleMergeBranch = (branchName: string) => {
-    const branch = branches.find(b => b.name === branchName);
-    if (!branch) {
-      toast.error(`Branch ${branchName} not found`);
-      return;
-    }
-    
-    setBranchToMerge(branch.name);
+    setBranchToMerge(branchName);
     setIsMergeBranchDialogOpen(true);
   };
 
