@@ -53,9 +53,11 @@ export const GitVisualization = ({ repository, onUpdateRepository }: GitVisualiz
           <CommitHistoryView
             repository={repository}
             commits={commits}
+            branches={branches}
             loading={loadingCommits}
             onLoadMore={handleLoadMoreCommits}
             onCommitSelect={handleCommitSelect}
+            selectedCommitHash={selectedCommit?.hash}
           />
         </TabsContent>
         
