@@ -1,104 +1,167 @@
 
-import { useEffect } from 'react';
-import { GitRepository } from '@/services/git';
-import { 
-  useCommitHistory,
-  useBranchOperations,
-  useStashOperations,
-  useTagOperations,
-  useFileOperations
-} from './git';
+import { useEffect, useState } from 'react';
+import { GitRepository, GitCommit, GitDiff, GitBranch, GitStashEntry, GitTag, gitService } from '@/services/git';
+import { toast } from 'sonner';
+import { useCommitHistory } from './git/useCommitHistory';
+import { useBranchOperations } from './git/useBranchOperations';
+import { useStashOperations } from './git/useStashOperations';
+import { useFileOperations } from './git/useFileOperations';
+import { useTagOperations } from './git/useTagOperations';
+import { useCompareOperations } from './git/useCompareOperations';
 
 export function useGitVisualization(repository: GitRepository, onUpdateRepository: (repo: GitRepository) => void) {
-  // Use smaller, focused hooks
-  const commitHistory = useCommitHistory(repository);
-  const branchOperations = useBranchOperations(repository, onUpdateRepository);
-  const stashOperations = useStashOperations(repository);
-  const tagOperations = useTagOperations(repository);
-  const fileOperations = useFileOperations(repository);
+  // Get operations from specialized hooks
+  const {
+    commits,
+    diffs,
+    selectedCommit,
+    loadingCommits,
+    loadingDiff,
+    loadCommits,
+    handleLoadMoreCommits,
+    handleCommitSelect
+  } = useCommitHistory(repository);
   
-  // Load initial data
+  const {
+    branches,
+    loadingBranches,
+    isCreateBranchDialogOpen,
+    isMergeBranchDialogOpen,
+    newBranchName,
+    branchToMerge,
+    setIsCreateBranchDialogOpen,
+    setIsMergeBranchDialogOpen,
+    setNewBranchName,
+    loadBranches,
+    handleCreateBranch,
+    handleSwitchBranch,
+    handleMergeBranch,
+    confirmMergeBranch
+  } = useBranchOperations(repository, onUpdateRepository);
+  
+  const {
+    stashes,
+    loadingStashes,
+    isStashDialogOpen,
+    stashMessage,
+    setIsStashDialogOpen,
+    setStashMessage,
+    loadStashes,
+    handleCreateStash,
+    handleApplyStash,
+    handleDropStash
+  } = useStashOperations(repository);
+  
+  const {
+    isDiscardChangesDialogOpen,
+    filesToDiscard,
+    setIsDiscardChangesDialogOpen,
+    setFilesToDiscard,
+    handleDiscardChanges
+  } = useFileOperations(repository);
+  
+  const {
+    tags,
+    loadingTags,
+    isCreateTagDialogOpen,
+    newTagName,
+    newTagMessage,
+    newTagCommit,
+    setIsCreateTagDialogOpen,
+    setNewTagName,
+    setNewTagMessage,
+    setNewTagCommit,
+    loadTags,
+    handleCreateTag,
+    handleDeleteTag
+  } = useTagOperations(repository);
+  
+  const {
+    isCompareDialogOpen,
+    setIsCompareDialogOpen,
+    isComparing,
+    comparisonDiffs,
+    sourceBranchName,
+    targetBranchName,
+    showComparison,
+    handleCompareBranches,
+    closeComparison
+  } = useCompareOperations(repository);
+  
+  // Load data when the component mounts or repository changes
   useEffect(() => {
-    if (repository) {
-      commitHistory.loadCommits();
-      branchOperations.loadBranches();
-      stashOperations.loadStashes();
-      tagOperations.loadTags();
-    }
-  }, [repository]);
-
-  // Refresh data after branch operations
-  const handleSwitchBranch = async (branch: any) => {
-    const success = await branchOperations.handleSwitchBranch(branch);
-    if (success) {
-      commitHistory.loadCommits();
-    }
-  };
-
-  const confirmMergeBranch = async () => {
-    const success = await branchOperations.confirmMergeBranch();
-    if (success) {
-      commitHistory.loadCommits();
-      branchOperations.loadBranches();
-    }
-  };
-
+    loadCommits();
+    loadBranches();
+    loadStashes();
+    loadTags();
+  }, [repository.id]);
+  
   return {
     // Commit history
-    commits: commitHistory.commits,
-    diffs: commitHistory.diffs,
-    selectedCommit: commitHistory.selectedCommit,
-    loadingCommits: commitHistory.loadingCommits,
-    loadingDiff: commitHistory.loadingDiff,
-    handleLoadMoreCommits: commitHistory.handleLoadMoreCommits,
-    handleCommitSelect: commitHistory.handleCommitSelect,
+    commits,
+    diffs,
+    selectedCommit,
+    loadingCommits,
+    loadingDiff,
+    handleLoadMoreCommits,
+    handleCommitSelect,
     
     // Branch operations
-    branches: branchOperations.branches,
-    loadingBranches: branchOperations.loadingBranches,
-    isCreateBranchDialogOpen: branchOperations.isCreateBranchDialogOpen,
-    isMergeBranchDialogOpen: branchOperations.isMergeBranchDialogOpen,
-    newBranchName: branchOperations.newBranchName,
-    branchToMerge: branchOperations.branchToMerge,
-    setIsCreateBranchDialogOpen: branchOperations.setIsCreateBranchDialogOpen,
-    setIsMergeBranchDialogOpen: branchOperations.setIsMergeBranchDialogOpen,
-    setNewBranchName: branchOperations.setNewBranchName,
-    setBranchToMerge: branchOperations.setBranchToMerge,
-    handleCreateBranch: branchOperations.handleCreateBranch,
+    branches,
+    loadingBranches,
+    isCreateBranchDialogOpen,
+    isMergeBranchDialogOpen,
+    newBranchName,
+    branchToMerge,
+    setIsCreateBranchDialogOpen,
+    setIsMergeBranchDialogOpen,
+    setNewBranchName,
+    handleCreateBranch,
     handleSwitchBranch,
-    handleMergeBranch: branchOperations.handleMergeBranch,
+    handleMergeBranch,
     confirmMergeBranch,
     
     // Stash operations
-    stashes: stashOperations.stashes,
-    loadingStashes: stashOperations.loadingStashes,
-    isStashDialogOpen: stashOperations.isStashDialogOpen,
-    stashMessage: stashOperations.stashMessage,
-    setIsStashDialogOpen: stashOperations.setIsStashDialogOpen,
-    setStashMessage: stashOperations.setStashMessage,
-    handleCreateStash: stashOperations.handleCreateStash,
-    handleApplyStash: stashOperations.handleApplyStash,
-    handleDropStash: stashOperations.handleDropStash,
-    
-    // Tag operations
-    tags: tagOperations.tags,
-    loadingTags: tagOperations.loadingTags,
-    isCreateTagDialogOpen: tagOperations.isCreateTagDialogOpen,
-    newTagName: tagOperations.newTagName,
-    newTagMessage: tagOperations.newTagMessage,
-    newTagCommit: tagOperations.newTagCommit,
-    setIsCreateTagDialogOpen: tagOperations.setIsCreateTagDialogOpen,
-    setNewTagName: tagOperations.setNewTagName,
-    setNewTagMessage: tagOperations.setNewTagMessage,
-    setNewTagCommit: tagOperations.setNewTagCommit,
-    handleCreateTag: tagOperations.handleCreateTag,
-    handleDeleteTag: tagOperations.handleDeleteTag,
+    stashes,
+    loadingStashes,
+    isStashDialogOpen,
+    stashMessage,
+    setIsStashDialogOpen,
+    setStashMessage,
+    handleCreateStash,
+    handleApplyStash,
+    handleDropStash,
     
     // File operations
-    isDiscardChangesDialogOpen: fileOperations.isDiscardChangesDialogOpen,
-    filesToDiscard: fileOperations.filesToDiscard,
-    setIsDiscardChangesDialogOpen: fileOperations.setIsDiscardChangesDialogOpen,
-    setFilesToDiscard: fileOperations.setFilesToDiscard,
-    handleDiscardChanges: fileOperations.handleDiscardChanges
+    isDiscardChangesDialogOpen,
+    filesToDiscard,
+    setIsDiscardChangesDialogOpen,
+    setFilesToDiscard,
+    handleDiscardChanges,
+    
+    // Tag operations
+    tags,
+    loadingTags,
+    isCreateTagDialogOpen,
+    newTagName,
+    newTagMessage,
+    newTagCommit,
+    setIsCreateTagDialogOpen,
+    setNewTagName,
+    setNewTagMessage,
+    setNewTagCommit,
+    handleCreateTag,
+    handleDeleteTag,
+    
+    // Branch comparison
+    isCompareDialogOpen,
+    setIsCompareDialogOpen,
+    isComparing,
+    comparisonDiffs,
+    sourceBranchName,
+    targetBranchName,
+    showComparison,
+    handleCompareBranches,
+    closeComparison
   };
 }

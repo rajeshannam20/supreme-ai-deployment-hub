@@ -4,13 +4,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { useGitRepositories } from '@/hooks/useGitRepositories';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { Search, HelpCircle } from 'lucide-react';
+import { Search, HelpCircle, RefreshCw, GitBranch, Settings, Info } from 'lucide-react';
 import AddRepositoryDialogContainer from './repositories/AddRepositoryDialogContainer';
 import PushChangesDialogContainer from './repositories/PushChangesDialogContainer';
 import RepositorySection from './repositories/RepositorySection';
 import { GitRepository } from '@/services/git';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import GitDocumentation from './GitDocumentation';
 
 export const GitRepositoryManager = () => {
@@ -34,6 +36,7 @@ export const GitRepositoryManager = () => {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [repoToDelete, setRepoToDelete] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isRefreshing, setIsRefreshing] = useState(false);
   
   const handleOpenPushDialog = (repo: GitRepository) => {
     handleSelectForPush(repo);
@@ -57,6 +60,18 @@ export const GitRepositoryManager = () => {
       setRepoToDelete(null);
     }
   };
+  
+  const refreshAllRepositories = async () => {
+    setIsRefreshing(true);
+    try {
+      // Refresh each repository sequentially
+      for (const repo of repositories) {
+        await handlePullChanges(repo);
+      }
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   // Filter repositories based on search query
   const filteredRepositories = repositories.filter(repo => 
@@ -74,6 +89,47 @@ export const GitRepositoryManager = () => {
             <CardDescription>Manage your Git repositories and sync changes</CardDescription>
           </div>
           <div className="flex gap-2">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button 
+                    variant="outline" 
+                    size="icon" 
+                    onClick={refreshAllRepositories} 
+                    disabled={loading || isRefreshing || repositories.length === 0}
+                  >
+                    <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Refresh All Repositories</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="icon">
+                  <Settings className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={refreshAllRepositories} disabled={repositories.length === 0}>
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Refresh All
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem>
+                  <GitBranch className="h-4 w-4 mr-2" />
+                  Manage Remote Sources
+                </DropdownMenuItem>
+                <DropdownMenuItem>
+                  <Info className="h-4 w-4 mr-2" />
+                  Show Git Configuration
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            
             <AddRepositoryDialogContainer
               loading={loading}
               onCloneRepository={handleCloneRepository}
@@ -101,6 +157,24 @@ export const GitRepositoryManager = () => {
                 className="pl-8"
               />
             </div>
+            
+            {filteredRepositories.length === 0 && repositories.length > 0 && (
+              <div className="text-center py-8 text-muted-foreground">
+                No repositories match your search criteria
+              </div>
+            )}
+            
+            {repositories.length === 0 && (
+              <div className="text-center py-12 px-4">
+                <div className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-muted mb-4">
+                  <GitBranch className="h-6 w-6" />
+                </div>
+                <h3 className="text-lg font-medium mb-2">No repositories added yet</h3>
+                <p className="text-muted-foreground mb-4">
+                  Add your first Git repository to start managing your code.
+                </p>
+              </div>
+            )}
             
             <RepositorySection
               repositories={filteredRepositories}

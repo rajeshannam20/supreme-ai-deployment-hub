@@ -1,174 +1,133 @@
+
 import React from 'react';
-import { format } from 'date-fns';
-import { GitBranch, GitMerge, Check, Cloud, ArrowUpDown } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { GitBranch as Branch, GitRepository } from '@/services/git';
+import { GitBranch, GitMerge, Plus, GitCompareArrow } from 'lucide-react';
+import { GitRepository, GitBranch as Branch } from '@/services/git';
 
 interface BranchesViewProps {
   repository: GitRepository;
   branches: Branch[];
   loading: boolean;
   onCreateBranch: () => void;
-  onSwitchBranch: (branch: Branch) => void;
-  onMergeBranch: (branch: Branch) => void;
+  onSwitchBranch: (branch: string) => void;
+  onMergeBranch: (branch: string) => void;
+  onCompareBranches?: () => void;
 }
 
-export const BranchesView = ({ 
-  repository, 
-  branches, 
-  loading, 
+const BranchesView: React.FC<BranchesViewProps> = ({
+  repository,
+  branches,
+  loading,
   onCreateBranch,
   onSwitchBranch,
-  onMergeBranch
-}: BranchesViewProps) => {
-  // Split branches into local and remote
+  onMergeBranch,
+  onCompareBranches
+}) => {
+  // Separate local and remote branches
   const localBranches = branches.filter(branch => !branch.isRemote);
   const remoteBranches = branches.filter(branch => branch.isRemote);
   
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+  
   return (
-    <Card className="w-full shadow-md">
-      <CardHeader className="pb-2">
+    <Card>
+      <CardHeader className="pb-3">
         <div className="flex justify-between items-center">
-          <div>
-            <CardTitle className="text-lg flex items-center gap-2">
-              <GitBranch className="h-5 w-5" />
-              Branches
-            </CardTitle>
-            <CardDescription>
-              {repository.name} ({branches.length} branches)
-            </CardDescription>
+          <CardTitle className="text-lg font-medium flex items-center gap-2">
+            <GitBranch className="h-5 w-5" />
+            Branches
+          </CardTitle>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={onCreateBranch}>
+              <Plus className="h-4 w-4 mr-1" />
+              New Branch
+            </Button>
+            {onCompareBranches && (
+              <Button variant="outline" size="sm" onClick={onCompareBranches}>
+                <GitCompareArrow className="h-4 w-4 mr-1" />
+                Compare
+              </Button>
+            )}
           </div>
-          <Button
-            size="sm"
-            onClick={onCreateBranch}
-          >
-            New Branch
-          </Button>
         </div>
       </CardHeader>
-      <CardContent className="p-0 pt-2">
-        <ScrollArea className="h-[300px] rounded-md">
-          <div className="p-3 space-y-4">
-            {loading ? (
-              Array.from({ length: 3 }).map((_, i) => (
-                <BranchSkeleton key={i} />
-              ))
-            ) : (
-              <>
-                <div>
-                  <h3 className="text-sm font-medium mb-2 px-2">Local Branches</h3>
-                  <div className="space-y-1">
-                    {localBranches.map((branch) => (
-                      <BranchItem 
-                        key={branch.name} 
-                        branch={branch} 
-                        onSwitch={() => onSwitchBranch(branch)}
-                        onMerge={() => onMergeBranch(branch)}
-                        isCurrentBranch={branch.name === repository.branch}
-                      />
-                    ))}
-                  </div>
-                </div>
-                
-                {remoteBranches.length > 0 && (
-                  <div>
-                    <h3 className="text-sm font-medium mb-2 px-2">Remote Branches</h3>
-                    <div className="space-y-1">
-                      {remoteBranches.map((branch) => (
-                        <BranchItem 
-                          key={branch.name} 
-                          branch={branch} 
-                          onSwitch={() => onSwitchBranch(branch)}
-                          onMerge={() => onMergeBranch(branch)}
-                          isCurrentBranch={false}
-                          isRemote
-                        />
-                      ))}
+      <CardContent>
+        <ScrollArea className="h-[300px]">
+          <div className="space-y-4">
+            <div>
+              <h3 className="font-medium mb-2">Local Branches</h3>
+              {localBranches.length === 0 ? (
+                <div className="text-sm text-muted-foreground">No local branches found</div>
+              ) : (
+                <div className="space-y-2">
+                  {localBranches.map(branch => (
+                    <div 
+                      key={branch.name} 
+                      className={`p-2 rounded-md flex items-center justify-between ${branch.isActive ? 'bg-primary/10' : 'hover:bg-muted'}`}
+                    >
+                      <div className="flex items-center">
+                        <GitBranch className={`h-4 w-4 mr-2 ${branch.isActive ? 'text-primary' : 'text-muted-foreground'}`} />
+                        <span className={branch.isActive ? 'font-medium' : ''}>{branch.name}</span>
+                        {branch.upstream && (
+                          <span className="ml-2 text-xs text-muted-foreground">
+                            {branch.ahead && branch.ahead > 0 ? `↑${branch.ahead}` : ''}
+                            {branch.behind && branch.behind > 0 ? `↓${branch.behind}` : ''}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex gap-1">
+                        {!branch.isActive && (
+                          <>
+                            <Button size="sm" variant="ghost" onClick={() => onSwitchBranch(branch.name)}>
+                              Switch
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              variant="ghost" 
+                              onClick={() => onMergeBranch(branch.name)}
+                              title={`Merge ${branch.name} into ${repository.branch}`}
+                            >
+                              <GitMerge className="h-4 w-4" />
+                            </Button>
+                          </>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                )}
-              </>
-            )}
+                  ))}
+                </div>
+              )}
+            </div>
+            
+            <div>
+              <h3 className="font-medium mb-2">Remote Branches</h3>
+              {remoteBranches.length === 0 ? (
+                <div className="text-sm text-muted-foreground">No remote branches found</div>
+              ) : (
+                <div className="space-y-2">
+                  {remoteBranches.map(branch => (
+                    <div key={branch.name} className="p-2 rounded-md flex items-center justify-between hover:bg-muted">
+                      <div className="flex items-center">
+                        <GitBranch className="h-4 w-4 mr-2 text-muted-foreground" />
+                        <span>{branch.name}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </ScrollArea>
       </CardContent>
     </Card>
   );
 };
-
-interface BranchItemProps {
-  branch: Branch;
-  onSwitch: () => void;
-  onMerge: () => void;
-  isCurrentBranch: boolean;
-  isRemote?: boolean;
-}
-
-const BranchItem = ({ branch, onSwitch, onMerge, isCurrentBranch, isRemote }: BranchItemProps) => {
-  return (
-    <div className="flex items-center p-2 hover:bg-accent rounded-md transition-colors">
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
-          {isRemote ? (
-            <Cloud className="h-4 w-4 text-muted-foreground" />
-          ) : (
-            <GitBranch className="h-4 w-4 text-muted-foreground" />
-          )}
-          <p className="font-medium truncate">{branch.name}</p>
-          {isCurrentBranch && (
-            <Badge variant="outline" className="bg-green-100 text-green-800 border-green-300">
-              <Check className="h-3 w-3 mr-1" /> current
-            </Badge>
-          )}
-        </div>
-        <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1 ml-6">
-          <span className="font-mono">{branch.lastCommitHash}</span>
-          <span>•</span>
-          <span>{format(new Date(branch.lastCommitDate), 'MMM d, yyyy')}</span>
-          
-          {(branch.ahead !== undefined || branch.behind !== undefined) && (
-            <>
-              <span>•</span>
-              <span className="flex items-center">
-                <ArrowUpDown className="h-3 w-3 mr-1" />
-                {branch.ahead && `${branch.ahead} ahead`}
-                {branch.ahead && branch.behind && ", "}
-                {branch.behind && `${branch.behind} behind`}
-              </span>
-            </>
-          )}
-        </div>
-      </div>
-      
-      {!isCurrentBranch && !isRemote && (
-        <div className="flex space-x-2">
-          <Button variant="ghost" size="sm" onClick={onSwitch}>
-            Switch
-          </Button>
-          <Button variant="ghost" size="sm" onClick={onMerge}>
-            Merge
-          </Button>
-        </div>
-      )}
-    </div>
-  );
-};
-
-const BranchSkeleton = () => (
-  <div className="flex items-center p-2">
-    <div className="flex-1">
-      <Skeleton className="h-5 w-[200px] mb-2" />
-      <Skeleton className="h-3 w-[160px]" />
-    </div>
-    <div className="flex space-x-2">
-      <Skeleton className="h-8 w-16" />
-      <Skeleton className="h-8 w-16" />
-    </div>
-  </div>
-);
 
 export default BranchesView;

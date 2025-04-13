@@ -3,10 +3,12 @@ import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
 import { GitRepository } from '@/services/git';
 import CommitHistoryView from './CommitHistoryView';
 import BranchesView from './BranchesView';
 import DiffView from './DiffView';
+import ComparisonView from './ComparisonView';
 import StashesView from './StashesView';
 import TagsView from './TagsView';
 import CreateBranchDialog from './dialogs/CreateBranchDialog';
@@ -14,6 +16,7 @@ import MergeBranchDialog from './dialogs/MergeBranchDialog';
 import StashDialog from './dialogs/StashDialog';
 import DiscardChangesDialog from './dialogs/DiscardChangesDialog';
 import CreateTagDialog from './dialogs/CreateTagDialog';
+import CompareBranchesDialog from './dialogs/CompareBranchesDialog';
 import { useGitVisualization } from '@/hooks/useGitVisualization';
 
 interface GitVisualizationProps {
@@ -39,6 +42,7 @@ export const GitVisualization = ({ repository, onUpdateRepository }: GitVisualiz
     isCreateTagDialogOpen,
     isStashDialogOpen,
     isDiscardChangesDialogOpen,
+    isCompareDialogOpen,
     newBranchName,
     branchToMerge,
     stashMessage,
@@ -46,11 +50,17 @@ export const GitVisualization = ({ repository, onUpdateRepository }: GitVisualiz
     newTagMessage,
     newTagCommit,
     filesToDiscard,
+    comparisonDiffs,
+    sourceBranchName,
+    targetBranchName,
+    showComparison,
+    isComparing,
     setIsCreateBranchDialogOpen,
     setIsMergeBranchDialogOpen,
     setIsCreateTagDialogOpen,
     setIsStashDialogOpen,
     setIsDiscardChangesDialogOpen,
+    setIsCompareDialogOpen,
     setNewBranchName,
     setStashMessage,
     setNewTagName,
@@ -68,6 +78,8 @@ export const GitVisualization = ({ repository, onUpdateRepository }: GitVisualiz
     handleCreateTag,
     handleDeleteTag,
     handleDiscardChanges,
+    handleCompareBranches,
+    closeComparison,
     confirmMergeBranch
   } = useGitVisualization(repository, onUpdateRepository);
   
@@ -76,6 +88,21 @@ export const GitVisualization = ({ repository, onUpdateRepository }: GitVisualiz
   
   return (
     <div className="mt-6">
+      {showComparison && (
+        <div className="mb-4">
+          <div className="flex justify-between items-center mb-2">
+            <h3 className="text-lg font-medium">Branch Comparison Results</h3>
+            <Button size="sm" variant="ghost" onClick={closeComparison}>Close</Button>
+          </div>
+          <ComparisonView
+            sourceBranch={sourceBranchName}
+            targetBranch={targetBranchName}
+            diffs={comparisonDiffs}
+            loading={isComparing}
+          />
+        </div>
+      )}
+      
       <Tabs defaultValue="history">
         <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="history">Commit History</TabsTrigger>
@@ -105,6 +132,7 @@ export const GitVisualization = ({ repository, onUpdateRepository }: GitVisualiz
             onCreateBranch={() => setIsCreateBranchDialogOpen(true)}
             onSwitchBranch={handleSwitchBranch}
             onMergeBranch={handleMergeBranch}
+            onCompareBranches={() => setIsCompareDialogOpen(true)}
           />
         </TabsContent>
         
@@ -164,6 +192,17 @@ export const GitVisualization = ({ repository, onUpdateRepository }: GitVisualiz
         branchToMerge={branchToMerge}
         repository={repository}
         onConfirmMerge={confirmMergeBranch}
+      />
+      
+      {/* Compare Branches Dialog */}
+      <CompareBranchesDialog
+        isOpen={isCompareDialogOpen}
+        onOpenChange={setIsCompareDialogOpen}
+        repository={repository}
+        branches={branches}
+        currentBranch={repository.branch}
+        loading={isComparing}
+        onCompareBranches={handleCompareBranches}
       />
       
       {/* Stash Dialog */}

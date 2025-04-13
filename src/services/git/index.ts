@@ -6,6 +6,7 @@ import { tagService } from './tagService';
 import { stashService } from './stashService';
 import { diffService } from './diffService';
 import { repoService } from './repoService';
+import { compareService } from './compareService';
 
 // Re-export all service types
 export * from './types';
@@ -19,7 +20,8 @@ export const gitService = {
   ...branchService,  // Branch management
   ...stashService,   // Stash operations
   ...tagService,     // Tag management
-  ...diffService     // Diff and file changes operations
+  ...diffService,    // Diff and file changes operations
+  ...compareService  // Branch comparison operations
 };
 
 // For backward compatibility, also export the original object
