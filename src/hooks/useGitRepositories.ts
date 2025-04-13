@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { GitRepository, gitService } from '@/services/gitService';
+import { GitRepository, gitService } from '@/services/git';
 import { getRepositories, saveRepository, deleteRepository } from '@/extension/gitStorage';
 import { toast } from 'sonner';
 

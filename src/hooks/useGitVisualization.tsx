@@ -8,7 +8,7 @@ import {
   GitStashEntry, 
   GitTag, 
   gitService 
-} from '@/services/gitService';
+} from '@/services/git';
 import { toast } from 'sonner';
 
 export function useGitVisualization(repository: GitRepository, onUpdateRepository: (repo: GitRepository) => void) {
