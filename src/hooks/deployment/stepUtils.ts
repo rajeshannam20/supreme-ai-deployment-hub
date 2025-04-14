@@ -1,5 +1,5 @@
 
-import { DeploymentStep, CloudProvider } from '../../types/deployment';
+import { DeploymentStep, CloudProvider, DeploymentEnvironment } from '../../types/deployment';
 import { createDeploymentError } from '../../services/deployment/errorHandling';
 import { UseDeploymentProcessProps } from './types';
 
@@ -83,7 +83,7 @@ export const handleStepFailure = (
   updateStep: UseDeploymentProcessProps['updateStep'],
   addLog: UseDeploymentProcessProps['addLog'],
   provider: CloudProvider,
-  environment: string
+  environment: DeploymentEnvironment  // This parameter needs to be of type DeploymentEnvironment
 ): void => {
   const stepError = createDeploymentError(error, step, provider, environment);
   addLog(`[${step.title}] - ${stepError.message}`, 'error');
