@@ -60,7 +60,13 @@ export const executeStepCommand = async (
       addLog(`[${step.title}] - ${getUserFriendlyErrorMessage(commandError, true)}`, 'error');
       
       // Update step with error details
-      updateStep(stepId, updateStepWithError(step, commandError));
+      updateStep(stepId, {
+        status: 'error',
+        progress: 0,
+        errorMessage: commandError.message,
+        errorCode: commandError.code,
+        errorDetails: commandError.details
+      });
       
       // Check if auto-recovery should be attempted for certain errors
       if (canAutoRecover(commandError) && step.id !== 'connect-cluster') {
@@ -99,7 +105,13 @@ export const executeConnectStep = async (
         deploymentConfig?.provider || 'aws',
         environment
       );
-      updateStep(stepId, updateStepWithError(step, connectionError));
+      updateStep(stepId, {
+        status: 'error',
+        progress: 0,
+        errorMessage: connectionError.message,
+        errorCode: connectionError.code,
+        errorDetails: connectionError.details
+      });
       addLog(`[${step.title}] - ${getUserFriendlyErrorMessage(connectionError)}`, 'error');
       return false;
     }
@@ -110,7 +122,13 @@ export const executeConnectStep = async (
       deploymentConfig?.provider || 'aws',
       environment
     );
-    updateStep(stepId, updateStepWithError(step, connectionError));
+    updateStep(stepId, {
+      status: 'error',
+      progress: 0,
+      errorMessage: connectionError.message,
+      errorCode: connectionError.code,
+      errorDetails: connectionError.details
+    });
     addLog(`[${step.title}] - ${getUserFriendlyErrorMessage(connectionError)}`, 'error');
     return false;
   }

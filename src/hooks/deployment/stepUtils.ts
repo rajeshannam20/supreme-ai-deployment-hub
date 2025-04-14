@@ -1,6 +1,6 @@
 
-import { DeploymentStep } from '../../types/deployment';
-import { createDeploymentError, updateStepWithError } from '../../services/deployment/errorHandling';
+import { DeploymentStep, CloudProvider } from '../../types/deployment';
+import { createDeploymentError } from '../../services/deployment/errorHandling';
 import { UseDeploymentProcessProps } from './types';
 
 /**
@@ -82,10 +82,16 @@ export const handleStepFailure = (
   error: any,
   updateStep: UseDeploymentProcessProps['updateStep'],
   addLog: UseDeploymentProcessProps['addLog'],
-  provider: string,
+  provider: CloudProvider,
   environment: string
 ): void => {
   const stepError = createDeploymentError(error, step, provider, environment);
   addLog(`[${step.title}] - ${stepError.message}`, 'error');
-  updateStep(stepId, updateStepWithError(step, stepError));
+  updateStep(stepId, {
+    status: 'error',
+    progress: 0,
+    errorMessage: stepError.message,
+    errorCode: stepError.code,
+    errorDetails: stepError.details
+  });
 };
