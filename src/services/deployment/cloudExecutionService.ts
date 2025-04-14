@@ -1,6 +1,16 @@
 
 import { CloudProvider } from '../../types/deployment';
 
+// AWS SDK imports
+import { 
+  STSClient, 
+  GetCallerIdentityCommand 
+} from '@aws-sdk/client-sts';
+import { 
+  EKSClient, 
+  DescribeClusterCommand 
+} from '@aws-sdk/client-eks';
+
 export interface CloudCommandResult {
   success: boolean;
   logs: string[];
@@ -137,30 +147,104 @@ const retryOperation = async <T>(
   throw new Error('Retry mechanism failed in an unexpected way');
 };
 
-// Mock implementation for now - will be replaced with actual SDK implementations
-export const executeCloudCommand = async (options: ExecuteCommandOptions): Promise<CloudCommandResult> => {
-  const { command, provider, onProgress, timeout = 120000, retryCount = 2, environment = 'development' } = options;
+// AWS Client implementation
+export const getAwsProviderClient = async (): Promise<{ 
+  eks: EKSClient,
+  sts: STSClient
+}> => {
+  try {
+    const stsClient = new STSClient();
+    await stsClient.send(new GetCallerIdentityCommand({}));
+    
+    return {
+      eks: new EKSClient(),
+      sts: stsClient
+    };
+  } catch (error) {
+    console.error("Failed to initialize AWS client:", error);
+    throw new Error("AWS authentication failed. Please check your credentials.");
+  }
+};
+
+// Actual implementation for AWS commands
+const executeAwsCommand = async (
+  command: string, 
+  options: ExecuteCommandOptions
+): Promise<CloudCommandResult> => {
+  try {
+    const client = await getAwsProviderClient();
+    
+    if (command.includes('describe-cluster')) {
+      // Extract cluster name from command
+      const clusterName = command.match(/--name\s+([^\s]+)/)?.[1];
+      if (!clusterName) {
+        return {
+          success: false,
+          logs: ['Failed to parse cluster name from command'],
+          error: 'Invalid command format'
+        };
+      }
+      
+      const response = await client.eks.send(
+        new DescribeClusterCommand({ name: clusterName })
+      );
+      
+      return {
+        success: true,
+        logs: [
+          `Cluster: ${response.cluster?.name}`,
+          `Status: ${response.cluster?.status}`,
+          `Endpoint: ${response.cluster?.endpoint}`,
+          `Created: ${response.cluster?.createdAt?.toISOString()}`
+        ],
+        operationId: response.cluster?.arn
+      };
+    }
+    
+    // More command implementations would go here
+    
+    // Fallback to simulation for commands not yet implemented
+    return simulateCommandExecution(options);
+  } catch (error) {
+    const { errorCode, errorMessage, errorDetails } = classifyCloudError(error, 'aws');
+    return {
+      success: false,
+      logs: [`[ERROR] ${errorMessage}`],
+      error: errorMessage,
+      errorCode,
+      errorDetails
+    };
+  }
+};
+
+// Simulation for commands not yet implemented with real SDKs
+const simulateCommandExecution = async (options: ExecuteCommandOptions): Promise<CloudCommandResult> => {
+  const { command, provider, onProgress, timeout = 120000, environment = 'development' } = options;
   
-  // Enhanced logging for production
-  console.log(`[${environment.toUpperCase()}][${provider}] Executing command: ${command}`);
+  console.log(`[${environment.toUpperCase()}][${provider}] Simulating command: ${command}`);
   
   try {
-    // Simulate progress updates with more detailed information
-    const progressInterval = setInterval(() => {
-      const progress = Math.floor(Math.random() * 10) + 1;
-      const currentProgress = Math.min((progress || 0) + 10, 90);
-      onProgress?.(currentProgress);
-      
-      // In production, log progress at key milestones
-      if (environment === 'production' && (currentProgress % 25 === 0)) {
-        console.log(`[${provider}] Command progress: ${currentProgress}%`);
-      }
-    }, 500);
+    // Use a local variable for the interval to fix the undefined error
+    let progressUpdateInterval: NodeJS.Timeout | null = null;
+    
+    // Simulate progress updates
+    if (onProgress) {
+      let currentProgress = 0;
+      progressUpdateInterval = setInterval(() => {
+        const increment = Math.floor(Math.random() * 10) + 1;
+        currentProgress = Math.min(currentProgress + increment, 90);
+        onProgress(currentProgress);
+        
+        if (environment === 'production' && (currentProgress % 25 === 0)) {
+          console.log(`[${provider}] Command progress: ${currentProgress}%`);
+        }
+      }, 500);
+    }
     
     // Set timeout for long-running operations
     const timeoutPromise = new Promise<never>((_, reject) => {
       setTimeout(() => {
-        clearInterval(progressInterval);
+        if (progressUpdateInterval) clearInterval(progressUpdateInterval);
         reject(new Error('TIMEOUT: Command execution timed out'));
       }, timeout);
     });
@@ -168,7 +252,6 @@ export const executeCloudCommand = async (options: ExecuteCommandOptions): Promi
     // Execute with potential for retry
     const executionPromise = retryOperation(
       async () => {
-        // TODO: Replace with actual provider SDK calls in future
         await new Promise(resolve => setTimeout(resolve, 2500));
         
         // For demonstration, randomly throw errors in non-production environments
@@ -194,7 +277,7 @@ export const executeCloudCommand = async (options: ExecuteCommandOptions): Promi
         };
       },
       {
-        retryCount,
+        retryCount: options.retryCount || 2,
         retryDelay: 1000,
         onRetry: (attempt, error) => {
           console.warn(`[${provider}] Retry attempt ${attempt} after error: ${error.message}`);
@@ -204,13 +287,19 @@ export const executeCloudCommand = async (options: ExecuteCommandOptions): Promi
     
     // Race between execution and timeout
     const result = await Promise.race([executionPromise, timeoutPromise]);
-    clearInterval(progressInterval);
-    onProgress?.(100);
+    
+    // Clear interval if it exists
+    if (progressUpdateInterval) clearInterval(progressUpdateInterval);
+    
+    // Set final progress
+    if (onProgress) onProgress(100);
     
     return result;
   } catch (error) {
-    // Clear any pending intervals
-    clearInterval(progressInterval);
+    // Make sure interval is cleared in case of error
+    if (typeof progressUpdateInterval !== 'undefined' && progressUpdateInterval !== null) {
+      clearInterval(progressUpdateInterval);
+    }
     
     // Classify and log error with enhanced details
     const { errorCode, errorMessage, errorDetails } = classifyCloudError(error, provider);
@@ -234,18 +323,40 @@ export const executeCloudCommand = async (options: ExecuteCommandOptions): Promi
   }
 };
 
-// Will be implemented in future PRs - these are placeholders for the real implementations
-export const getAwsProviderClient = async () => {
-  // TODO: Implement AWS SDK integration
-  return null;
+// Main command execution function that routes to the appropriate provider
+export const executeCloudCommand = async (options: ExecuteCommandOptions): Promise<CloudCommandResult> => {
+  const { provider } = options;
+  
+  // Route to provider-specific implementation when available
+  switch (provider) {
+    case 'aws':
+      // Use AWS SDK implementation
+      return executeAwsCommand(options.command, options);
+    
+    case 'azure':
+    case 'gcp':
+    case 'custom':
+      // Fall back to simulation for other providers for now
+      return simulateCommandExecution(options);
+    
+    default:
+      return {
+        success: false,
+        logs: [`Unsupported cloud provider: ${provider}`],
+        error: `Unsupported cloud provider: ${provider}`
+      };
+  }
 };
 
 export const getAzureProviderClient = async () => {
   // TODO: Implement Azure SDK integration
+  console.log("Azure client requested - implementation in progress");
   return null;
 };
 
 export const getGcpProviderClient = async () => {
   // TODO: Implement GCP SDK integration
+  console.log("GCP client requested - implementation in progress");
   return null;
 };
+
