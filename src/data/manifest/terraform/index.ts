@@ -29,9 +29,14 @@ ${variablesConfigYaml}
 
 ${outputsConfigYaml}`;
 
+// Import Azure Terraform files as raw text
+import mainTf from './azure/main.tf?raw';
+import variablesTf from './azure/variables.tf?raw';
+import outputsTf from './azure/outputs.tf?raw';
+
 // Export Azure Container Apps Terraform configuration
 export const azureContainerAppsTerraform = {
-  mainTf: require('./azure/main.tf'),
-  variablesTf: require('./azure/variables.tf'),
-  outputsTf: require('./azure/outputs.tf')
+  mainTf,
+  variablesTf,
+  outputsTf
 };
