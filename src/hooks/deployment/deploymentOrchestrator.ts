@@ -1,4 +1,3 @@
-
 import { DeploymentStep } from '../../types/deployment';
 import { createLogger } from '../../services/deployment/loggingService';
 import { executeDeploymentStep } from './stepExecution';
@@ -18,6 +17,9 @@ export const runDeploymentProcess = async (
   
   setIsDeploying(true);
   addLog('Deployment started.', 'success');
+  
+  // Keep track of completed steps for potential rollback
+  const completedSteps: string[] = [];
   
   try {
     // Validate environment readiness
@@ -68,7 +70,10 @@ export const runDeploymentProcess = async (
 
       // Execute the step with default retry strategy
       const success = await executeDeploymentStep(step.id, props);
-      if (!success) {
+      if (success) {
+        // Track successful steps for potential rollback
+        completedSteps.push(step.id);
+      } else {
         addLog(`Deployment stopped due to failure in step: ${step.title}`, 'error');
         
         // For production deployments, provide more detailed failure analysis
@@ -76,6 +81,12 @@ export const runDeploymentProcess = async (
           addLog('Production deployment failed. Performing deployment analysis...', 'info');
           // In a real implementation, this would gather more diagnostics and provide recovery suggestions
           addLog('Refer to the production deployment runbook for recovery procedures.', 'info');
+          
+          // Offer rollback for production deployments
+          if (completedSteps.length > 0 && environment === 'production') {
+            addLog('Initiating automatic rollback of completed steps...', 'warning');
+            await performRollback(completedSteps, props);
+          }
         }
         
         setIsDeploying(false);
@@ -97,6 +108,54 @@ export const runDeploymentProcess = async (
   } catch (error: any) {
     addLog(`Deployment failed: ${error.message}`, 'error');
     logger.error('Deployment process failed', { error });
+    
+    // Attempt rollback for production environments on unexpected errors
+    if (completedSteps.length > 0 && environment === 'production') {
+      addLog('Unexpected error occurred. Initiating rollback...', 'warning');
+      await performRollback(completedSteps, props);
+    }
+    
     setIsDeploying(false);
   }
+};
+
+/**
+ * Rolls back completed deployment steps in reverse order
+ */
+export const performRollback = async (
+  completedStepIds: string[],
+  props: UseDeploymentProcessProps
+): Promise<void> => {
+  const { deploymentSteps, addLog, updateStep } = props;
+  
+  addLog('Starting rollback procedure...', 'warning');
+  
+  // Process steps in reverse order (most recent first)
+  for (const stepId of [...completedStepIds].reverse()) {
+    const step = deploymentSteps.find(s => s.id === stepId);
+    if (!step) continue;
+    
+    addLog(`Rolling back: ${step.title}`, 'info');
+    updateStep(stepId, { status: 'rolling-back', progress: 0 });
+    
+    try {
+      // Check if step has a rollback handler
+      if (step.rollback) {
+        // Execute rollback function if available
+        await step.rollback();
+        addLog(`Rolled back step: ${step.title}`, 'success');
+        updateStep(stepId, { status: 'rolled-back', progress: 100 });
+      } else {
+        // Mark as skipped if no rollback function available
+        addLog(`No rollback function for step: ${step.title}. Manual intervention may be required.`, 'warning');
+        updateStep(stepId, { status: 'rollback-skipped', progress: 100 });
+      }
+    } catch (error: any) {
+      addLog(`Error during rollback of step ${step.title}: ${error.message}`, 'error');
+      updateStep(stepId, { status: 'rollback-failed', progress: 0 });
+      // Continue with other rollbacks even if one fails
+    }
+  }
+  
+  addLog('Rollback procedure completed. System may require additional manual recovery.', 'warning');
 };
