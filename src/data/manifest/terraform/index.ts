@@ -28,3 +28,10 @@ ${serviceMeshYaml}
 ${variablesConfigYaml}
 
 ${outputsConfigYaml}`;
+
+// Export Azure Container Apps Terraform configuration
+export const azureContainerAppsTerraform = {
+  mainTf: require('./azure/main.tf'),
+  variablesTf: require('./azure/variables.tf'),
+  outputsTf: require('./azure/outputs.tf')
+};
