@@ -1,6 +1,6 @@
 
 import { STSClient, GetCallerIdentityCommand } from '@aws-sdk/client-sts';
-import { ExecuteCommandOptions, CloudCommandResult } from '../types';
+import type { CloudCommandResult, ExecuteCommandOptions } from '../types';
 import { classifyCloudError } from '../errorHandling';
 import { simulateCommandExecution } from '../simulator';
 

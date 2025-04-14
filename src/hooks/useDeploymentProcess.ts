@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { DeploymentStep, DeploymentConfig, DeploymentEnvironment } from '../../types/deployment';
+import { DeploymentStep, DeploymentConfig, DeploymentEnvironment, CloudProvider } from '../types/deployment';
 import { executeCloudCommand, CloudCommandResult } from '../services/deployment/cloudExecutionService';
 import { createLogger } from '../services/deployment/loggingService';
 
@@ -93,7 +93,6 @@ export const useDeploymentProcess = ({
           return false;
         }
       } else {
-        // Handle steps without commands (e.g., connect-cluster)
         if (step.id === 'connect-cluster') {
           const success = await connectToCluster();
           if (success) {

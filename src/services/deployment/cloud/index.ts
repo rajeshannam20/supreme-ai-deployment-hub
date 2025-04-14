@@ -1,15 +1,14 @@
 
-import { CloudCommandResult, ExecuteCommandOptions } from './types';
 import { executeAwsCommand } from './providers/aws';
 import { getAzureProviderClient } from './providers/azure';
 import { getGcpProviderClient } from './providers/gcp';
 import { simulateCommandExecution } from './simulator';
 import { classifyCloudError } from './errorHandling';
+import type { CloudCommandResult, ExecuteCommandOptions } from './types';
 
 // Export types and utility functions
+export type { CloudCommandResult, ExecuteCommandOptions };
 export { 
-  CloudCommandResult, 
-  ExecuteCommandOptions,
   classifyCloudError,
   getAzureProviderClient,
   getGcpProviderClient

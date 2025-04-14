@@ -1,5 +1,5 @@
 
-import { CloudProvider } from '../../../types/deployment';
+import type { CloudProvider } from '../../../types/deployment';
 
 // Error handling utilities for cloud operations
 const errorCodeMapping: Record<string, string> = {

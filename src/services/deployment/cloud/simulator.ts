@@ -9,10 +9,10 @@ export const simulateCommandExecution = async (options: ExecuteCommandOptions): 
   
   console.log(`[${environment.toUpperCase()}][${provider}] Simulating command: ${command}`);
   
+  // Define interval as NodeJS.Timeout and initialize as null
+  let intervalId: NodeJS.Timeout | null = null;
+  
   try {
-    // Define interval as NodeJS.Timeout and initialize as null
-    let intervalId: NodeJS.Timeout | null = null;
-    
     // Simulate progress updates
     if (onProgress) {
       let currentProgress = 0;
@@ -83,7 +83,7 @@ export const simulateCommandExecution = async (options: ExecuteCommandOptions): 
     return result;
   } catch (error) {
     // Make sure interval is cleared in case of error
-    if (typeof intervalId !== 'undefined' && intervalId !== null) {
+    if (intervalId) {
       clearInterval(intervalId);
     }
     
