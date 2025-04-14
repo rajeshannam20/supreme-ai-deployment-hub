@@ -1,3 +1,4 @@
+
 export type DeploymentStatus = 'success' | 'warning' | 'error' | 'pending' | 'in-progress';
 export type CloudProvider = 'aws' | 'azure' | 'gcp' | 'custom';
 export type DeploymentEnvironment = 'development' | 'staging' | 'production';

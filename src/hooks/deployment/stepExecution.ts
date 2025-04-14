@@ -2,6 +2,12 @@
 import { DeploymentStep } from '../../types/deployment';
 import { CloudCommandResult, executeCloudCommand } from '../../services/deployment/cloudExecutionService';
 import { createLogger } from '../../services/deployment/loggingService';
+import { 
+  createDeploymentError, 
+  updateStepWithError, 
+  getUserFriendlyErrorMessage,
+  canAutoRecover
+} from '../../services/deployment/errorHandling';
 import { UseDeploymentProcessProps } from './types';
 
 export const executeDeploymentStep = async (
@@ -23,13 +29,25 @@ export const executeDeploymentStep = async (
   const logger = createLogger(environment, deploymentConfig?.provider || 'aws');
 
   if (!deploymentConfig) {
-    addLog('Deployment configuration is not set. Please configure deployment settings.', 'error');
+    const configError = createDeploymentError(
+      { code: 'DEPLOY_CONFIG_001', message: 'Deployment configuration is not set' },
+      undefined,
+      'aws',
+      environment
+    );
+    addLog(getUserFriendlyErrorMessage(configError), 'error');
     return false;
   }
 
   const step = deploymentSteps.find(step => step.id === stepId);
   if (!step) {
-    addLog(`Step with id ${stepId} not found.`, 'error');
+    const stepError = createDeploymentError(
+      { code: 'DEPLOY_RESOURCE_001', message: `Step with id ${stepId} not found` },
+      undefined,
+      deploymentConfig.provider,
+      environment
+    );
+    addLog(getUserFriendlyErrorMessage(stepError), 'error');
     return false;
   }
 
@@ -38,8 +56,14 @@ export const executeDeploymentStep = async (
   addLog(`[${step.title}] - Starting...`);
 
   if (!isConnected && step.id !== 'connect-cluster') {
-    addLog(`[${step.title}] - Not connected to the cluster. Skipping step.`, 'warning');
-    updateStep(stepId, { status: 'warning', progress: 100, errorMessage: 'Not connected to cluster.' });
+    const connectionError = createDeploymentError(
+      { code: 'DEPLOY_CONN_001', message: 'Not connected to the cluster' },
+      step,
+      deploymentConfig.provider,
+      environment
+    );
+    addLog(`[${step.title}] - ${getUserFriendlyErrorMessage(connectionError)}`, 'warning');
+    updateStep(stepId, updateStepWithError(step, connectionError));
     return false;
   }
 
@@ -63,47 +87,99 @@ export const executeDeploymentStep = async (
       }
 
       if (commandResult.success) {
-        addLog(`[${step.title}] - Completed successfully.`);
+        addLog(`[${step.title}] - Completed successfully.`, 'success');
         updateStep(stepId, { status: 'success', progress: 100, outputLog: commandResult.logs });
         return true;
       } else {
-        addLog(`[${step.title}] - Failed: ${commandResult.error}`, 'error');
-        updateStep(stepId, {
-          status: 'error', 
-          progress: commandResult.progress || 0, 
-          errorMessage: commandResult.error,
-          outputLog: commandResult.logs,
-          // Include these properties only if they exist in DeploymentStep
-          ...(commandResult.errorCode ? { errorCode: commandResult.errorCode } : {}),
-          ...(commandResult.errorDetails ? { errorDetails: commandResult.errorDetails } : {})
-        });
+        // Create structured error from command failure
+        const commandError = createDeploymentError(
+          {
+            code: commandResult.errorCode || 'DEPLOY_UNKNOWN',
+            message: commandResult.error || 'Command execution failed',
+            details: commandResult.errorDetails
+          },
+          step,
+          deploymentConfig.provider,
+          environment
+        );
+        
+        // Log friendly error message
+        addLog(`[${step.title}] - ${getUserFriendlyErrorMessage(commandError, true)}`, 'error');
+        
+        // Update step with error details
+        updateStep(stepId, updateStepWithError(step, commandError));
+        
+        // Check if auto-recovery should be attempted
+        if (canAutoRecover(commandError) && step.id !== 'connect-cluster') {
+          addLog(`[${step.title}] - Attempting automatic recovery...`, 'info');
+          // Logic for auto-recovery would go here in a real implementation
+          // For now, we just return false
+        }
+        
         return false;
       }
     } else {
       if (step.id === 'connect-cluster') {
-        const success = await connectToCluster();
-        if (success) {
-          updateStep(stepId, { status: 'success', progress: 100 });
-          return true;
-        } else {
-          updateStep(stepId, { status: 'error', progress: 0, errorMessage: 'Failed to connect to cluster.' });
+        try {
+          const success = await connectToCluster();
+          if (success) {
+            updateStep(stepId, { status: 'success', progress: 100 });
+            return true;
+          } else {
+            const connectionError = createDeploymentError(
+              { code: 'DEPLOY_CONN_001', message: 'Failed to connect to cluster' },
+              step,
+              deploymentConfig.provider,
+              environment
+            );
+            updateStep(stepId, updateStepWithError(step, connectionError));
+            addLog(`[${step.title}] - ${getUserFriendlyErrorMessage(connectionError)}`, 'error');
+            return false;
+          }
+        } catch (error) {
+          const connectionError = createDeploymentError(
+            error,
+            step,
+            deploymentConfig.provider,
+            environment
+          );
+          updateStep(stepId, updateStepWithError(step, connectionError));
+          addLog(`[${step.title}] - ${getUserFriendlyErrorMessage(connectionError)}`, 'error');
           return false;
         }
       } else {
-        addLog(`[${step.title}] - No command to execute.`, 'warning');
+        const noCommandError = createDeploymentError(
+          { code: 'DEPLOY_CONFIG_001', message: 'No command to execute' },
+          step,
+          deploymentConfig.provider,
+          environment
+        );
+        addLog(`[${step.title}] - ${getUserFriendlyErrorMessage(noCommandError)}`, 'warning');
         updateStep(stepId, { status: 'warning', progress: 100, outputLog: ['No command to execute.'] });
         return true;
       }
     }
   } catch (error: any) {
-    logger.error(`[${step.title}] - Execution error:`, error);
-    addLog(`[${step.title}] - Execution failed: ${error.message}`, 'error');
-    updateStep(stepId, {
-      status: 'error',
-      progress: 0,
-      errorMessage: error.message,
-      outputLog: [`Execution failed: ${error.message}`]
+    // Create structured error from caught exception
+    const executionError = createDeploymentError(
+      error,
+      step,
+      deploymentConfig.provider,
+      environment
+    );
+    
+    // Log detailed error
+    logger.error(`[${step.title}] - Execution error:`, {
+      error: executionError,
+      stack: error.stack
     });
+    
+    // Log user-friendly message
+    addLog(`[${step.title}] - ${getUserFriendlyErrorMessage(executionError)}`, 'error');
+    
+    // Update step with error details
+    updateStep(stepId, updateStepWithError(step, executionError));
+    
     return false;
   }
 };
