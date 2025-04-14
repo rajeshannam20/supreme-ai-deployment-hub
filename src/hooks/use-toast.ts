@@ -7,7 +7,7 @@ import {
 } from "@/components/ui/use-toast";
 
 // Define the extended toast props type with all required properties
-export type ExtendedToastProps = ToastProps & {
+export type ExtendedToastProps = {
   variant?: 'default' | 'destructive' | 'success';
   title?: string;
   description?: string;
