@@ -1,7 +1,8 @@
 
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { DeploymentStep } from '../types/deployment';
+import { DeploymentStep, CloudProvider, DeploymentConfig } from '../types/deployment';
+import { executeCloudCommand } from '../services/deployment/cloudExecutionService';
 
 interface UseDeploymentProcessProps {
   deploymentSteps: DeploymentStep[];
@@ -10,6 +11,7 @@ interface UseDeploymentProcessProps {
   setCurrentStep: (stepId: string) => void;
   connectToCluster: (kubeConfig?: string) => Promise<boolean>;
   addLog: (message: string, type: 'info' | 'success' | 'warning' | 'error') => void;
+  deploymentConfig?: DeploymentConfig;
 }
 
 export const useDeploymentProcess = ({
@@ -18,31 +20,105 @@ export const useDeploymentProcess = ({
   updateStep,
   setCurrentStep,
   connectToCluster,
-  addLog
+  addLog,
+  deploymentConfig
 }: UseDeploymentProcessProps) => {
   const [isDeploying, setIsDeploying] = useState<boolean>(false);
-  const DEFAULT_TIMEOUT = 30000; // 30 seconds timeout by default
+  const DEFAULT_TIMEOUT = 120000; // 2 minutes timeout by default
+
+  // Execute a real cloud command
+  const executeStep = async (step: DeploymentStep): Promise<boolean> => {
+    if (!step.command) {
+      addLog(`Step ${step.id} has no command defined`, 'error');
+      return false;
+    }
+
+    try {
+      // Execute the actual cloud command
+      const result = await executeCloudCommand({
+        command: step.command,
+        provider: step.provider || (deploymentConfig?.provider || 'aws'),
+        timeout: DEFAULT_TIMEOUT,
+        onProgress: (progress: number) => {
+          updateStep(step.id, { progress });
+        }
+      });
+
+      if (result.success) {
+        updateStep(step.id, { 
+          status: 'success', 
+          progress: 100, 
+          outputLog: result.logs 
+        });
+        addLog(`Successfully executed step: ${step.title}`, 'success');
+        return true;
+      } else {
+        updateStep(step.id, { 
+          status: 'error', 
+          progress: result.progress || 0, 
+          outputLog: result.logs,
+          errorMessage: result.error
+        });
+        addLog(`Failed to execute step ${step.title}: ${result.error}`, 'error');
+        return false;
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      updateStep(step.id, { 
+        status: 'error', 
+        progress: 0,
+        errorMessage
+      });
+      addLog(`Error in step ${step.title}: ${errorMessage}`, 'error');
+      return false;
+    }
+  };
 
   // Function to run a step with timeout
-  const runStepWithTimeout = async (
+  const runStep = async (
     stepId: string, 
     timeoutMs: number = DEFAULT_TIMEOUT
   ): Promise<boolean> => {
+    const step = deploymentSteps.find(s => s.id === stepId);
+    if (!step) {
+      addLog(`Step ${stepId} not found`, 'error');
+      return false;
+    }
+
+    // Set step as in progress
+    setCurrentStep(stepId);
+    updateStep(stepId, { status: 'in-progress', progress: 0 });
+    addLog(`Starting step: ${step.title}`, 'info');
+
+    // Check if all dependencies are met
+    if (step.dependsOn && step.dependsOn.length > 0) {
+      const unmetDependencies = step.dependsOn.filter(depId => {
+        const depStep = deploymentSteps.find(s => s.id === depId);
+        return !depStep || depStep.status !== 'success';
+      });
+
+      if (unmetDependencies.length > 0) {
+        addLog(`Cannot start step ${step.title}: unmet dependencies`, 'error');
+        updateStep(stepId, { status: 'error', progress: 0 });
+        return false;
+      }
+    }
+
     return new Promise((resolve) => {
       let stepComplete = false;
       
       // Set timeout for the step
       const timeoutId = setTimeout(() => {
         if (!stepComplete) {
-          updateStep(stepId, { status: 'error', progress: 0 });
-          addLog(`Step ${stepId} timed out after ${timeoutMs/1000} seconds`, 'error');
+          updateStep(stepId, { status: 'error', progress: 0, errorMessage: 'Operation timed out' });
+          addLog(`Step ${step.title} timed out after ${timeoutMs/1000} seconds`, 'error');
           stepComplete = true;
           resolve(false);
         }
       }, timeoutMs);
       
-      // Run the actual step
-      runStepImpl(stepId)
+      // Execute the actual step
+      executeStep(step)
         .then(success => {
           stepComplete = true;
           clearTimeout(timeoutId);
@@ -51,49 +127,11 @@ export const useDeploymentProcess = ({
         .catch(error => {
           stepComplete = true;
           clearTimeout(timeoutId);
-          addLog(`Error in step ${stepId}: ${error.message}`, 'error');
-          updateStep(stepId, { status: 'error', progress: 0 });
+          addLog(`Error in step ${step.title}: ${error.message}`, 'error');
+          updateStep(stepId, { status: 'error', progress: 0, errorMessage: error.message });
           resolve(false);
         });
     });
-  };
-
-  // Internal implementation of running a step
-  const runStepImpl = async (stepId: string): Promise<boolean> => {
-    setCurrentStep(stepId);
-    updateStep(stepId, { status: 'in-progress', progress: 10 });
-    addLog(`Starting step: ${stepId}`, 'info');
-    
-    // Simulate randomness in completion time (and occasional failures)
-    const shouldFail = Math.random() < 0.1; // 10% chance of failure
-    const slowStep = Math.random() < 0.2; // 20% chance of slow step
-    
-    // Simulate step progress
-    for (let progress = 20; progress <= 100; progress += 20) {
-      if (!isDeploying) {
-        updateStep(stepId, { status: 'error', progress: progress - 20 });
-        addLog(`Step ${stepId} cancelled`, 'warning');
-        return false;
-      }
-      
-      // Simulate slower execution for some steps
-      const delay = slowStep ? 2000 : 1000;
-      await new Promise(resolve => setTimeout(resolve, delay));
-      
-      // If this step is meant to fail, fail around 60% progress
-      if (shouldFail && progress >= 60) {
-        updateStep(stepId, { status: 'error', progress: progress });
-        addLog(`Step ${stepId} failed at ${progress}%`, 'error');
-        return false;
-      }
-      
-      updateStep(stepId, { progress });
-      addLog(`${stepId}: Progress ${progress}%`, 'info');
-    }
-    
-    updateStep(stepId, { status: 'success', progress: 100 });
-    addLog(`Completed step: ${stepId}`, 'success');
-    return true;
   };
 
   // Start the full deployment process
@@ -110,25 +148,48 @@ export const useDeploymentProcess = ({
         return;
       }
     }
+
+    if (!deploymentConfig) {
+      toast.error('Deployment configuration is missing');
+      return;
+    }
     
     setIsDeploying(true);
-    addLog('Starting DEVONN.AI Framework deployment', 'info');
+    addLog(`Starting deployment to ${deploymentConfig.environment} environment on ${deploymentConfig.provider}`, 'info');
     toast.info('Starting deployment process');
     
     // Reset all steps to pending
     deploymentSteps.forEach(step => {
+      // Skip steps that are not relevant to the selected provider
+      if (step.providerSpecific && step.provider !== deploymentConfig.provider) {
+        updateStep(step.id, { status: 'pending', progress: 0 });
+        return;
+      }
       updateStep(step.id, { status: 'pending', progress: 0 });
     });
     
+    // Filter steps by provider if needed
+    const applicableSteps = deploymentSteps.filter(step => 
+      !step.providerSpecific || step.provider === deploymentConfig.provider
+    );
+
     // Run through each step sequentially with timeouts
-    for (const step of deploymentSteps) {
-      // Custom timeouts for different steps
-      let timeout = DEFAULT_TIMEOUT;
-      if (step.id === 'backend' || step.id === 'monitoring') {
-        timeout = 45000; // 45 seconds for more complex steps
+    for (const step of applicableSteps) {
+      // Skip steps that should be skipped
+      if (step.status === 'success') {
+        addLog(`Skipping already completed step: ${step.title}`, 'info');
+        continue;
       }
       
-      const completed = await runStepWithTimeout(step.id, timeout);
+      // Custom timeouts for different steps based on complexity
+      let timeout = DEFAULT_TIMEOUT;
+      if (step.id === 'backend' || step.id === 'monitoring') {
+        timeout = 180000; // 3 minutes for more complex steps
+      } else if (step.id === 'infrastructure') {
+        timeout = 300000; // 5 minutes for infrastructure provisioning
+      }
+      
+      const completed = await runStep(step.id, timeout);
       if (!completed) {
         addLog('Deployment process stopped due to errors', 'error');
         toast.error(`Deployment failed during ${step.title} step`);
@@ -137,7 +198,7 @@ export const useDeploymentProcess = ({
       }
     }
     
-    addLog('DEVONN.AI Framework deployment completed successfully', 'success');
+    addLog(`Deployment to ${deploymentConfig.environment} completed successfully`, 'success');
     toast.success('Deployment completed successfully');
     setIsDeploying(false);
   };
@@ -153,7 +214,7 @@ export const useDeploymentProcess = ({
 
   return {
     isDeploying,
-    runStep: runStepWithTimeout, // Expose the timeout-enabled version
+    runStep,
     startDeployment,
     cancelDeployment
   };

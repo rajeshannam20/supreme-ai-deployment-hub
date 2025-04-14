@@ -1,12 +1,15 @@
 
 import { useState } from 'react';
-import { ClusterStatus, ServiceStatus } from '../types/deployment';
+import { ClusterStatus, ServiceStatus, CloudProvider, CloudProviderCredentials } from '../types/deployment';
 import { toast } from 'sonner';
+import { connectToKubernetesCluster } from '../services/deployment/kubernetesService';
 
 export const useClusterConnection = (addLog: (message: string, type: 'info' | 'success' | 'warning' | 'error') => void) => {
   const [isConnected, setIsConnected] = useState<boolean>(false);
   const [isConnecting, setIsConnecting] = useState<boolean>(false);
   const [connectionAttempts, setConnectionAttempts] = useState<number>(0);
+  const [provider, setProvider] = useState<CloudProvider>('aws');
+  const [providerCredentials, setProviderCredentials] = useState<CloudProviderCredentials | null>(null);
   const [clusterStatus, setClusterStatus] = useState<ClusterStatus>({
     nodes: 0,
     pods: 0,
@@ -16,7 +19,7 @@ export const useClusterConnection = (addLog: (message: string, type: 'info' | 's
   });
   const [serviceStatus, setServiceStatus] = useState<ServiceStatus[]>([]);
 
-  // Connect to Kubernetes cluster with automatic retry
+  // Connect to Kubernetes cluster
   const connectToCluster = async (kubeConfig?: string): Promise<boolean> => {
     if (isConnecting) {
       addLog('Connection attempt already in progress', 'warning');
@@ -31,42 +34,43 @@ export const useClusterConnection = (addLog: (message: string, type: 'info' | 's
     setConnectionAttempts(attempts);
     
     try {
-      // Simulating connection to a Kubernetes cluster
-      await new Promise((resolve, reject) => {
-        // Simulate occasional connection failures (1 in 4 chance of failure)
-        const shouldFail = Math.random() < 0.25;
+      // Use the actual Kubernetes connection service
+      const result = await connectToKubernetesCluster({
+        kubeConfig,
+        provider,
+        attempt: attempts
+      });
+      
+      if (result.connected) {
+        // Successfully connected
+        setIsConnected(true);
+        setClusterStatus({
+          nodes: result.clusterInfo.nodes,
+          pods: result.clusterInfo.pods,
+          services: result.clusterInfo.services,
+          deployments: result.clusterInfo.deployments,
+          status: result.clusterInfo.status,
+          provider: result.clusterInfo.provider,
+          region: result.clusterInfo.region,
+          version: result.clusterInfo.version,
+          uptime: result.clusterInfo.uptime,
+        });
         
-        setTimeout(() => {
-          if (shouldFail && attempts < 3) {
-            reject(new Error('Connection timeout'));
-          } else {
-            resolve(true);
-          }
-        }, 2000);
-      });
-      
-      // Successfully connected
-      setIsConnected(true);
-      setClusterStatus({
-        nodes: 3,
-        pods: 12,
-        services: 8,
-        deployments: 5,
-        status: 'Healthy',
-      });
-      
-      setServiceStatus([
-        { name: 'devonn-ai-backend', status: 'Running', pods: '3/3', cpu: '45%', memory: '512Mi' },
-        { name: 'devonn-ai-frontend', status: 'Running', pods: '2/2', cpu: '30%', memory: '256Mi' },
-        { name: 'devonn-ai-inference', status: 'Running', pods: '2/3', cpu: '85%', memory: '1.2Gi' },
-        { name: 'devonn-ai-redis', status: 'Running', pods: '1/1', cpu: '10%', memory: '128Mi' },
-        { name: 'devonn-ai-database', status: 'Running', pods: '1/1', cpu: '25%', memory: '512Mi' },
-      ]);
-      
-      addLog('Successfully connected to Kubernetes cluster', 'success');
-      toast.success('Connected to Kubernetes cluster');
-      setIsConnecting(false);
-      return true;
+        setServiceStatus(result.serviceStatuses);
+        
+        // Update provider credentials if available
+        if (result.providerCredentials) {
+          setProviderCredentials(result.providerCredentials);
+          setProvider(result.providerCredentials.provider);
+        }
+        
+        addLog('Successfully connected to Kubernetes cluster', 'success');
+        toast.success('Connected to Kubernetes cluster');
+        setIsConnecting(false);
+        return true;
+      } else {
+        throw new Error(result.error || 'Failed to connect to cluster');
+      }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       addLog(`Connection attempt ${attempts} failed: ${errorMessage}`, 'error');
@@ -85,6 +89,19 @@ export const useClusterConnection = (addLog: (message: string, type: 'info' | 's
     }
   };
 
+  // Set cloud provider
+  const setCloudProvider = (newProvider: CloudProvider) => {
+    if (isConnected) {
+      addLog('Cannot change provider while connected to a cluster', 'warning');
+      toast.warning('Disconnect from the current cluster first');
+      return false;
+    }
+    
+    setProvider(newProvider);
+    addLog(`Cloud provider set to ${newProvider}`, 'info');
+    return true;
+  };
+
   // Disconnect from cluster
   const disconnectFromCluster = () => {
     if (isConnected) {
@@ -98,6 +115,7 @@ export const useClusterConnection = (addLog: (message: string, type: 'info' | 's
       });
       setServiceStatus([]);
       setConnectionAttempts(0);
+      setProviderCredentials(null);
       addLog('Disconnected from Kubernetes cluster', 'info');
       toast.info('Disconnected from cluster');
       return true;
@@ -110,7 +128,10 @@ export const useClusterConnection = (addLog: (message: string, type: 'info' | 's
     isConnecting,
     clusterStatus,
     serviceStatus,
+    provider,
+    providerCredentials,
     connectToCluster,
-    disconnectFromCluster
+    disconnectFromCluster,
+    setCloudProvider
   };
 };
