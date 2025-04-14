@@ -30,7 +30,7 @@ export const makeApiRequest = async <T>(
     toastOptions?: {
       title?: string;
       description?: string;
-      variant?: 'default' | 'destructive' | 'success';
+      variant?: 'default' | 'destructive';
     };
   } = {}
 ): Promise<T | null> => {
