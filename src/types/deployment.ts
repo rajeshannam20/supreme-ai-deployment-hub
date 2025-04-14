@@ -1,4 +1,3 @@
-
 export type DeploymentStatus = 'success' | 'warning' | 'error' | 'pending' | 'in-progress';
 export type CloudProvider = 'aws' | 'azure' | 'gcp' | 'custom';
 export type DeploymentEnvironment = 'development' | 'staging' | 'production';
@@ -16,6 +15,8 @@ export interface DeploymentStep {
   dependsOn?: string[];
   providerSpecific?: boolean;
   provider?: CloudProvider;
+  errorCode?: string;
+  errorDetails?: Record<string, any>;
 }
 
 export interface ServiceStatus {
