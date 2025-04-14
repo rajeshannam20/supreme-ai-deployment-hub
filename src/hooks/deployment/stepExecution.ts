@@ -87,7 +87,7 @@ export const executeDeploymentStep = async (
       }
 
       if (commandResult.success) {
-        addLog(`[${step.title}] - Completed successfully.`, 'success');
+        addLog(`[${step.title}] - Completed successfully.`, 'info'); // Changed from 'success' to 'info'
         updateStep(stepId, { status: 'success', progress: 100, outputLog: commandResult.logs });
         return true;
       } else {

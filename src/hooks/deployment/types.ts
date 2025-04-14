@@ -7,7 +7,7 @@ export interface UseDeploymentProcessProps {
   updateStep: (stepId: string, updates: Partial<DeploymentStep>) => void;
   setCurrentStep: (stepId: string) => void;
   connectToCluster: (kubeConfig?: string) => Promise<boolean>;
-  addLog: (log: string, type?: 'info' | 'error' | 'warning') => void;
+  addLog: (log: string, type?: 'info' | 'error' | 'warning' | 'success') => void; // Updated to include 'success'
   deploymentConfig: DeploymentConfig | undefined;
   environment: DeploymentEnvironment;
 }
