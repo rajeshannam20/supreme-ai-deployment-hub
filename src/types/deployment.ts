@@ -1,5 +1,13 @@
-
-export type DeploymentStatus = 'success' | 'warning' | 'error' | 'pending' | 'in-progress';
+export type DeploymentStatus = 
+  | 'success' 
+  | 'warning' 
+  | 'error' 
+  | 'pending' 
+  | 'in-progress' 
+  | 'rolling-back' 
+  | 'rolled-back' 
+  | 'rollback-skipped' 
+  | 'rollback-failed';
 export type CloudProvider = 'aws' | 'azure' | 'gcp' | 'custom';
 export type DeploymentEnvironment = 'development' | 'staging' | 'production';
 
@@ -18,6 +26,7 @@ export interface DeploymentStep {
   provider?: CloudProvider;
   errorCode?: string;
   errorDetails?: Record<string, any>;
+  rollback?: () => Promise<void>;
 }
 
 export interface ServiceStatus {
