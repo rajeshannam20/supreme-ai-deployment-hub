@@ -1,4 +1,3 @@
-
 import { createApiClient, ApiClientConfig, handleApiError } from './apiClient';
 import { toast } from '@/hooks/use-toast';
 
@@ -30,7 +29,7 @@ export const makeApiRequest = async <T>(
     toastOptions?: {
       title?: string;
       description?: string;
-      variant?: 'default' | 'destructive';
+      variant?: 'default' | 'destructive' | 'success';
     };
   } = {}
 ): Promise<T | null> => {
