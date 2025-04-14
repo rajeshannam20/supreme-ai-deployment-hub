@@ -1,5 +1,5 @@
 
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState, useRef } from 'react';
 import { 
   CloudProvider, 
   DeploymentConfig, 
@@ -41,6 +41,7 @@ export const ConfigProvider: React.FC<ConfigProviderProps> = ({
   const [environment, setEnvironment] = useState<DeploymentEnvironment>('development');
   const [deploymentConfig, setDeploymentConfig] = useState<DeploymentConfig | null>(null);
   const logger = createLogger(environment, provider);
+  const initializedRef = useRef(false);
 
   const updateDeploymentConfigWithDefaults = useCallback((env: DeploymentEnvironment, prov: CloudProvider) => {
     logger.info('Updating deployment configuration', { provider: prov, environment: env });
@@ -63,8 +64,12 @@ export const ConfigProvider: React.FC<ConfigProviderProps> = ({
     });
   }, [logger]);
 
+  // Fix the infinite loop by using a ref to track initialization
   useEffect(() => {
-    updateDeploymentConfigWithDefaults(environment, provider);
+    if (!initializedRef.current) {
+      updateDeploymentConfigWithDefaults(environment, provider);
+      initializedRef.current = true;
+    }
   }, [provider, environment, updateDeploymentConfigWithDefaults]);
 
   const setDeploymentEnvironment = useCallback((newEnvironment: DeploymentEnvironment) => {
