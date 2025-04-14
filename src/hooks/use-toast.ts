@@ -22,11 +22,8 @@ export const useToast = () => {
   return {
     ...originalHook,
     toast: (props: ExtendedToastProps) => {
-      // Map 'success' variant to 'default' with green styling if needed
-      const mappedProps = { ...props };
-      
-      // The actual toast component will handle the standard variants
-      return originalHook.toast(mappedProps);
+      // Pass all props to the original toast function
+      return originalHook.toast(props);
     }
   };
 };
@@ -34,14 +31,5 @@ export const useToast = () => {
 // Extended toast function that handles the 'success' variant
 export const toast = (props: ExtendedToastProps) => {
   // Use the original toast function from use-toast.ts
-  const { title, description, variant, duration, action, ...restProps } = props;
-  
-  return useToastOriginal().toast({
-    title,
-    description, 
-    variant: variant as any, // Cast to any to bypass type checking temporarily
-    duration,
-    action,
-    ...restProps
-  });
+  return useToastOriginal().toast(props);
 };

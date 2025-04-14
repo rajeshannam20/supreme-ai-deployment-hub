@@ -1,5 +1,5 @@
 
-import { toast } from 'sonner';
+import { toast } from '@/hooks/use-toast';
 import { APIPlaygroundState } from './types';
 
 interface UseRequestHandlerProps {
@@ -13,7 +13,11 @@ export const useRequestHandler = ({ state, updateState }: UseRequestHandlerProps
     try {
       JSON.parse(state.headers);
     } catch (e) {
-      toast.error('Invalid headers JSON format');
+      toast({
+        title: "Validation Error",
+        description: "Invalid headers JSON format",
+        variant: "destructive"
+      });
       return false;
     }
 
@@ -22,7 +26,11 @@ export const useRequestHandler = ({ state, updateState }: UseRequestHandlerProps
       try {
         JSON.parse(state.requestBody);
       } catch (e) {
-        toast.error('Invalid request body JSON format');
+        toast({
+          title: "Validation Error",
+          description: "Invalid request body JSON format",
+          variant: "destructive"
+        });
         return false;
       }
     }
@@ -70,9 +78,17 @@ export const useRequestHandler = ({ state, updateState }: UseRequestHandlerProps
       }
 
       if (fetchResponse.ok) {
-        toast.success(`Request successful: ${statusText}`);
+        toast({
+          title: "Request Successful",
+          description: statusText,
+          variant: "success"
+        });
       } else {
-        toast.error(`Request failed: ${statusText}`);
+        toast({
+          title: "Request Failed",
+          description: statusText,
+          variant: "destructive"
+        });
       }
     } catch (error) {
       console.error('API request error:', error);
@@ -80,7 +96,11 @@ export const useRequestHandler = ({ state, updateState }: UseRequestHandlerProps
         status: 'Request failed',
         response: error instanceof Error ? error.message : 'An unknown error occurred'
       });
-      toast.error('Request failed. Check console for details.');
+      toast({
+        title: "Request Failed",
+        description: "Check console for details",
+        variant: "destructive"
+      });
     } finally {
       updateState({ loading: false });
     }

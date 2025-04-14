@@ -4,6 +4,7 @@ import { executeDeploymentStep } from './stepExecution';
 import { UseDeploymentProcessProps } from './types';
 import { validateDeploymentBeforeStart } from './deploymentValidator';
 import { runDeploymentProcess } from './deploymentOrchestrator';
+import { toast } from '@/hooks/use-toast';
 
 /**
  * Handles running a specific deployment step
@@ -14,7 +15,22 @@ export const runDeploymentStep = async (
   timeoutMs: number = 120000,
   retryStrategy?: Partial<RetryStrategy>
 ): Promise<boolean> => {
-  return executeDeploymentStep(stepId, props, timeoutMs, retryStrategy);
+  const result = await executeDeploymentStep(stepId, props, timeoutMs, retryStrategy);
+  
+  // Show success toast when a step completes successfully
+  if (result) {
+    const step = props.deploymentSteps.find(s => s.id === stepId);
+    if (step) {
+      toast({
+        title: "Step Completed",
+        description: `${step.title} was completed successfully`,
+        variant: "success",
+        duration: 3000,
+      });
+    }
+  }
+  
+  return result;
 };
 
 /**
@@ -64,6 +80,14 @@ export const startDeploymentProcess = async (
     return;
   }
   
+  // Show toast when deployment starts
+  toast({
+    title: "Deployment Started",
+    description: `Deploying to ${props.environment} environment`,
+    variant: "default",
+    duration: 3000,
+  });
+  
   // Run the deployment process
   await runDeploymentProcess(props, isDeploying, setIsDeploying);
 };
@@ -83,4 +107,12 @@ export const cancelDeploymentProcess = (
   
   setIsDeploying(false);
   addLog('Deployment cancellation requested. Waiting for current operations to complete...', 'warning');
+  
+  // Show toast when deployment is cancelled
+  toast({
+    title: "Deployment Cancelled",
+    description: "The deployment process has been cancelled",
+    variant: "destructive",
+    duration: 3000,
+  });
 };
