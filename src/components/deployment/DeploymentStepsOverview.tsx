@@ -15,9 +15,20 @@ const DeploymentStepsOverview = () => {
 
   // Group steps by status for easier rendering
   const completedSteps = deploymentSteps.filter(step => step.status === 'success');
-  const inProgressSteps = deploymentSteps.filter(step => step.status === 'in-progress');
+  
+  // Include in-progress steps and also steps that are currently rolling back
+  const inProgressSteps = deploymentSteps.filter(
+    step => step.status === 'in-progress' || step.status === 'rolling-back'
+  );
+  
+  // Any step that is not completed or in progress is considered pending
   const pendingSteps = deploymentSteps.filter(
-    step => step.status !== 'success' && step.status !== 'in-progress'
+    step => {
+      const status = step.status;
+      return status !== 'success' && 
+             status !== 'in-progress' && 
+             status !== 'rolling-back';
+    }
   );
 
   return (
