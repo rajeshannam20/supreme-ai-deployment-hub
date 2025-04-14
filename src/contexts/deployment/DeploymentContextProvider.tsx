@@ -1,5 +1,5 @@
 
-import React, { createContext, useCallback, useEffect, useMemo, useState, ReactNode } from 'react';
+import React, { createContext, useCallback, useEffect, useMemo, useState, ReactNode, useRef } from 'react';
 import { DeploymentContextType } from './DeploymentContextTypes';
 import { 
   CloudProvider,
@@ -43,6 +43,10 @@ export const DeploymentContextProvider: React.FC<{ children: ReactNode }> = ({ c
   // State for environment and deployment config
   const [environment, setEnvironment] = useState<DeploymentEnvironment>('development');
   const [deploymentConfig, setDeploymentConfig] = useState<DeploymentConfig | null>(null);
+  
+  // Track last calculated progress
+  const [overallProgress, setOverallProgress] = useState<number>(0);
+  const lastProgressUpdateRef = useRef<number>(0);
 
   // Create a memoized config update function that doesn't change on every render
   const updateDeploymentConfigWithDefaults = useCallback((env: DeploymentEnvironment, prov: CloudProvider) => {
@@ -119,23 +123,48 @@ export const DeploymentContextProvider: React.FC<{ children: ReactNode }> = ({ c
   }, [isDeploying, addLog, logger, deploymentConfig]);
 
   // Calculate overall progress when deployment steps change
+  // Using a ref to prevent infinite update loops
   useEffect(() => {
-    const completedSteps = deploymentSteps.filter(step => step.status === 'success').length;
-    const inProgressSteps = deploymentSteps.filter(step => step.status === 'in-progress');
-    
-    if (inProgressSteps.length > 0) {
-      const currentProgress = inProgressSteps[0].progress / 100;
-      const overallProgress = (completedSteps + currentProgress) / deploymentSteps.length * 100;
+    const calculateProgress = () => {
+      const completedSteps = deploymentSteps.filter(step => step.status === 'success').length;
+      const totalSteps = deploymentSteps.length;
+      const inProgressSteps = deploymentSteps.filter(step => step.status === 'in-progress');
       
-      if (environment === 'production') {
-        logger.info(`Deployment progress: ${Math.floor(overallProgress)}%`, {
-          completedSteps,
-          totalSteps: deploymentSteps.length,
-          currentStep: inProgressSteps[0].id
-        });
+      let progress = 0;
+      if (inProgressSteps.length > 0) {
+        const currentProgress = inProgressSteps[0].progress / 100;
+        progress = (completedSteps + currentProgress) / totalSteps * 100;
+      } else {
+        progress = (completedSteps / totalSteps) * 100;
       }
-    }
-  }, [deploymentSteps, environment, logger]);
+      
+      // Round to 2 decimal places
+      const roundedProgress = Math.round(progress * 100) / 100;
+      
+      // Only update if progress has changed significantly (avoid unnecessary re-renders)
+      if (Math.abs(roundedProgress - lastProgressUpdateRef.current) >= 0.5) {
+        setOverallProgress(roundedProgress);
+        lastProgressUpdateRef.current = roundedProgress;
+        
+        // Log progress changes
+        if (environment === 'production' || roundedProgress % 10 < 0.5) {
+          logger.info(`Deployment progress: ${Math.floor(roundedProgress)}%`, {
+            completedSteps,
+            totalSteps,
+            currentStep: inProgressSteps.length > 0 ? inProgressSteps[0].id : 'none',
+            statusBreakdown: {
+              completed: completedSteps,
+              inProgress: inProgressSteps.length,
+              pending: totalSteps - completedSteps - inProgressSteps.length
+            }
+          });
+        }
+      }
+    };
+    
+    // Calculate initial progress
+    calculateProgress();
+  }, [deploymentSteps, environment, logger]); // Only recalculate when steps or environment changes
 
   // Get a summary of the deployment status
   const getDeploymentSummary = useCallback((): string => {
@@ -151,7 +180,7 @@ export const DeploymentContextProvider: React.FC<{ children: ReactNode }> = ({ c
     }
     
     if (isDeploying) {
-      status += `Deployment in progress (${environment} environment). `;
+      status += `Deployment in progress (${environment} environment): ${Math.round(overallProgress)}% complete. `;
     }
     
     status += `${completedSteps}/${totalSteps} steps completed. `;
@@ -166,7 +195,7 @@ export const DeploymentContextProvider: React.FC<{ children: ReactNode }> = ({ c
     }
     
     return status;
-  }, [deploymentSteps, isConnected, provider, clusterStatus.region, isDeploying, environment, serviceStatus]);
+  }, [deploymentSteps, isConnected, provider, clusterStatus.region, isDeploying, environment, overallProgress, serviceStatus]);
 
   // Memoize the context value to prevent unnecessary rerenders
   const contextValue = useMemo(() => ({
@@ -182,6 +211,7 @@ export const DeploymentContextProvider: React.FC<{ children: ReactNode }> = ({ c
     providerCredentials,
     deploymentConfig,
     environment,
+    overallProgress,
     connectToCluster,
     disconnectFromCluster,
     setCloudProvider,
@@ -207,6 +237,7 @@ export const DeploymentContextProvider: React.FC<{ children: ReactNode }> = ({ c
     providerCredentials,
     deploymentConfig,
     environment,
+    overallProgress,
     connectToCluster,
     disconnectFromCluster,
     setCloudProvider,

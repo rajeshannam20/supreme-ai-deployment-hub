@@ -24,6 +24,7 @@ export interface DeploymentContextType {
   providerCredentials: CloudProviderCredentials | null;
   deploymentConfig: DeploymentConfig | null;
   environment: DeploymentEnvironment;
+  overallProgress: number; // Added overall progress percentage
   connectToCluster: (kubeConfig?: string) => Promise<boolean>;
   disconnectFromCluster: () => boolean;
   setCloudProvider: (provider: CloudProvider) => boolean;
