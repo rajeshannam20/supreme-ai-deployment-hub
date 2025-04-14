@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react';
 import { 
   DeploymentStatus, 
   DeploymentStep, 
@@ -75,27 +75,32 @@ export const DeploymentProvider: React.FC<{ children: ReactNode }> = ({ children
   const [environment, setEnvironment] = useState<DeploymentEnvironment>('development');
   const [deploymentConfig, setDeploymentConfig] = useState<DeploymentConfig | null>(null);
 
-  // Initialize deployment config when provider changes
-  useEffect(() => {
-    logger.info('Updating deployment configuration', { provider, environment });
+  // Create a memoized config update function that doesn't change on every render
+  const updateDeploymentConfigWithDefaults = useCallback((env: DeploymentEnvironment, prov: CloudProvider) => {
+    logger.info('Updating deployment configuration', { provider: prov, environment: env });
     
     setDeploymentConfig({
-      provider,
-      environment,
-      region: provider === 'aws' ? 'us-west-2' : 
-              provider === 'azure' ? 'eastus' : 
-              provider === 'gcp' ? 'us-central1' : '',
-      clusterName: `devonn-${environment}`,
+      provider: prov,
+      environment: env,
+      region: prov === 'aws' ? 'us-west-2' : 
+              prov === 'azure' ? 'eastus' : 
+              prov === 'gcp' ? 'us-central1' : '',
+      clusterName: `devonn-${env}`,
       namespace: 'default',
       useExistingCluster: false,
-      resourcePrefix: `devonn-${environment}`,
+      resourcePrefix: `devonn-${env}`,
       tags: {
-        environment,
+        environment: env,
         project: 'devonn-ai',
         managedBy: 'devonn-dashboard'
       }
     });
-  }, [provider, environment, logger]);
+  }, [logger]);
+
+  // Initialize deployment config when provider or environment changes
+  useEffect(() => {
+    updateDeploymentConfigWithDefaults(environment, provider);
+  }, [provider, environment, updateDeploymentConfigWithDefaults]);
 
   // Get deployment process management with error handling
   const { isDeploying, runStep, retryStep, startDeployment, cancelDeployment } = useDeploymentProcess({
@@ -110,7 +115,7 @@ export const DeploymentProvider: React.FC<{ children: ReactNode }> = ({ children
   });
 
   // Update deployment environment
-  const setDeploymentEnvironment = (newEnvironment: DeploymentEnvironment) => {
+  const setDeploymentEnvironment = useCallback((newEnvironment: DeploymentEnvironment) => {
     if (isDeploying) {
       addLog('Cannot change environment while deployment is in progress', 'warning');
       return;
@@ -119,24 +124,11 @@ export const DeploymentProvider: React.FC<{ children: ReactNode }> = ({ children
     logger.info(`Changing deployment environment to ${newEnvironment}`);
     setEnvironment(newEnvironment);
     
-    if (deploymentConfig) {
-      setDeploymentConfig({
-        ...deploymentConfig,
-        environment: newEnvironment,
-        clusterName: `devonn-${newEnvironment}`,
-        resourcePrefix: `devonn-${newEnvironment}`,
-        tags: {
-          ...deploymentConfig.tags,
-          environment: newEnvironment
-        }
-      });
-    }
-    
     addLog(`Deployment environment set to ${newEnvironment}`, 'info');
-  };
+  }, [isDeploying, addLog, logger]);
 
   // Update deployment configuration
-  const updateDeploymentConfig = (config: Partial<DeploymentConfig>) => {
+  const updateDeploymentConfig = useCallback((config: Partial<DeploymentConfig>) => {
     if (isDeploying) {
       addLog('Cannot update configuration while deployment is in progress', 'warning');
       return;
@@ -148,14 +140,14 @@ export const DeploymentProvider: React.FC<{ children: ReactNode }> = ({ children
         provider: config.provider || deploymentConfig.provider
       });
       
-      setDeploymentConfig({
-        ...deploymentConfig,
+      setDeploymentConfig(prevConfig => ({
+        ...prevConfig!,
         ...config
-      });
+      }));
       
       addLog('Deployment configuration updated', 'info');
     }
-  };
+  }, [isDeploying, addLog, logger, deploymentConfig]);
 
   // Calculate overall progress when deployment steps change
   useEffect(() => {
@@ -177,7 +169,7 @@ export const DeploymentProvider: React.FC<{ children: ReactNode }> = ({ children
   }, [deploymentSteps, environment, logger]);
 
   // New function to get a summary of the deployment status
-  const getDeploymentSummary = (): string => {
+  const getDeploymentSummary = useCallback((): string => {
     const completedSteps = deploymentSteps.filter(step => step.status === 'success').length;
     const totalSteps = deploymentSteps.length;
     const failedSteps = deploymentSteps.filter(step => step.status === 'error').length;
@@ -205,7 +197,7 @@ export const DeploymentProvider: React.FC<{ children: ReactNode }> = ({ children
     }
     
     return status;
-  };
+  }, [deploymentSteps, isConnected, provider, clusterStatus.region, isDeploying, environment, serviceStatus]);
 
   return (
     <DeploymentContext.Provider
