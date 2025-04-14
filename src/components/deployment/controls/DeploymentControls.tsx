@@ -9,6 +9,7 @@ import { useDeployment } from '@/contexts/DeploymentContext';
 import DeploymentGuide from './DeploymentGuide';
 import DeploymentControlTabs from './DeploymentControlTabs';
 import DeploymentActionButtons from './DeploymentActionButtons';
+import KubeConfigConnect from './KubeConfigConnect';
 
 const DeploymentControls = () => {
   const [showGuide, setShowGuide] = useState(false);
