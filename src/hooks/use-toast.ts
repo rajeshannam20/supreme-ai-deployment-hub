@@ -4,12 +4,15 @@ import { Toast, ToastActionElement, ToastProps } from "@/components/ui/toast";
 
 import {
   useToast as useToastOriginal,
-  toast as toastOriginal,
 } from "@/components/ui/use-toast";
 
-// Extended toast variant type that includes 'success'
-type ExtendedToastProps = ToastProps & {
+// Define the extended toast props type with all required properties
+export type ExtendedToastProps = ToastProps & {
   variant?: 'default' | 'destructive' | 'success';
+  title?: string;
+  description?: string;
+  duration?: number;
+  action?: ToastActionElement;
 };
 
 // Wrapper for useToast that handles the extended variants
@@ -18,7 +21,7 @@ export const useToast = () => {
 
   return {
     ...originalHook,
-    toast: (props: ExtendedToastProps & { action?: ToastActionElement }) => {
+    toast: (props: ExtendedToastProps) => {
       // Map 'success' variant to 'default' with green styling if needed
       const mappedProps = { ...props };
       
@@ -29,7 +32,16 @@ export const useToast = () => {
 };
 
 // Extended toast function that handles the 'success' variant
-export const toast = (props: ExtendedToastProps & { action?: ToastActionElement }) => {
-  // Use the original toast function
-  return toastOriginal(props);
+export const toast = (props: ExtendedToastProps) => {
+  // Use the original toast function from use-toast.ts
+  const { title, description, variant, duration, action, ...restProps } = props;
+  
+  return useToastOriginal().toast({
+    title,
+    description, 
+    variant: variant as any, // Cast to any to bypass type checking temporarily
+    duration,
+    action,
+    ...restProps
+  });
 };
