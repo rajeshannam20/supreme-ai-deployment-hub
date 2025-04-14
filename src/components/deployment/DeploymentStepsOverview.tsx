@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useDeployment } from '@/contexts/DeploymentContext';
 import { Badge } from '@/components/ui/badge';
 import DeploymentInfoCard from '@/components/DeploymentInfoCard';
+import { DeploymentStatus } from '@/types/deployment';
 
 const DeploymentStepsOverview = () => {
   const { 
@@ -31,6 +32,30 @@ const DeploymentStepsOverview = () => {
     }
   );
 
+  // Helper function to map deployment statuses to compatible card statuses
+  const mapStatusForCard = (status: DeploymentStatus): 'success' | 'warning' | 'error' | 'pending' | 'in-progress' => {
+    switch (status) {
+      case 'success':
+        return 'success';
+      case 'warning':
+        return 'warning';
+      case 'error':
+        return 'error';
+      case 'in-progress':
+        return 'in-progress';
+      case 'rolling-back':
+        return 'in-progress';
+      case 'rolled-back':
+      case 'rollback-skipped':
+        return 'warning';
+      case 'rollback-failed':
+        return 'error';
+      case 'pending':
+      default:
+        return 'pending';
+    }
+  };
+
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -54,7 +79,7 @@ const DeploymentStepsOverview = () => {
               key={step.id}
               title={step.title}
               description={step.description}
-              status={step.status}
+              status={mapStatusForCard(step.status)}
               progress={step.progress}
               stepId={step.id}
               onClick={() => runStep(step.id)}
