@@ -1,3 +1,4 @@
+
 import { useCallback, useState } from 'react';
 import { DeploymentStep, DeploymentConfig, DeploymentEnvironment, CloudProvider } from '../types/deployment';
 import { executeCloudCommand, CloudCommandResult } from '../services/deployment/cloudExecutionService';
@@ -83,8 +84,8 @@ export const useDeploymentProcess = ({
         } else {
           addLog(`[${step.title}] - Failed: ${commandResult.error}`, 'error');
           updateStep(stepId, {
-            status: 'error',
-            progress: commandResult.progress || 0,
+            status: 'error', 
+            progress: commandResult.progress || 0, 
             errorMessage: commandResult.error,
             outputLog: commandResult.logs,
             errorCode: commandResult.errorCode,
@@ -178,3 +179,4 @@ export const useDeploymentProcess = ({
 
   return { isDeploying, runStep, retryStep, startDeployment, cancelDeployment };
 };
+
