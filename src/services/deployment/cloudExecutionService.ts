@@ -209,13 +209,13 @@ const simulateCommandExecution = async (options: ExecuteCommandOptions): Promise
   console.log(`[${environment.toUpperCase()}][${provider}] Simulating command: ${command}`);
   
   try {
-    // Use a local variable for the interval to fix the undefined error
-    let progressUpdateInterval: NodeJS.Timeout | null = null;
+    // Define interval as NodeJS.Timeout and initialize as null
+    let intervalId: NodeJS.Timeout | null = null;
     
     // Simulate progress updates
     if (onProgress) {
       let currentProgress = 0;
-      progressUpdateInterval = setInterval(() => {
+      intervalId = setInterval(() => {
         const increment = Math.floor(Math.random() * 10) + 1;
         currentProgress = Math.min(currentProgress + increment, 90);
         onProgress(currentProgress);
@@ -229,7 +229,7 @@ const simulateCommandExecution = async (options: ExecuteCommandOptions): Promise
     // Set timeout for long-running operations
     const timeoutPromise = new Promise<never>((_, reject) => {
       setTimeout(() => {
-        if (progressUpdateInterval) clearInterval(progressUpdateInterval);
+        if (intervalId) clearInterval(intervalId);
         reject(new Error('TIMEOUT: Command execution timed out'));
       }, timeout);
     });
@@ -274,7 +274,7 @@ const simulateCommandExecution = async (options: ExecuteCommandOptions): Promise
     const result = await Promise.race([executionPromise, timeoutPromise]);
     
     // Clear interval if it exists
-    if (progressUpdateInterval) clearInterval(progressUpdateInterval);
+    if (intervalId) clearInterval(intervalId);
     
     // Set final progress
     if (onProgress) onProgress(100);
@@ -282,8 +282,8 @@ const simulateCommandExecution = async (options: ExecuteCommandOptions): Promise
     return result;
   } catch (error) {
     // Make sure interval is cleared in case of error
-    if (typeof progressUpdateInterval !== 'undefined' && progressUpdateInterval !== null) {
-      clearInterval(progressUpdateInterval);
+    if (typeof intervalId !== 'undefined' && intervalId !== null) {
+      clearInterval(intervalId);
     }
     
     // Classify and log error with enhanced details
