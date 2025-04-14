@@ -36,6 +36,12 @@ const config = {
     connections: 80, // 80% of max connections
     errorRate: 1, // 1% error rate
     latency: 500 // 500ms latency
+  },
+  observability: {
+    enableDistributedTracing: true,
+    enableAnomalyDetection: env === 'production',
+    enableLogInsights: true,
+    retentionDays: env === 'production' ? 90 : 30
   }
 };
 
@@ -43,6 +49,7 @@ async function main() {
   try {
     // Initialize AWS clients
     const cloudwatch = new CloudWatch({ region: config.region });
+    const cloudwatchLogs = new CloudWatchLogs({ region: config.region });
     const sns = new SNS({ region: config.region });
     
     // Create SNS topic for alerts if it doesn't exist
@@ -123,6 +130,41 @@ async function main() {
             region: config.region,
             title: 'RDS Free Storage Space'
           }
+        },
+        // API Gateway Latency
+        {
+          type: 'metric',
+          x: 0,
+          y: 12,
+          width: 12,
+          height: 6,
+          properties: {
+            metrics: [
+              ['AWS/ApiGateway', 'Latency', 'ApiName', `devonn-api-${env}`]
+            ],
+            period: 300,
+            stat: 'Average',
+            region: config.region,
+            title: 'API Gateway Latency'
+          }
+        },
+        // API Gateway 4XX/5XX Errors
+        {
+          type: 'metric',
+          x: 12,
+          y: 12,
+          width: 12,
+          height: 6,
+          properties: {
+            metrics: [
+              ['AWS/ApiGateway', '4XXError', 'ApiName', `devonn-api-${env}`],
+              ['AWS/ApiGateway', '5XXError', 'ApiName', `devonn-api-${env}`]
+            ],
+            period: 300,
+            stat: 'Sum',
+            region: config.region,
+            title: 'API Gateway Errors'
+          }
         }
       ]
     });
@@ -133,6 +175,58 @@ async function main() {
     });
     
     console.log(`Dashboard created: ${dashboardName}`);
+    
+    // Create CloudWatch Log Groups with appropriate retention
+    console.log('Setting up CloudWatch Log Groups...');
+    
+    const logGroups = [
+      `/aws/eks/${config.clusterName}/cluster`,
+      `/aws/rds/instance/${config.dbInstanceId}/postgresql`,
+      `/aws/lambda/devonn-${env}-api`
+    ];
+    
+    for (const logGroup of logGroups) {
+      try {
+        // Create log group if it doesn't exist
+        try {
+          await cloudwatchLogs.createLogGroup({
+            logGroupName: logGroup
+          });
+          console.log(`Created log group: ${logGroup}`);
+        } catch (error) {
+          if (error.name !== 'ResourceAlreadyExistsException') {
+            throw error;
+          }
+          console.log(`Log group already exists: ${logGroup}`);
+        }
+        
+        // Set retention policy
+        await cloudwatchLogs.putRetentionPolicy({
+          logGroupName: logGroup,
+          retentionInDays: config.observability.retentionDays
+        });
+        console.log(`Set retention policy for ${logGroup}: ${config.observability.retentionDays} days`);
+        
+        // Create log metric filters for error tracking
+        if (config.observability.enableLogInsights) {
+          await cloudwatchLogs.putMetricFilter({
+            logGroupName: logGroup,
+            filterName: `${logGroup.replace(/\//g, '-')}-errors`,
+            filterPattern: 'ERROR',
+            metricTransformations: [
+              {
+                metricName: `ErrorCount-${logGroup.replace(/\//g, '-')}`,
+                metricNamespace: 'Devonn/Logs',
+                metricValue: '1'
+              }
+            ]
+          });
+          console.log(`Created error metric filter for ${logGroup}`);
+        }
+      } catch (error) {
+        console.error(`Error setting up log group ${logGroup}:`, error);
+      }
+    }
     
     // Create CloudWatch Alarms
     console.log('Creating CloudWatch alarms...');
@@ -200,6 +294,118 @@ async function main() {
       ]
     });
     
+    // API Gateway Latency Alarm
+    await cloudwatch.putMetricAlarm({
+      AlarmName: `${config.alarmPrefix}-api-latency-high`,
+      ComparisonOperator: 'GreaterThanThreshold',
+      EvaluationPeriods: 3,
+      MetricName: 'Latency',
+      Namespace: 'AWS/ApiGateway',
+      Period: 300,
+      Statistic: 'Average',
+      Threshold: config.thresholds.latency,
+      ActionsEnabled: true,
+      AlarmActions: [topicArn],
+      AlarmDescription: `API Gateway latency exceeds ${config.thresholds.latency}ms`,
+      Dimensions: [
+        {
+          Name: 'ApiName',
+          Value: `devonn-api-${env}`
+        }
+      ]
+    });
+    
+    // API Gateway 5XX Error Alarm
+    await cloudwatch.putMetricAlarm({
+      AlarmName: `${config.alarmPrefix}-api-5xx-errors`,
+      ComparisonOperator: 'GreaterThanThreshold',
+      EvaluationPeriods: 1,
+      MetricName: '5XXError',
+      Namespace: 'AWS/ApiGateway',
+      Period: 60,
+      Statistic: 'Sum',
+      Threshold: 5, // More than 5 errors per minute
+      ActionsEnabled: true,
+      AlarmActions: [topicArn],
+      AlarmDescription: 'API Gateway is returning 5XX errors',
+      Dimensions: [
+        {
+          Name: 'ApiName',
+          Value: `devonn-api-${env}`
+        }
+      ]
+    });
+    
+    // Set up anomaly detection if enabled
+    if (config.observability.enableAnomalyDetection) {
+      console.log('Setting up anomaly detection...');
+      
+      await cloudwatch.putAnomalyDetector({
+        Namespace: 'AWS/ApiGateway',
+        MetricName: 'Latency',
+        Stat: 'Average',
+        Dimensions: [
+          {
+            Name: 'ApiName',
+            Value: `devonn-api-${env}`
+          }
+        ]
+      });
+      
+      console.log('Created anomaly detector for API Gateway latency');
+      
+      // Create alarm based on anomaly detection
+      await cloudwatch.putMetricAlarm({
+        AlarmName: `${config.alarmPrefix}-api-latency-anomaly`,
+        ComparisonOperator: 'GreaterThanUpperThreshold',
+        EvaluationPeriods: 3,
+        ThresholdMetricId: 'ad1',
+        Metrics: [
+          {
+            Id: 'm1',
+            MetricStat: {
+              Metric: {
+                Namespace: 'AWS/ApiGateway',
+                MetricName: 'Latency',
+                Dimensions: [
+                  {
+                    Name: 'ApiName',
+                    Value: `devonn-api-${env}`
+                  }
+                ]
+              },
+              Period: 300,
+              Stat: 'Average'
+            },
+            ReturnData: true
+          },
+          {
+            Id: 'ad1',
+            Expression: 'ANOMALY_DETECTION_BAND(m1, 2)',
+            ReturnData: true
+          }
+        ],
+        ActionsEnabled: true,
+        AlarmActions: [topicArn],
+        AlarmDescription: 'API Gateway latency is abnormally high'
+      });
+      
+      console.log('Created anomaly detection alarm for API Gateway latency');
+    }
+    
+    // Create composite alarm for critical issues (if in production)
+    if (env === 'production') {
+      await cloudwatch.putCompositeAlarm({
+        AlarmName: `${config.alarmPrefix}-critical-issues`,
+        AlarmRule: `ALARM("${config.alarmPrefix}-api-5xx-errors") OR ALARM("${config.alarmPrefix}-rds-cpu-high")`,
+        ActionsEnabled: true,
+        AlarmActions: [topicArn],
+        AlarmDescription: 'Critical system issues detected - immediate action required'
+      });
+      
+      console.log('Created composite alarm for critical issues');
+    }
+    
     console.log('Monitoring setup complete!');
     console.log(`NOTE: Subscribe to SNS topic ${topicArn} to receive alerts`);
     
@@ -207,6 +413,11 @@ async function main() {
     console.log('1. Add email subscribers to the SNS topic');
     console.log('2. Verify the created dashboard in CloudWatch');
     console.log('3. Test the alarms by simulating threshold breaches');
+    console.log('4. Set up on-call rotations in PagerDuty or similar service');
+    
+    if (config.observability.enableDistributedTracing) {
+      console.log('5. Set up AWS X-Ray for distributed tracing');
+    }
     
   } catch (error) {
     console.error('Error setting up monitoring:', error);
