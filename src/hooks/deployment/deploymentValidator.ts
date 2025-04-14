@@ -58,7 +58,7 @@ export const validateDeploymentBeforeStart = (
   }
 
   // Show warnings but don't block deployment
-  if (validationResult.warnings.length > 0) {
+  if (validationResult.warnings && validationResult.warnings.length > 0) {
     validationResult.warnings.forEach(warning => {
       addLog(`Warning: ${warning}`, 'warning');
     });
