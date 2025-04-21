@@ -1,7 +1,7 @@
-
 import { DeploymentStep, CloudProvider, DeploymentEnvironment } from '../../types/deployment';
 import { createDeploymentError } from '../../services/deployment/errorHandling';
 import { UseDeploymentProcessProps } from './types';
+import { toast } from '@/hooks/use-toast';
 
 /**
  * Find a deployment step by its ID
@@ -87,50 +87,54 @@ export const validateExecutionEnvironment = (
 };
 
 /**
- * Handles the successful completion of a step
+ * Handles successful step execution
  */
 export const handleStepSuccess = (
-  stepId: string, 
-  step: DeploymentStep, 
-  logs: string[] | undefined, 
-  updateStep: UseDeploymentProcessProps['updateStep'],
-  addLog: UseDeploymentProcessProps['addLog']
+  stepId: string,
+  step: DeploymentStep,
+  logs: string[] | undefined,
+  updateStep: (stepId: string, updates: Partial<DeploymentStep>) => void,
+  addLog: (message: string, type?: 'info' | 'error' | 'warning' | 'success') => void
 ): void => {
-  addLog(`[${step.title}] - Completed successfully.`, 'info');
-  updateStep(stepId, { status: 'success', progress: 100, outputLog: logs });
+  updateStep(stepId, { 
+    status: 'success', 
+    progress: 100,
+    outputLog: logs || []
+  });
+  
+  addLog(`[${step.title}] - Completed successfully.`, 'success');
 };
 
 /**
- * Handles the failure of a step execution
+ * Handles failed step execution
  */
 export const handleStepFailure = (
   stepId: string,
   step: DeploymentStep,
   error: any,
-  updateStep: UseDeploymentProcessProps['updateStep'],
-  addLog: UseDeploymentProcessProps['addLog'],
+  updateStep: (stepId: string, updates: Partial<DeploymentStep>) => void,
+  addLog: (message: string, type?: 'info' | 'error' | 'warning' | 'success') => void,
   provider: CloudProvider,
   environment: DeploymentEnvironment
 ): void => {
-  const stepError = createDeploymentError(error, step, provider, environment);
-  addLog(`[${step.title}] - ${stepError.message}`, 'error');
+  const deployError = createDeploymentError(error, step, provider, environment);
+  
   updateStep(stepId, {
     status: 'error',
     progress: 0,
-    errorMessage: stepError.message,
-    errorCode: stepError.code,
-    errorDetails: stepError.details
+    errorMessage: deployError.message,
+    errorCode: deployError.code,
+    errorDetails: deployError.details
   });
   
-  // For production environments, provide more detailed error handling guidance
-  if (environment === 'production') {
-    addLog('Production deployment step failed. Refer to the runbook for recovery procedures.', 'warning');
-    
-    // Log additional information to help with troubleshooting
-    if (stepError.code) {
-      addLog(`Error code: ${stepError.code}. See documentation for troubleshooting this specific error.`, 'info');
-    }
-  }
+  addLog(`[${step.title}] - ${getUserFriendlyErrorMessage(deployError)}`, 'error');
+  
+  toast({
+    title: "Step Failed",
+    description: getUserFriendlyErrorMessage(deployError, true),
+    variant: "destructive",
+    duration: 5000,
+  });
 };
 
 /**
@@ -151,4 +155,14 @@ export const validateEnvironmentVariables = (
     valid: missing.length === 0,
     missing
   };
+};
+
+/**
+ * Get a user-friendly error message
+ */
+const getUserFriendlyErrorMessage = (error: any, isDetailed?: boolean): string => {
+  if (isDetailed) {
+    return error.message;
+  }
+  return error.message.split(':')[0];
 };

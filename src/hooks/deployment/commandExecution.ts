@@ -5,6 +5,7 @@ import { createLogger } from '../../services/deployment/loggingService';
 import { UseDeploymentProcessProps } from './types';
 import { canAutoRecover, getUserFriendlyErrorMessage, createDeploymentError } from '../../services/deployment/errorHandling';
 import { handleStepSuccess, handleStepFailure } from './stepUtils';
+import { toast } from '@/hooks/use-toast';
 
 /**
  * Executes a command for a deployment step
@@ -59,6 +60,14 @@ export const executeStepCommand = async (
       // Log friendly error message
       addLog(`[${step.title}] - ${getUserFriendlyErrorMessage(commandError, true)}`, 'error');
       
+      // Add toast notification for command error
+      toast({
+        title: "Command Error",
+        description: `${step.title}: ${commandResult.error || 'Execution failed'}`,
+        variant: "destructive",
+        duration: 5000,
+      });
+      
       // Update step with error details
       updateStep(stepId, {
         status: 'error',
@@ -79,6 +88,14 @@ export const executeStepCommand = async (
   } catch (error: any) {
     logger.error(`[${step.title}] - Execution error:`, { error, stack: error.stack });
     handleStepFailure(stepId, step, error, updateStep, addLog, deploymentConfig?.provider || 'aws', environment);
+    
+    toast({
+      title: "Execution Error",
+      description: `${step.title}: ${error.message || 'Unknown error'}`,
+      variant: "destructive",
+      duration: 5000,
+    });
+    
     return false;
   }
 };
@@ -97,6 +114,14 @@ export const executeConnectStep = async (
     const success = await connectToCluster();
     if (success) {
       updateStep(stepId, { status: 'success', progress: 100 });
+      
+      toast({
+        title: "Connection Successful",
+        description: "Successfully connected to cluster",
+        variant: "success",
+        duration: 3000,
+      });
+      
       return true;
     } else {
       const connectionError = createDeploymentError(
@@ -113,6 +138,14 @@ export const executeConnectStep = async (
         errorDetails: connectionError.details
       });
       addLog(`[${step.title}] - ${getUserFriendlyErrorMessage(connectionError)}`, 'error');
+      
+      toast({
+        title: "Connection Failed",
+        description: "Failed to connect to cluster",
+        variant: "destructive",
+        duration: 5000,
+      });
+      
       return false;
     }
   } catch (error) {
@@ -130,6 +163,14 @@ export const executeConnectStep = async (
       errorDetails: connectionError.details
     });
     addLog(`[${step.title}] - ${getUserFriendlyErrorMessage(connectionError)}`, 'error');
+    
+    toast({
+      title: "Connection Error",
+      description: connectionError.message || "Failed to connect to cluster",
+      variant: "destructive",
+      duration: 5000,
+    });
+    
     return false;
   }
 };

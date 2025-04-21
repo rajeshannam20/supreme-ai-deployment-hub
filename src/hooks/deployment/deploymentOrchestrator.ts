@@ -1,8 +1,10 @@
+
 import { DeploymentStep } from '../../types/deployment';
 import { createLogger } from '../../services/deployment/loggingService';
 import { executeDeploymentStep } from './stepExecution';
 import { UseDeploymentProcessProps } from './types';
 import { validateEnvironmentReadiness } from './deploymentValidator';
+import { toast } from '@/hooks/use-toast';
 
 /**
  * Handles the execution of the entire deployment process
@@ -32,6 +34,14 @@ export const runDeploymentProcess = async (
       
       if (!isEnvironmentReady && environment === 'production') {
         addLog('Deployment aborted due to environment validation failures.', 'error');
+        
+        toast({
+          title: "Deployment Aborted",
+          description: "Environment validation failures detected",
+          variant: "destructive",
+          duration: 5000,
+        });
+        
         setIsDeploying(false);
         return;
       }
@@ -76,6 +86,13 @@ export const runDeploymentProcess = async (
       } else {
         addLog(`Deployment stopped due to failure in step: ${step.title}`, 'error');
         
+        toast({
+          title: "Deployment Failed",
+          description: `Failed at step: ${step.title}`,
+          variant: "destructive",
+          duration: 5000,
+        });
+        
         // For production deployments, provide more detailed failure analysis
         if (environment === 'production') {
           addLog('Production deployment failed. Performing deployment analysis...', 'info');
@@ -100,14 +117,35 @@ export const runDeploymentProcess = async (
     // In a real implementation, this would perform actual verification checks
     if (environment === 'production') {
       addLog('Production deployment verification complete. System is now live.', 'success');
+      
+      toast({
+        title: "Production Deployment Complete",
+        description: "System is now live",
+        variant: "success",
+        duration: 5000,
+      });
     } else {
       addLog('Deployment completed successfully!', 'success');
+      
+      toast({
+        title: "Deployment Successful",
+        description: `${environment} environment is ready`,
+        variant: "success",
+        duration: 5000,
+      });
     }
     
     setIsDeploying(false);
   } catch (error: any) {
     addLog(`Deployment failed: ${error.message}`, 'error');
     logger.error('Deployment process failed', { error });
+    
+    toast({
+      title: "Unexpected Error",
+      description: error.message || "Deployment process failed",
+      variant: "destructive",
+      duration: 5000,
+    });
     
     // Attempt rollback for production environments on unexpected errors
     if (completedSteps.length > 0 && environment === 'production') {
@@ -129,6 +167,13 @@ export const performRollback = async (
   const { deploymentSteps, addLog, updateStep } = props;
   
   addLog('Starting rollback procedure...', 'warning');
+  
+  toast({
+    title: "Rollback Initiated",
+    description: "Reverting deployment changes",
+    variant: "warning",
+    duration: 5000,
+  });
   
   // Process steps in reverse order (most recent first)
   for (const stepId of [...completedStepIds].reverse()) {
@@ -158,4 +203,11 @@ export const performRollback = async (
   }
   
   addLog('Rollback procedure completed. System may require additional manual recovery.', 'warning');
+  
+  toast({
+    title: "Rollback Completed",
+    description: "Manual verification recommended",
+    variant: "info",
+    duration: 5000,
+  });
 };
