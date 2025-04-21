@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Container from '@/components/Container';
@@ -24,8 +23,8 @@ const HeroSection: React.FC = () => {
       <div className="absolute inset-0 bg-black/60 z-0"></div>
       
       <Container maxWidth="2xl" animate>
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center relative z-10">
-          {/* Increased column span for content to provide more space */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start relative z-10">
+          {/* Content section */}
           <motion.div
             className="lg:col-span-7"
             initial={{ opacity: 0, y: 20 }}
@@ -78,8 +77,8 @@ const HeroSection: React.FC = () => {
             </div>
           </motion.div>
           
-          {/* Terminal window component with adjusted column span */}
-          <div className="lg:col-span-5 relative">
+          {/* Terminal window component - Moved down */}
+          <div className="lg:col-span-5 relative lg:mt-20">
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}

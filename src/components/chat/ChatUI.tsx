@@ -7,21 +7,35 @@ import { Avatar } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Mic, MicOff, Send } from 'lucide-react';
 import { toast } from 'sonner';
+import { useChat } from '@/contexts/ChatContext';
 
 interface Message {
   id: string;
   content: string;
   sender: 'user' | 'agent';
   timestamp: Date;
+  type?: 'text' | 'buttons';
+  buttons?: Array<{
+    id: string;
+    label: string;
+    action: () => void;
+  }>;
 }
 
 const ChatUI = () => {
+  const { sendMessage } = useChat();
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
       content: "Hello! I'm your AI assistant. How can I help you today?",
       sender: 'agent',
-      timestamp: new Date()
+      timestamp: new Date(),
+      type: 'buttons',
+      buttons: [
+        { id: '1', label: 'Deployment Help', action: () => handleButtonClick('I need help with deployment') },
+        { id: '2', label: 'API Integration', action: () => handleButtonClick('How to integrate APIs?') },
+        { id: '3', label: 'System Status', action: () => handleButtonClick('Show me the system status') }
+      ]
     }
   ]);
   const [input, setInput] = useState('');
@@ -35,47 +49,65 @@ const ChatUI = () => {
   const scrollToBottom = () => {
     endOfMessagesRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
-  
-  const handleSendMessage = () => {
-    if (!input.trim()) return;
-    
+
+  const handleButtonClick = (message: string) => {
     // Add user message
     const userMessage: Message = {
       id: Date.now().toString(),
-      content: input,
+      content: message,
       sender: 'user',
-      timestamp: new Date()
+      timestamp: new Date(),
+      type: 'text'
     };
     
-    setMessages([...messages, userMessage]);
-    setInput('');
-    
-    // Simulate agent response (replace with actual API call)
+    setMessages(prev => [...prev, userMessage]);
+    handleSendMessage(message);
+  };
+  
+  const handleSendMessage = async (text: string) => {
+    if (!text.trim()) return;
+
+    // Clear input if it's from the input field
+    if (text === input) {
+      setInput('');
+    }
+
+    // Simulate AI response
     setTimeout(() => {
-      const agentMessage: Message = {
+      const aiResponse: Message = {
         id: (Date.now() + 1).toString(),
-        content: "I'm processing your request. This would be connected to your backend in a real implementation.",
         sender: 'agent',
-        timestamp: new Date()
+        content: "I'm processing your request. Here are some options:",
+        timestamp: new Date(),
+        type: 'buttons',
+        buttons: [
+          { 
+            id: 'resp1', 
+            label: 'Learn More', 
+            action: () => handleButtonClick('Tell me more about this topic')
+          },
+          { 
+            id: 'resp2', 
+            label: 'See Documentation', 
+            action: () => handleButtonClick('Show me the documentation')
+          }
+        ]
       };
-      setMessages(prev => [...prev, agentMessage]);
+      setMessages(prev => [...prev, aiResponse]);
     }, 1000);
   };
   
   const toggleRecording = () => {
     setIsRecording(!isRecording);
-    // Implement actual speech recognition here
     if (!isRecording) {
-      // Start recording
       toast.info('Voice recording started...');
     } else {
-      // Stop recording
       toast.info('Voice recording stopped');
     }
   };
   
   return (
-    <Card className="w-full h-[600px] flex flex-col">
+    <Card className="w-full max-w-[400px] h-[600px] flex flex-col fixed bottom-20 right-5 z-50">
       <CardHeader>
         <CardTitle>AI Assistant</CardTitle>
       </CardHeader>
@@ -110,7 +142,24 @@ const ChatUI = () => {
                         : 'bg-muted'
                     }`}
                   >
-                    {message.content}
+                    <p className="text-sm whitespace-pre-line">{message.content}</p>
+                    
+                    {message.type === 'buttons' && message.buttons && (
+                      <div className="mt-2 space-y-2">
+                        {message.buttons.map((button) => (
+                          <Button
+                            key={button.id}
+                            variant="secondary"
+                            size="sm"
+                            className="w-full text-left"
+                            onClick={button.action}
+                          >
+                            {button.label}
+                          </Button>
+                        ))}
+                      </div>
+                    )}
+                    
                     <div className={`text-xs mt-1 ${
                       message.sender === 'user' ? 'text-primary-foreground/70' : 'text-muted-foreground'
                     }`}>
@@ -132,19 +181,20 @@ const ChatUI = () => {
             onClick={toggleRecording}
             className={isRecording ? 'text-red-500' : ''}
           >
-            {isRecording ? <MicOff /> : <Mic />}
+            {isRecording ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
           </Button>
           <Input
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="Type your message..."
             onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                handleSendMessage();
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleSendMessage(input);
               }
             }}
           />
-          <Button onClick={handleSendMessage} disabled={!input.trim()}>
+          <Button onClick={() => handleSendMessage(input)} disabled={!input.trim()}>
             <Send className="h-4 w-4" />
           </Button>
         </div>
