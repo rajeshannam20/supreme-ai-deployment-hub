@@ -7,7 +7,7 @@ interface Process {
   id: string;
   name: string;
   status: 'running' | 'paused' | 'failed' | 'completed';
-  priority?: string;
+  priority?: string | number;
   cpuUsage?: number;
   memoryUsage?: number;
 }

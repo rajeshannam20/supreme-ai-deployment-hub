@@ -9,12 +9,17 @@ interface ChatMessageProps {
   content: string;
   sender: 'user' | 'agent' | 'ai';
   timestamp: Date;
-  type?: 'text' | 'buttons';
+  type?: 'text' | 'buttons' | 'links' | 'image';
   buttons?: Array<{
     id: string;
     label: string;
     action: () => void;
   }>;
+  links?: Array<{
+    label: string;
+    url: string;
+  }>;
+  imageUrl?: string;
   fromVoice?: boolean;
   feedback?: 'positive' | 'negative';
   isSpeaking: boolean;
@@ -31,6 +36,8 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
   timestamp,
   type,
   buttons,
+  links,
+  imageUrl,
   fromVoice,
   feedback,
   isSpeaking,
@@ -77,6 +84,36 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
                   </Button>
                 ))}
               </div>
+            </div>
+          )}
+          
+          {type === 'links' && links && (
+            <div className="space-y-2">
+              <p className="text-sm mb-2">{content}</p>
+              <div className="flex flex-col space-y-1">
+                {links.map((link, index) => (
+                  <a 
+                    key={index}
+                    href={link.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm underline text-blue-500 hover:text-blue-700"
+                  >
+                    {link.label}
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {type === 'image' && imageUrl && (
+            <div className="space-y-2">
+              <p className="text-sm mb-2">{content}</p>
+              <img 
+                src={imageUrl} 
+                alt="Message content" 
+                className="rounded-md max-w-full h-auto"
+              />
             </div>
           )}
           
