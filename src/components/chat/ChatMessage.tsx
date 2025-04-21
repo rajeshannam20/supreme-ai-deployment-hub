@@ -7,7 +7,7 @@ import { ThumbsUp, ThumbsDown, Volume2, VolumeX } from 'lucide-react';
 interface ChatMessageProps {
   id: string;
   content: string;
-  sender: 'user' | 'agent';
+  sender: 'user' | 'agent' | 'ai';
   timestamp: Date;
   type?: 'text' | 'buttons';
   buttons?: Array<{
@@ -43,12 +43,15 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
     return new Date(date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
+  // Treat 'ai' the same as 'agent' for rendering purposes
+  const isAgent = sender === 'agent' || sender === 'ai';
+
   return (
     <div className={`flex ${sender === 'user' ? 'justify-end' : 'justify-start'}`}>
       <div className={`flex items-start max-w-[80%] ${sender === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
         <Avatar className={`h-8 w-8 ${sender === 'user' ? 'ml-2' : 'mr-2'}`}>
           <div className={`w-full h-full flex items-center justify-center ${
-            sender === 'agent' ? 'bg-primary text-primary-foreground' : 'bg-muted'
+            isAgent ? 'bg-primary text-primary-foreground' : 'bg-muted'
           }`}>
             {sender === 'user' ? 'U' : 'AI'}
           </div>
@@ -82,7 +85,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
           }`}>
             <span>{formatTimestamp(timestamp)}</span>
             
-            {sender === 'agent' && (
+            {isAgent && (
               <div className="flex space-x-1">
                 {speechSupport.voiceOutput && (
                   <button

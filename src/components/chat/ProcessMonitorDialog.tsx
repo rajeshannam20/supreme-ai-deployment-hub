@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 interface Process {
   id: string;
   name: string;
-  status: 'running' | 'paused' | 'failed';
+  status: 'running' | 'paused' | 'failed' | 'completed';
   priority?: string;
   cpuUsage?: number;
   memoryUsage?: number;
@@ -40,6 +40,7 @@ const ProcessMonitorDialog: React.FC<ProcessMonitorDialogProps> = ({
                 <div className="flex items-center">
                   <div className={`w-2 h-2 rounded-full mr-2 ${
                     process.status === 'running' ? 'bg-green-500' : 
+                    process.status === 'completed' ? 'bg-blue-500' :
                     process.status === 'paused' ? 'bg-yellow-500' : 'bg-red-500'
                   }`}></div>
                   <h4 className="font-medium text-sm">{process.name}</h4>
