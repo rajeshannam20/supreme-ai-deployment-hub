@@ -65,11 +65,11 @@ const HeroSection: React.FC = () => {
                 gradientColors="linear-gradient(90deg, #00FF41, #39FF14, #00FF41)"
                 gradientAnimationDuration={3}
                 hoverEffect={true}
-                className="py-0 justify-start"
-                textClassName={`${isMobile ? 'text-4xl sm:text-5xl' : 'text-5xl lg:text-6xl xl:text-7xl'} font-display font-semibold tracking-tight`}
+                className="py-2 justify-start"
+                textClassName={`${isMobile ? 'text-5xl sm:text-6xl' : 'text-6xl lg:text-7xl xl:text-8xl'} font-display font-semibold tracking-tight`}
               />
               
-              <p className="text-xl text-[#00FF41]/90 font-mono mb-2 max-w-md">
+              <p className="text-2xl text-[#00FF41]/90 font-mono mb-3 max-w-md">
                 Here at an opportune time.
               </p>
               
@@ -77,11 +77,11 @@ const HeroSection: React.FC = () => {
                 A minimalist, elegant framework for deploying AI systems with precision and scalability.
               </p>
 
-              <div className="flex flex-col sm:flex-row gap-4 pt-4">
+              <div className="flex flex-col sm:flex-row gap-4 pt-6">
                 <Button 
                   size="lg"
-                  className="bg-[#00FF41] hover:bg-[#00FF41]/90 text-black shadow-[0_0_15px_rgba(0,255,65,0.5)] 
-                           transition-all duration-300 group relative overflow-hidden w-full sm:w-auto"
+                  className="bg-[#00FF41] hover:bg-[#00FF41]/90 text-black shadow-[0_0_20px_rgba(0,255,65,0.6)] 
+                           transition-all duration-300 group relative overflow-hidden w-full sm:w-auto text-lg py-6"
                 >
                   <motion.div
                     className="absolute inset-0 bg-white/20"
@@ -89,18 +89,18 @@ const HeroSection: React.FC = () => {
                     animate={{ x: ["0%", "100%"] }}
                     transition={{ duration: 1.5, repeat: Infinity }}
                   />
-                  <Download className="mr-2 h-4 w-4 opacity-70" />
+                  <Download className="mr-2 h-5 w-5 opacity-70" />
                   <span className="relative z-10">Download Framework</span>
-                  <ArrowRight className="ml-2 h-4 w-4 opacity-70 group-hover:translate-x-1 transition-transform" />
+                  <ArrowRight className="ml-2 h-5 w-5 opacity-70 group-hover:translate-x-1 transition-transform" />
                 </Button>
                 
                 <Button
                   variant="outline"
                   size="lg"
                   className="border-[#00FF41]/50 text-[#00FF41] hover:bg-[#00FF41]/10 backdrop-blur-sm
-                           w-full sm:w-auto"
+                           w-full sm:w-auto text-lg py-6"
                 >
-                  <Code className="mr-2 h-4 w-4" />
+                  <Code className="mr-2 h-5 w-5" />
                   View Documentation
                 </Button>
               </div>
@@ -116,9 +116,9 @@ const HeroSection: React.FC = () => {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.2 + index * 0.1 }}
-                    className="text-center p-2 rounded-lg bg-black/20 backdrop-blur-sm border border-[#00FF41]/20"
+                    className="text-center p-3 rounded-lg bg-black/20 backdrop-blur-sm border border-[#00FF41]/20"
                   >
-                    <div className="text-lg sm:text-xl font-bold text-[#00FF41]">{stat.value}</div>
+                    <div className="text-xl sm:text-2xl font-bold text-[#00FF41]">{stat.value}</div>
                     <div className="text-xs sm:text-sm text-white/60">{stat.label}</div>
                   </motion.div>
                 ))}
@@ -141,4 +141,3 @@ const HeroSection: React.FC = () => {
 };
 
 export default HeroSection;
-
