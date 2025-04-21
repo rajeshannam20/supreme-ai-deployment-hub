@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Container from '@/components/Container';
@@ -24,9 +25,9 @@ const HeroSection: React.FC = () => {
       
       <Container maxWidth="2xl" animate>
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start relative z-10">
-          {/* Content section */}
+          {/* Content section - Moved up */}
           <motion.div
-            className="lg:col-span-7"
+            className="lg:col-span-7 mb-12 lg:mb-0"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
@@ -77,8 +78,8 @@ const HeroSection: React.FC = () => {
             </div>
           </motion.div>
           
-          {/* Terminal window component - Moved down */}
-          <div className="lg:col-span-5 relative lg:mt-20">
+          {/* Terminal window component - Moved down with larger gap */}
+          <div className="lg:col-span-5 relative lg:mt-32">
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
