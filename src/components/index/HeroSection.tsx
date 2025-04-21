@@ -14,7 +14,7 @@ const HeroSection: React.FC = () => {
   const y = useTransform(scrollY, [0, 300], [0, 100]);
   const opacity = useTransform(scrollY, [0, 300], [1, 0]);
   const isMobile = useIsMobile();
-  const [stats] = useState({
+  const [stats, setStats] = useState({
     deployments: 0,
     efficiency: 0,
     uptime: 0
@@ -22,7 +22,7 @@ const HeroSection: React.FC = () => {
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setState(prev => ({
+      setStats(prev => ({
         deployments: Math.min(prev.deployments + 1, 1000),
         efficiency: Math.min(prev.efficiency + 1, 99),
         uptime: Math.min(prev.uptime + 0.1, 99.99)
@@ -141,3 +141,4 @@ const HeroSection: React.FC = () => {
 };
 
 export default HeroSection;
+
