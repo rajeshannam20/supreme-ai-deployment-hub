@@ -1,10 +1,9 @@
-
 export interface Message {
   id: string;
-  sender: 'user' | 'ai';
+  sender: 'user' | 'agent' | 'ai';
   content: string;
   timestamp: Date;
-  type: 'text' | 'buttons' | 'links' | 'image';
+  type?: 'text' | 'buttons' | 'links' | 'image';
   buttons?: Array<{
     id: string;
     label: string;
@@ -22,12 +21,12 @@ export interface Message {
 export interface Process {
   id: string;
   name: string;
-  status: 'running' | 'completed' | 'failed' | 'paused';
+  status: 'running' | 'paused' | 'failed' | 'completed';
   progress: number;
   message: string;
   startTime: Date;
   endTime?: Date;
-  priority?: number;
+  priority?: string | number;
   cpuUsage?: number;
   memoryUsage?: number;
 }
