@@ -8,7 +8,7 @@ import {
 
 // Define the extended toast props type with all required properties
 export type ExtendedToastProps = {
-  variant?: 'default' | 'destructive' | 'success';
+  variant?: 'default' | 'destructive' | 'success' | 'warning' | 'info';
   title?: string;
   description?: string;
   duration?: number;
@@ -28,7 +28,7 @@ export const useToast = () => {
   };
 };
 
-// Extended toast function that handles the 'success' variant
+// Extended toast function that handles all variants
 export const toast = (props: ExtendedToastProps) => {
   // Use the original toast function from use-toast.ts
   return useToastOriginal().toast(props);
