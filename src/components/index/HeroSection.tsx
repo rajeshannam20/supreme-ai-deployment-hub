@@ -8,8 +8,11 @@ import { Button } from '@/components/ui/button';
 import { ArrowRight, Download, Code } from 'lucide-react';
 import InteractiveTerminal from './InteractiveTerminal';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 
 const HeroSection: React.FC = () => {
+  const navigate = useNavigate();
   const { scrollY } = useScroll();
   const y = useTransform(scrollY, [0, 300], [0, 100]);
   const opacity = useTransform(scrollY, [0, 300], [1, 0]);
@@ -31,6 +34,27 @@ const HeroSection: React.FC = () => {
 
     return () => clearInterval(interval);
   }, []);
+
+  const handleDownloadClick = () => {
+    toast.success("Starting download...", {
+      description: "The framework package will begin downloading shortly",
+    });
+    
+    // Simulate download delay
+    setTimeout(() => {
+      // Create a download link for a fictional framework package
+      const link = document.createElement('a');
+      link.href = '/devonn-ai-framework.zip'; // This would be a real file in production
+      link.download = 'devonn-ai-framework.zip';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }, 800);
+  };
+
+  const handleDocumentationClick = () => {
+    navigate('/documentation');
+  };
 
   return (
     <section className="relative min-h-screen flex items-center overflow-hidden">
@@ -82,6 +106,7 @@ const HeroSection: React.FC = () => {
                   size="lg"
                   className="bg-[#00FF41] hover:bg-[#00FF41]/90 text-black shadow-[0_0_20px_rgba(0,255,65,0.6)] 
                            transition-all duration-300 group relative overflow-hidden w-full sm:w-auto text-lg py-6"
+                  onClick={handleDownloadClick}
                 >
                   <motion.div
                     className="absolute inset-0 bg-white/20"
@@ -99,6 +124,7 @@ const HeroSection: React.FC = () => {
                   size="lg"
                   className="border-[#00FF41]/50 text-[#00FF41] hover:bg-[#00FF41]/10 backdrop-blur-sm
                            w-full sm:w-auto text-lg py-6"
+                  onClick={handleDocumentationClick}
                 >
                   <Code className="mr-2 h-5 w-5" />
                   View Documentation

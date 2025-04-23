@@ -72,6 +72,10 @@ const KubeConfigConnect = () => {
     toast.info("Disconnected from Kubernetes cluster");
   };
 
+  const toggleAdvancedHelp = () => {
+    setShowAdvancedHelp(!showAdvancedHelp);
+  };
+
   if (isConnected) {
     return (
       <div className="space-y-4">
@@ -102,7 +106,7 @@ const KubeConfigConnect = () => {
                 variant="ghost" 
                 size="sm"
                 className="p-0 h-auto"
-                onClick={() => setShowAdvancedHelp(!showAdvancedHelp)}
+                onClick={toggleAdvancedHelp}
               >
                 <HelpCircle className="h-4 w-4 text-muted-foreground" />
               </Button>

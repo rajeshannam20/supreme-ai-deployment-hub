@@ -1,13 +1,21 @@
+
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
-import { Terminal } from 'lucide-react';
+import { Terminal, Book } from 'lucide-react';
+import { toast } from 'sonner';
 
 const CTASection = () => {
   const navigate = useNavigate();
 
   const handleDeploymentNavigation = () => {
     navigate('/deployment');
+    toast.success("Navigating to deployment dashboard");
+  };
+  
+  const handleExploreFeatures = () => {
+    navigate('/documentation#features');
+    toast.info("Exploring features...");
   };
 
   return (
@@ -21,7 +29,7 @@ const CTASection = () => {
             Streamline your AI deployment with our comprehensive infrastructure management tools.
           </p>
           
-          <div className="flex justify-center space-x-4">
+          <div className="flex flex-wrap justify-center gap-4">
             <Button 
               onClick={handleDeploymentNavigation} 
               className="bg-primary hover:bg-primary/90"
@@ -29,7 +37,11 @@ const CTASection = () => {
               <Terminal className="mr-2 h-4 w-4" />
               Go to Deployment Dashboard
             </Button>
-            <Button variant="outline">
+            <Button 
+              variant="outline"
+              onClick={handleExploreFeatures}
+            >
+              <Book className="mr-2 h-4 w-4" />
               Explore Features
             </Button>
           </div>
