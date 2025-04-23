@@ -18,6 +18,7 @@ export const useClusterConnection = (addLog: (message: string, type: 'info' | 's
     status: 'Disconnected',
   });
   const [serviceStatus, setServiceStatus] = useState<ServiceStatus[]>([]);
+  const [connectionError, setConnectionError] = useState<string | null>(null);
 
   // Connect to Kubernetes cluster
   const connectToCluster = useCallback(async (kubeConfig?: string): Promise<boolean> => {
@@ -27,6 +28,7 @@ export const useClusterConnection = (addLog: (message: string, type: 'info' | 's
     }
     
     setIsConnecting(true);
+    setConnectionError(null);
     addLog('Attempting to connect to Kubernetes cluster...', 'info');
     
     // Log connection details (excluding sensitive parts)
@@ -42,6 +44,16 @@ export const useClusterConnection = (addLog: (message: string, type: 'info' | 's
       await new Promise(resolve => setTimeout(resolve, 300));
       
       console.log('Connecting to cluster with provider:', provider);
+      console.log('Connection attempt:', attempts);
+      
+      if (kubeConfig) {
+        console.log('Using provided kubeconfig (length):', kubeConfig.length);
+        // Log first few characters for debugging (avoid sensitive data)
+        const safePart = kubeConfig.substring(0, 20).replace(/\n/g, ' ');
+        console.log('Kubeconfig starts with:', safePart + '...');
+      } else {
+        console.log('Using local kubeconfig from default path');
+      }
       
       // Use the actual Kubernetes connection service
       const result = await connectToKubernetesCluster({
@@ -50,7 +62,12 @@ export const useClusterConnection = (addLog: (message: string, type: 'info' | 's
         attempt: attempts
       });
       
-      console.log('Connection result:', { ...result, kubeConfig: '[REDACTED]' });
+      console.log('Connection result:', { 
+        connected: result.connected,
+        clusterInfo: result.clusterInfo,
+        error: result.error,
+        kubeConfig: '[REDACTED]' 
+      });
       
       if (result.connected) {
         // Successfully connected
@@ -68,6 +85,7 @@ export const useClusterConnection = (addLog: (message: string, type: 'info' | 's
         });
         
         setServiceStatus(result.serviceStatuses || []);
+        setConnectionError(null);
         
         // Update provider credentials if available
         if (result.providerCredentials) {
@@ -78,6 +96,14 @@ export const useClusterConnection = (addLog: (message: string, type: 'info' | 's
         addLog('Successfully connected to Kubernetes cluster', 'success');
         addLog(`Cluster info: ${result.clusterInfo.nodes} nodes, ${result.clusterInfo.pods} pods`, 'info');
         
+        if (result.clusterInfo.version) {
+          addLog(`Kubernetes version: ${result.clusterInfo.version}`, 'info');
+        }
+        
+        if (result.clusterInfo.provider) {
+          addLog(`Cloud provider: ${result.clusterInfo.provider}${result.clusterInfo.region ? ` (${result.clusterInfo.region})` : ''}`, 'info');
+        }
+        
         toast.success('Connected to Kubernetes cluster');
         setIsConnecting(false);
         return true;
@@ -86,6 +112,7 @@ export const useClusterConnection = (addLog: (message: string, type: 'info' | 's
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      setConnectionError(errorMessage);
       
       // Log detailed error information
       console.error('Cluster connection error:', error);
@@ -96,15 +123,23 @@ export const useClusterConnection = (addLog: (message: string, type: 'info' | 's
         addLog('Authentication error: Check your kubeconfig credentials', 'error');
       } else if (errorMessage.includes('timeout') || errorMessage.includes('no connection')) {
         addLog('Network error: Unable to reach the Kubernetes API server', 'error');
-      } else if (errorMessage.includes('YAML')) {
+      } else if (errorMessage.includes('YAML') || errorMessage.includes('parse')) {
         addLog('Invalid kubeconfig format: Check your YAML syntax', 'error');
+      } else if (errorMessage.includes('certificate')) {
+        addLog('Certificate error: Your kubeconfig may contain expired certificates', 'error');
+      } else if (errorMessage.includes('context')) {
+        addLog('Context error: The specified context may not exist in your kubeconfig', 'error');
       }
       
-      // Auto-retry logic for first and second attempts
+      // Auto-retry logic for first and second attempts with exponential backoff
       if (attempts < 3) {
-        addLog(`Automatically retrying connection (attempt ${attempts + 1}/3)...`, 'warning');
+        const retryDelay = Math.pow(2, attempts - 1) * 1000; // 1s, 2s
+        addLog(`Automatically retrying connection in ${retryDelay/1000}s (attempt ${attempts + 1}/3)...`, 'warning');
         toast.warning(`Connection failed. Retrying (${attempts + 1}/3)...`);
         setIsConnecting(false);
+        
+        // Wait before retrying
+        await new Promise(resolve => setTimeout(resolve, retryDelay));
         return connectToCluster(kubeConfig);
       }
       
@@ -141,6 +176,7 @@ export const useClusterConnection = (addLog: (message: string, type: 'info' | 's
       setServiceStatus([]);
       setConnectionAttempts(0);
       setProviderCredentials(null);
+      setConnectionError(null);
       addLog('Disconnected from Kubernetes cluster', 'info');
       toast.info('Disconnected from cluster');
       return true;
@@ -155,6 +191,7 @@ export const useClusterConnection = (addLog: (message: string, type: 'info' | 's
     serviceStatus,
     provider,
     providerCredentials,
+    connectionError,
     connectToCluster,
     disconnectFromCluster,
     setCloudProvider
