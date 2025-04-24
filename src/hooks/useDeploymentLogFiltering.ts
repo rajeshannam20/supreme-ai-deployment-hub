@@ -6,6 +6,8 @@ interface LogCounts {
   WARNING: number;
   ERROR: number;
   DEBUG: number;
+  TRACE: number;
+  total: number;
 }
 
 export const useDeploymentLogFiltering = (logs: string[]) => {
@@ -16,13 +18,19 @@ export const useDeploymentLogFiltering = (logs: string[]) => {
 
   // Count logs by type
   const logCounts = useMemo(() => {
-    return logs.reduce((counts, log) => {
+    const counts = logs.reduce((counts, log) => {
       if (log.includes('[INFO]')) counts.INFO++;
       else if (log.includes('[WARNING]')) counts.WARNING++;
       else if (log.includes('[ERROR]')) counts.ERROR++;
       else if (log.includes('[DEBUG]')) counts.DEBUG++;
+      else if (log.includes('[TRACE]')) counts.TRACE++;
       return counts;
-    }, { INFO: 0, WARNING: 0, ERROR: 0, DEBUG: 0 } as LogCounts);
+    }, { INFO: 0, WARNING: 0, ERROR: 0, DEBUG: 0, TRACE: 0 } as LogCounts);
+    
+    // Calculate total count
+    counts.total = counts.INFO + counts.WARNING + counts.ERROR + counts.DEBUG + counts.TRACE;
+    
+    return counts;
   }, [logs]);
 
   // Filter logs by type and time
