@@ -11,6 +11,7 @@ import DeploymentSummary from '@/components/deployment/DeploymentSummary';
 import { DeploymentProvider } from '@/contexts/DeploymentContext';
 import { Card } from '@/components/ui/card';
 import { motion } from 'framer-motion';
+import { Shield, Book, AlertTriangle, BarChart } from 'lucide-react';
 
 const DeploymentPage: React.FC = () => {
   return (
@@ -24,7 +25,7 @@ const DeploymentPage: React.FC = () => {
           >
             <SectionHeading
               tag="Deployment"
-              subheading="Deploy, monitor, and manage your DEVONN.AI Framework."
+              subheading="Deploy, monitor, and manage your Supreme AI Deployment Hub."
             >
               Deployment Dashboard
             </SectionHeading>
@@ -69,6 +70,14 @@ const DeploymentPage: React.FC = () => {
                   <TabsList className="mb-4">
                     <TabsTrigger value="steps">Steps Overview</TabsTrigger>
                     <TabsTrigger value="logs">Deployment Logs</TabsTrigger>
+                    <TabsTrigger value="metrics">
+                      <BarChart className="h-4 w-4 mr-1" />
+                      Metrics
+                    </TabsTrigger>
+                    <TabsTrigger value="security">
+                      <Shield className="h-4 w-4 mr-1" />
+                      Security
+                    </TabsTrigger>
                   </TabsList>
                   
                   <TabsContent value="steps">
@@ -77,6 +86,46 @@ const DeploymentPage: React.FC = () => {
                   
                   <TabsContent value="logs">
                     <DeploymentLogs />
+                  </TabsContent>
+                  
+                  <TabsContent value="metrics">
+                    <Card className="p-6">
+                      <h3 className="text-lg font-medium mb-4 flex items-center">
+                        <BarChart className="h-5 w-5 mr-2" />
+                        Deployment Metrics
+                      </h3>
+                      <div className="text-sm text-muted-foreground">
+                        <p>Deployment metrics will appear here after you run deployments. Monitor performance trends, resource usage, and anomaly detection here.</p>
+                      </div>
+                      <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-md">
+                        <div className="flex items-center text-yellow-700">
+                          <AlertTriangle className="h-5 w-5 mr-2" />
+                          <p>No metrics data available yet. Complete a deployment to populate metrics.</p>
+                        </div>
+                      </div>
+                    </Card>
+                  </TabsContent>
+                  
+                  <TabsContent value="security">
+                    <Card className="p-6">
+                      <h3 className="text-lg font-medium mb-4 flex items-center">
+                        <Shield className="h-5 w-5 mr-2" />
+                        Security Status
+                      </h3>
+                      <div className="text-sm text-muted-foreground mb-4">
+                        <p>View security scans, compliance status, and vulnerability reports for your deployments.</p>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="border rounded-lg p-4">
+                          <h4 className="font-medium mb-2">Security Scans</h4>
+                          <p className="text-sm">No recent security scans. Click "Run Security Scan" button to check for vulnerabilities.</p>
+                        </div>
+                        <div className="border rounded-lg p-4">
+                          <h4 className="font-medium mb-2">Compliance Status</h4>
+                          <p className="text-sm">Compliance checks not yet configured. Set up compliance monitoring in settings.</p>
+                        </div>
+                      </div>
+                    </Card>
                   </TabsContent>
                 </Tabs>
               </motion.div>
@@ -96,22 +145,31 @@ const DeploymentPage: React.FC = () => {
                   href="#" 
                   className="block p-4 border rounded-lg hover:border-primary hover:bg-primary/5 transition-colors"
                 >
-                  <h4 className="font-medium">Documentation</h4>
+                  <div className="flex items-center mb-2">
+                    <Book className="h-5 w-5 mr-2" />
+                    <h4 className="font-medium">Documentation</h4>
+                  </div>
                   <p className="text-sm text-muted-foreground">Detailed deployment guides and reference</p>
                 </a>
                 <a 
                   href="#" 
                   className="block p-4 border rounded-lg hover:border-primary hover:bg-primary/5 transition-colors"
                 >
-                  <h4 className="font-medium">Troubleshooting</h4>
+                  <div className="flex items-center mb-2">
+                    <AlertTriangle className="h-5 w-5 mr-2" />
+                    <h4 className="font-medium">Troubleshooting</h4>
+                  </div>
                   <p className="text-sm text-muted-foreground">Common issues and solutions</p>
                 </a>
                 <a 
                   href="#" 
                   className="block p-4 border rounded-lg hover:border-primary hover:bg-primary/5 transition-colors"
                 >
-                  <h4 className="font-medium">Community Forums</h4>
-                  <p className="text-sm text-muted-foreground">Get help from the community</p>
+                  <div className="flex items-center mb-2">
+                    <Shield className="h-5 w-5 mr-2" />
+                    <h4 className="font-medium">Security Resources</h4>
+                  </div>
+                  <p className="text-sm text-muted-foreground">Security best practices and standards</p>
                 </a>
               </div>
             </Card>
