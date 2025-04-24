@@ -1,58 +1,90 @@
 
-import { useMemo, useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 
-interface LogCounts {
-  ERROR: number;
-  WARNING: number;
-  SUCCESS: number;
-  INFO: number;
-  DEBUG: number;
+interface LogCountsType {
   total: number;
+  INFO: number;
+  WARNING: number;
+  ERROR: number;
+  DEBUG: number;
 }
 
 export const useDeploymentLogFiltering = (logs: string[]) => {
-  const [logFilter, setLogFilter] = useState<string>('all');
-  const [timeRange, setTimeRange] = useState<string>('all');
+  const [logFilter, setLogFilter] = useState<string>('ALL');
+  const [timeRange, setTimeRange] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [isSearching, setIsSearching] = useState<boolean>(false);
 
+  // Filter logs based on log level and time range
   const filteredLogs = useMemo(() => {
-    return logs.filter(log => {
-      // Filter by log type
-      const typeMatch = logFilter === 'all' || log.includes(logFilter);
-      
-      // Filter by time range
-      let timeMatch = true;
-      if (timeRange !== 'all') {
-        const logTimestamp = new Date(log.substring(1, 20)).getTime();
-        const now = new Date().getTime();
-        const rangeMs = parseInt(timeRange) * 60 * 1000; // convert minutes to ms
-        timeMatch = now - logTimestamp <= rangeMs;
+    let filtered = [...logs];
+
+    // Filter by log level
+    if (logFilter !== 'ALL') {
+      filtered = filtered.filter(log => log.includes(`[${logFilter}]`));
+    }
+
+    // Filter by time range
+    if (timeRange !== 'ALL') {
+      const now = new Date();
+      let timeLimit: Date;
+
+      switch (timeRange) {
+        case '1H':
+          timeLimit = new Date(now.getTime() - 60 * 60 * 1000);
+          break;
+        case '6H':
+          timeLimit = new Date(now.getTime() - 6 * 60 * 60 * 1000);
+          break;
+        case '24H':
+          timeLimit = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+          break;
+        case '7D':
+          timeLimit = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+          break;
+        default:
+          timeLimit = new Date(0); // Beginning of time
       }
-      
-      // Filter by search query
-      const searchMatch = !searchQuery || log.toLowerCase().includes(searchQuery.toLowerCase());
-      
-      return typeMatch && timeMatch && searchMatch;
-    });
+
+      filtered = filtered.filter(log => {
+        try {
+          // Extract timestamp from log (assuming format like "[2023-04-24T12:34:56.789Z]")
+          const timestampMatch = log.match(/\[([\d\-T:.Z]+)\]/);
+          if (timestampMatch && timestampMatch[1]) {
+            const logTime = new Date(timestampMatch[1]);
+            return logTime >= timeLimit;
+          }
+          return true; // If no timestamp found, include the log
+        } catch (e) {
+          return true; // If parsing fails, include the log
+        }
+      });
+    }
+
+    // Filter by search query
+    if (searchQuery.trim() !== '') {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(log => log.toLowerCase().includes(query));
+    }
+
+    return filtered;
   }, [logs, logFilter, timeRange, searchQuery]);
 
-  const logCounts: LogCounts = useMemo(() => {
-    const counts = {
-      ERROR: 0,
-      WARNING: 0,
-      SUCCESS: 0,
+  // Count logs by type
+  const logCounts = useMemo(() => {
+    const counts: LogCountsType = {
+      total: logs.length,
       INFO: 0,
-      DEBUG: 0,
-      total: logs.length
+      WARNING: 0,
+      ERROR: 0,
+      DEBUG: 0
     };
 
     logs.forEach(log => {
-      if (log.includes('ERROR')) counts.ERROR++;
-      else if (log.includes('WARNING')) counts.WARNING++;
-      else if (log.includes('SUCCESS')) counts.SUCCESS++;
-      else if (log.includes('INFO')) counts.INFO++;
-      else if (log.includes('DEBUG')) counts.DEBUG++;
+      if (log.includes('[INFO]')) counts.INFO++;
+      else if (log.includes('[WARNING]') || log.includes('[WARN]')) counts.WARNING++;
+      else if (log.includes('[ERROR]') || log.includes('[CRITICAL]')) counts.ERROR++;
+      else if (log.includes('[DEBUG]')) counts.DEBUG++;
     });
 
     return counts;
@@ -68,6 +100,6 @@ export const useDeploymentLogFiltering = (logs: string[]) => {
     isSearching,
     setIsSearching,
     filteredLogs,
-    logCounts,
+    logCounts
   };
 };
