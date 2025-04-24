@@ -136,6 +136,9 @@ export const connectToKubernetesCluster = async (options: ClusterConnectionOptio
       }
     }
 
+    // Create an expiration date one hour from now
+    const expirationDate = new Date(Date.now() + 3600000);
+
     return {
       connected: true,
       clusterInfo: {
@@ -151,7 +154,7 @@ export const connectToKubernetesCluster = async (options: ClusterConnectionOptio
         authenticated: true,
         profileName: provider === 'aws' ? 'default' : undefined,
         region,
-        expiresAt: new Date(Date.now() + 3600000).toISOString(), // 1 hour from now
+        expiresAt: expirationDate, // Fixed: Now using Date object instead of string
       }
     };
   } catch (error) {
@@ -307,7 +310,7 @@ async function fetchServiceStatuses(
         memory: memoryUsage,
         type: service.spec?.type || 'ClusterIP',
         endpoints: endpoints.filter(Boolean),
-        age: getAge(service.metadata?.creationTimestamp)
+        age: getAge(service.metadata?.creationTimestamp || '') // Fixed: Now passing string as expected
       };
     });
   } catch (error) {
@@ -319,7 +322,7 @@ async function fetchServiceStatuses(
 /**
  * Calculate age from creation timestamp
  */
-function getAge(timestamp?: string): string {
+function getAge(timestamp: string): string {
   if (!timestamp) return 'unknown';
   
   const created = new Date(timestamp);
