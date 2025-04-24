@@ -1,110 +1,103 @@
 
-import { ExecuteCommandOptions, CloudCommandResult } from './types';
-import { classifyCloudError } from './errorHandling';
-import { retryOperation } from './retryUtils';
+import { CloudProvider, CloudCommandResult, ExecuteCommandOptions } from './types';
 
-// Simulation for commands not yet implemented with real SDKs
-export const simulateCommandExecution = async (options: ExecuteCommandOptions): Promise<CloudCommandResult> => {
-  const { command, provider, onProgress, timeout = 120000, environment = 'development' } = options;
+// Simulate command execution for browser environment
+export const simulateCommandExecution = async (
+  options: ExecuteCommandOptions
+): Promise<CloudCommandResult> => {
+  // Add slight delay to simulate network call
+  await new Promise(resolve => setTimeout(resolve, 500));
   
-  console.log(`[${environment.toUpperCase()}][${provider}] Simulating command: ${command}`);
+  const { provider = 'aws', region = 'us-west-2' } = options;
   
-  // Define interval as NodeJS.Timeout and initialize as null
-  let intervalId: NodeJS.Timeout | null = null;
+  // Generate random success/failure (mostly success)
+  const success = Math.random() > 0.1;
   
-  try {
-    // Simulate progress updates
-    if (onProgress) {
-      let currentProgress = 0;
-      intervalId = setInterval(() => {
-        const increment = Math.floor(Math.random() * 10) + 1;
-        currentProgress = Math.min(currentProgress + increment, 90);
-        onProgress(currentProgress);
-        
-        if (environment === 'production' && (currentProgress % 25 === 0)) {
-          console.log(`[${provider}] Command progress: ${currentProgress}%`);
-        }
-      }, 500);
-    }
+  if (success) {
+    return {
+      success: true,
+      logs: [
+        `[INFO] Running command in ${region}`,
+        `[INFO] Provider: ${provider}`,
+        '[INFO] Command executed successfully',
+        '[INFO] Operation completed in 0.85s'
+      ],
+      data: generateMockData(provider, options.command)
+    };
+  } else {
+    // Generate mock error
+    const errorCodes = {
+      aws: ['AccessDenied', 'ResourceNotFound', 'ValidationError'],
+      azure: ['AuthorizationFailed', 'ResourceNotFound', 'InvalidParameter'],
+      gcp: ['PERMISSION_DENIED', 'NOT_FOUND', 'INVALID_ARGUMENT']
+    };
     
-    // Set timeout for long-running operations
-    const timeoutPromise = new Promise<never>((_, reject) => {
-      setTimeout(() => {
-        if (intervalId) clearInterval(intervalId);
-        reject(new Error('TIMEOUT: Command execution timed out'));
-      }, timeout);
-    });
+    const errorIndex = Math.floor(Math.random() * 3);
+    const errorCode = errorCodes[provider]?.[errorIndex] || 'UnknownError';
     
-    // Execute with potential for retry
-    const executionPromise = retryOperation(
-      async () => {
-        await new Promise(resolve => setTimeout(resolve, 2500));
-        
-        // For demonstration, randomly throw errors in non-production environments
-        // to test error handling (10% chance)
-        if (environment !== 'production' && Math.random() < 0.1) {
-          const errors = [
-            { name: 'AccessDeniedException', message: 'User is not authorized to perform this action' },
-            { name: 'ResourceNotFoundException', message: 'The specified resource does not exist' },
-            { name: 'ThrottlingException', message: 'Rate exceeded for operation' }
-          ];
-          throw errors[Math.floor(Math.random() * errors.length)];
-        }
-        
-        return {
-          success: true,
-          logs: [
-            `[${new Date().toISOString()}] Command executed successfully: ${command}`,
-            `[${new Date().toISOString()}] Provider: ${provider}`,
-            `[${new Date().toISOString()}] Environment: ${environment}`
-          ],
-          progress: 100,
-          operationId: `op-${Date.now()}`
-        };
-      },
-      {
-        retryCount: options.retryCount || 2,
-        retryDelay: 1000,
-        onRetry: (attempt, error) => {
-          console.warn(`[${provider}] Retry attempt ${attempt} after error: ${error.message}`);
-        }
-      }
-    );
-    
-    // Race between execution and timeout
-    const result = await Promise.race([executionPromise, timeoutPromise]);
-    
-    // Clear interval if it exists
-    if (intervalId) clearInterval(intervalId);
-    
-    // Set final progress
-    if (onProgress) onProgress(100);
-    
-    return result;
-  } catch (error) {
-    // Make sure interval is cleared in case of error
-    if (intervalId) {
-      clearInterval(intervalId);
-    }
-    
-    // Classify and log error with enhanced details
-    const { errorCode, errorMessage, errorDetails } = classifyCloudError(error, provider);
-    
-    console.error(`[${environment.toUpperCase()}][${provider}] Command failed:`, {
-      command,
-      errorCode, 
-      errorMessage,
-      errorDetails
-    });
-    
-    // Return structured error information
     return {
       success: false,
-      logs: [`[ERROR] ${errorMessage}`],
-      error: errorMessage,
-      errorCode,
-      errorDetails,
-      progress: 0
+      logs: [
+        `[INFO] Running command in ${region}`,
+        `[INFO] Provider: ${provider}`,
+        `[ERROR] Command execution failed: ${errorCode}`,
+        '[ERROR] Operation failed after 0.65s'
+      ],
+      error: `Simulated ${errorCode} error`,
+      errorCode
     };
   }
 };
+
+// Generate mock data based on provider and command
+function generateMockData(provider: CloudProvider, command?: string): any {
+  const now = new Date();
+  const timestamp = now.toISOString();
+  
+  switch (provider) {
+    case 'aws':
+      if (command?.includes('eks') || command?.includes('cluster')) {
+        return {
+          clusters: ['dev-cluster', 'staging-cluster', 'prod-cluster'],
+          status: 'ACTIVE',
+          version: '1.25',
+          created: timestamp
+        };
+      }
+      return {
+        requestId: `req-${Math.random().toString(36).substring(2, 10)}`,
+        timestamp,
+        region: 'us-west-2'
+      };
+      
+    case 'azure':
+      return {
+        id: `/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/${command?.includes('resource') ? 'myResourceGroup' : 'defaultGroup'}`,
+        name: command?.includes('aks') ? 'myAksCluster' : 'defaultResource',
+        location: 'westus2',
+        tags: {
+          environment: 'dev'
+        },
+        properties: {
+          provisioningState: 'Succeeded',
+          timestamp
+        }
+      };
+      
+    case 'gcp':
+      return {
+        name: command?.includes('gke') ? 'my-gke-cluster' : 'default-resource',
+        zone: 'us-central1-a',
+        status: 'RUNNING',
+        createTime: timestamp,
+        projectId: 'my-project-id'
+      };
+      
+    default:
+      return {
+        success: true,
+        timestamp,
+        provider
+      };
+  }
+}

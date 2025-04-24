@@ -1,157 +1,98 @@
 
-import type { CloudProvider } from '../../../types/deployment';
-import { ErrorCategory, ErrorSeverity } from '../errorHandling';
+import { CloudProvider } from './types';
 
-// Error handling utilities for cloud operations
-const errorCodeMapping: Record<string, string> = {
-  // AWS specific error codes
-  'AccessDeniedException': 'DEPLOY_AUTH_002',
-  'ResourceNotFoundException': 'DEPLOY_RESOURCE_001',
-  'ThrottlingException': 'DEPLOY_TIMEOUT_001',
-  
-  // Azure specific error codes
-  'AuthorizationFailed': 'DEPLOY_AUTH_002',
-  'ResourceNotFound': 'DEPLOY_RESOURCE_001',
-  'TooManyRequests': 'DEPLOY_TIMEOUT_001',
-  
-  // GCP specific error codes
-  'PERMISSION_DENIED': 'DEPLOY_AUTH_002',
-  'NOT_FOUND': 'DEPLOY_RESOURCE_001',
-  'RESOURCE_EXHAUSTED': 'DEPLOY_TIMEOUT_001',
-  
-  // Generic error codes
-  'TIMEOUT': 'DEPLOY_TIMEOUT_001',
-  'NETWORK_ERROR': 'DEPLOY_CONN_001',
-  'VALIDATION_ERROR': 'DEPLOY_CONFIG_001'
-};
-
-// Error classifier to provide consistent error messages
-export const classifyCloudError = (error: any, provider: CloudProvider): {
+/**
+ * Classify cloud provider errors for better error messages
+ */
+export function classifyCloudError(error: any, provider: CloudProvider): {
   errorCode: string;
   errorMessage: string;
-  errorDetails: Record<string, any>;
-  category?: ErrorCategory;
-  severity?: ErrorSeverity;
-  recoverable?: boolean;
-} => {
+  errorDetails?: Record<string, any>;
+} {
   // Default values
-  let errorCode = 'DEPLOY_UNKNOWN';
-  let errorMessage = 'An unknown error occurred';
-  let errorDetails: Record<string, any> = {};
-  let category: ErrorCategory = 'unknown';
-  let severity: ErrorSeverity = 'major';
-  let recoverable = false;
+  let errorCode = 'UnknownError';
+  let errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+  let errorDetails = {};
   
-  if (!error) {
-    return { errorCode, errorMessage, errorDetails, category, severity, recoverable };
+  // Determine if this is an API error
+  const isApiError = error && (
+    error.response || 
+    error.statusCode || 
+    error.code || 
+    error.name === 'HttpError' ||
+    error.name === 'ApiError'
+  );
+  
+  if (isApiError) {
+    // Extract error information based on provider
+    switch (provider) {
+      case 'aws':
+        errorCode = error.code || 'AWSError';
+        
+        if (error.code === 'AccessDeniedException' || error.code === 'AccessDenied') {
+          errorMessage = 'AWS access denied. Please check your credentials and permissions.';
+        } else if (error.code === 'ResourceNotFoundException' || error.code === 'ResourceNotFound') {
+          errorMessage = 'The requested AWS resource was not found.';
+        } else if (error.code === 'ValidationException' || error.code === 'ValidationError') {
+          errorMessage = 'Invalid parameters for AWS operation.';
+        } else if (error.code === 'ExpiredToken') {
+          errorMessage = 'Your AWS credentials have expired. Please refresh them and try again.';
+        }
+        break;
+        
+      case 'azure':
+        errorCode = error.code || (error.response?.data?.error?.code) || 'AzureError';
+        
+        if (errorCode === 'AuthorizationFailed' || errorCode === 'Unauthorized') {
+          errorMessage = 'Azure authorization failed. Please check your credentials and permissions.';
+        } else if (errorCode === 'ResourceNotFound' || errorCode === 'ResourceGroupNotFound') {
+          errorMessage = 'The requested Azure resource was not found.';
+        } else if (errorCode === 'InvalidParameter' || errorCode === 'ValidationError') {
+          errorMessage = 'Invalid parameters for Azure operation.';
+        } else if (errorCode === 'TokenExpired') {
+          errorMessage = 'Your Azure credentials have expired. Please refresh them and try again.';
+        }
+        break;
+        
+      case 'gcp':
+        errorCode = error.code || (error.response?.data?.error?.status) || 'GCPError';
+        
+        if (errorCode === 'PERMISSION_DENIED' || errorCode === 'UNAUTHENTICATED') {
+          errorMessage = 'GCP permission denied. Please check your credentials and permissions.';
+        } else if (errorCode === 'NOT_FOUND') {
+          errorMessage = 'The requested GCP resource was not found.';
+        } else if (errorCode === 'INVALID_ARGUMENT' || errorCode === 'FAILED_PRECONDITION') {
+          errorMessage = 'Invalid parameters for GCP operation.';
+        } else if (error.response?.data?.error?.message) {
+          errorMessage = error.response.data.error.message;
+        }
+        break;
+        
+      default:
+        // Use generic error handling for other providers
+        errorCode = 'ProviderError';
+        errorMessage = 'Cloud provider error occurred. Please check your configuration.';
+    }
+    
+    // Extract detailed error information if available
+    if (error.response?.data) {
+      errorDetails = error.response.data;
+    }
+  } else if (error.message && error.message.includes('ECONNREFUSED')) {
+    // Connection errors
+    errorCode = 'ConnectionError';
+    errorMessage = 'Could not connect to the cloud provider. Please check your network connection.';
+  } else if (error.message && error.message.includes('ETIMEDOUT')) {
+    errorCode = 'TimeoutError'; 
+    errorMessage = 'The request to the cloud provider timed out. Please try again later.';
+  } else if (error.message && error.message.includes('certificate')) {
+    errorCode = 'CertificateError';
+    errorMessage = 'SSL certificate validation failed. Please check your system certificates.';
   }
   
-  // Extract provider-specific error information
-  if (provider === 'aws') {
-    errorCode = error.name || error.code || errorCode;
-    errorMessage = error.message || errorMessage;
-    errorDetails = {
-      requestId: error.$metadata?.requestId,
-      region: error.$metadata?.region,
-      service: error.$metadata?.service,
-      ...error.info
-    };
-    
-    // AWS specific categorization
-    if (errorCode.includes('Permission') || errorCode.includes('Access')) {
-      category = 'authorization';
-      severity = 'critical';
-      recoverable = false;
-    } else if (errorCode.includes('NotFound')) {
-      category = 'resource';
-      severity = 'major';
-      recoverable = false;
-    } else if (errorCode.includes('Throttling') || errorCode.includes('Timeout')) {
-      category = 'timeout';
-      severity = 'major';
-      recoverable = true;
-    }
-  } else if (provider === 'azure') {
-    errorCode = error.code || errorCode;
-    errorMessage = error.message || errorMessage;
-    errorDetails = {
-      requestId: error.requestId,
-      details: error.details,
-      target: error.target
-    };
-    
-    // Azure specific categorization
-    if (errorCode.includes('Authorization') || errorCode.includes('Authentication')) {
-      category = 'authorization';
-      severity = 'critical';
-      recoverable = false;
-    } else if (errorCode.includes('NotFound')) {
-      category = 'resource';
-      severity = 'major';
-      recoverable = false;
-    } else if (errorCode.includes('Timeout') || errorCode.includes('TooMany')) {
-      category = 'timeout';
-      severity = 'major';
-      recoverable = true;
-    }
-  } else if (provider === 'gcp') {
-    errorCode = error.code || errorCode;
-    errorMessage = error.message || errorMessage;
-    errorDetails = {
-      details: error.details,
-      location: error.location,
-      reason: error.reason
-    };
-    
-    // GCP specific categorization
-    if (errorCode.includes('PERMISSION') || errorCode.includes('UNAUTHENTICATED')) {
-      category = 'authorization';
-      severity = 'critical';
-      recoverable = false;
-    } else if (errorCode.includes('NOT_FOUND')) {
-      category = 'resource';
-      severity = 'major';
-      recoverable = false;
-    } else if (errorCode.includes('DEADLINE') || errorCode.includes('RESOURCE_EXHAUSTED')) {
-      category = 'timeout';
-      severity = 'major';
-      recoverable = true;
-    }
-  } else {
-    // Generic error handling
-    errorCode = error.code || error.name || errorCode;
-    errorMessage = error.message || errorMessage;
-    errorDetails = { ...error };
-    
-    // Generic categorization
-    if (errorMessage.toLowerCase().includes('permission') || 
-        errorMessage.toLowerCase().includes('access') || 
-        errorMessage.toLowerCase().includes('auth')) {
-      category = 'authorization';
-      severity = 'critical';
-      recoverable = false;
-    } else if (errorMessage.toLowerCase().includes('not found') || 
-               errorMessage.toLowerCase().includes('missing')) {
-      category = 'resource';
-      severity = 'major';
-      recoverable = false;
-    } else if (errorMessage.toLowerCase().includes('timeout') || 
-               errorMessage.toLowerCase().includes('too many')) {
-      category = 'timeout';
-      severity = 'major';
-      recoverable = true;
-    }
-  }
-  
-  // Map to consistent error code if available
-  const mappedErrorCode = errorCodeMapping[errorCode] || errorCode;
-  
-  return { 
-    errorCode: mappedErrorCode, 
-    errorMessage, 
-    errorDetails, 
-    category, 
-    severity, 
-    recoverable 
+  return {
+    errorCode,
+    errorMessage,
+    errorDetails
   };
-};
+}
