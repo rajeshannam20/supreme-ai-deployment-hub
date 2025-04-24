@@ -42,80 +42,85 @@ export class SpeechHandler {
       return;
     }
 
-    // Initialize speech recognition
-    const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
-    this.recognition = new SpeechRecognitionAPI();
-    
-    if (this.recognition) {
-      this.recognition.continuous = true;
-      this.recognition.interimResults = true;
-      this.recognition.lang = 'en-US';
+    try {
+      // Initialize speech recognition with compatibility for different browsers
+      const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
+      this.recognition = new SpeechRecognitionAPI();
+      
+      if (this.recognition) {
+        this.recognition.continuous = true;
+        this.recognition.interimResults = true;
+        this.recognition.lang = 'en-US';
 
-      this.recognition.onstart = () => {
-        this.isListening = true;
-        if (this.options.onStart) this.options.onStart();
-        
-        // Set a timeout to restart recognition if it stops unexpectedly
-        if (this.recognitionTimeout) {
-          clearTimeout(this.recognitionTimeout);
-        }
-        
-        this.recognitionTimeout = setTimeout(() => {
+        this.recognition.onstart = () => {
+          this.isListening = true;
+          if (this.options.onStart) this.options.onStart();
+          
+          // Set a timeout to restart recognition if it stops unexpectedly
+          if (this.recognitionTimeout) {
+            clearTimeout(this.recognitionTimeout);
+          }
+          
+          this.recognitionTimeout = setTimeout(() => {
+            if (this.isListening && this.autoRestart) {
+              console.log("Recognition restarted due to timeout");
+              this.restartListening();
+            }
+          }, 10000); // 10 seconds timeout
+        };
+
+        this.recognition.onend = () => {
+          if (this.recognitionTimeout) {
+            clearTimeout(this.recognitionTimeout);
+            this.recognitionTimeout = null;
+          }
+          
+          this.isListening = false;
+          if (this.options.onEnd) this.options.onEnd();
+          
+          // Auto restart if enabled
+          if (this.autoRestart) {
+            setTimeout(() => {
+              this.startListening();
+            }, 500);
+          }
+        };
+
+        this.recognition.onresult = (event) => {
+          let interim = '';
+          let final = '';
+          
+          for (let i = event.resultIndex; i < event.results.length; i++) {
+            if (event.results[i].isFinal) {
+              final += event.results[i][0].transcript;
+            } else {
+              interim += event.results[i][0].transcript;
+            }
+          }
+          
+          if (interim && this.options.onInterim) {
+            this.options.onInterim(interim);
+          }
+          
+          if (final && this.options.onResult) {
+            this.options.onResult(final);
+          }
+        };
+
+        this.recognition.onerror = (event) => {
+          console.error('Speech recognition error:', event.error);
+          
+          // Auto recover from errors
           if (this.isListening && this.autoRestart) {
-            console.log("Recognition restarted due to timeout");
-            this.restartListening();
+            setTimeout(() => this.restartListening(), 2000);
           }
-        }, 10000); // 10 seconds timeout
-      };
-
-      this.recognition.onend = () => {
-        if (this.recognitionTimeout) {
-          clearTimeout(this.recognitionTimeout);
-          this.recognitionTimeout = null;
-        }
-        
-        this.isListening = false;
-        if (this.options.onEnd) this.options.onEnd();
-        
-        // Auto restart if enabled
-        if (this.autoRestart) {
-          setTimeout(() => {
-            this.startListening();
-          }, 500);
-        }
-      };
-
-      this.recognition.onresult = (event) => {
-        let interim = '';
-        let final = '';
-        
-        for (let i = event.resultIndex; i < event.results.length; i++) {
-          if (event.results[i].isFinal) {
-            final += event.results[i][0].transcript;
-          } else {
-            interim += event.results[i][0].transcript;
-          }
-        }
-        
-        if (interim && this.options.onInterim) {
-          this.options.onInterim(interim);
-        }
-        
-        if (final && this.options.onResult) {
-          this.options.onResult(final);
-        }
-      };
-
-      this.recognition.onerror = (event) => {
-        console.error('Speech recognition error:', event.error);
-        
-        // Auto recover from errors
-        if (this.isListening && this.autoRestart) {
-          setTimeout(() => this.restartListening(), 2000);
-        }
-        
-        if (this.options.onError) this.options.onError(event.error);
-      };
+          
+          if (this.options.onError) this.options.onError(event.error);
+        };
+      }
+    } catch (error) {
+      console.error("Error initializing speech recognition:", error);
+      if (this.options.onError) this.options.onError("Failed to initialize speech recognition");
     }
   }
 
@@ -134,7 +139,12 @@ export class SpeechHandler {
         // Try to re-initialize and start again
         setTimeout(() => {
           this.initSpeechRecognition();
-          this.recognition?.start();
+          try {
+            this.recognition?.start();
+          } catch (innerError) {
+            console.error('Failed to restart speech recognition:', innerError);
+            if (this.options.onError) this.options.onError('Failed to start speech recognition');
+          }
         }, 100);
       }
     }
@@ -143,7 +153,11 @@ export class SpeechHandler {
   public stopListening() {
     this.autoRestart = false;
     if (this.recognition && this.isListening) {
-      this.recognition.stop();
+      try {
+        this.recognition.stop();
+      } catch (error) {
+        console.error('Error stopping speech recognition:', error);
+      }
     }
   }
 
@@ -152,10 +166,14 @@ export class SpeechHandler {
       try {
         this.recognition.stop();
         setTimeout(() => {
-          this.recognition?.start();
+          try {
+            this.recognition?.start();
+          } catch (error) {
+            console.error('Error starting speech recognition after restart:', error);
+          }
         }, 200);
       } catch (error) {
-        console.error('Error restarting speech recognition:', error);
+        console.error('Error stopping speech recognition for restart:', error);
       }
     }
   }
