@@ -7,9 +7,9 @@ import { Download, X, AlertTriangle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { saveAs } from 'file-saver';
 import { toast } from '@/hooks/use-toast';
-import { LogFilters } from '@/components/deployment/logs/LogFilters';
-import { LogSearch } from '@/components/deployment/logs/LogSearch';
-import { LogDisplay } from '@/components/deployment/logs/LogDisplay';
+import LogFilters from '@/components/deployment/logs/LogFilters';
+import LogSearch from '@/components/deployment/logs/LogSearch';
+import LogDisplay from '@/components/deployment/logs/LogDisplay';
 import { useDeploymentLogFiltering } from '@/hooks/useDeploymentLogFiltering';
 
 const DeploymentLogs = () => {
