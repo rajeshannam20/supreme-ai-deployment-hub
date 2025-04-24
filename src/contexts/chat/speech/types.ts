@@ -75,6 +75,7 @@ declare global {
   interface Window {
     SpeechRecognition: any;
     webkitSpeechRecognition: any;
-    speechSynthesis: SpeechSynthesis;
+    // Remove the 'speechSynthesis' declaration here since it's already defined in lib.dom.d.ts
+    // This avoids the "All declarations of 'speechSynthesis' must have identical modifiers" error
   }
 }
