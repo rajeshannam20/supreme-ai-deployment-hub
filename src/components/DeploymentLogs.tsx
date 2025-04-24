@@ -1,75 +1,41 @@
 
-import React, { useRef, useEffect, useState, useMemo } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { useDeployment } from '@/contexts/DeploymentContext';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Download, Filter, X, RefreshCw, Clock, Search, AlertTriangle } from 'lucide-react';
+import { Download, X, AlertTriangle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
 import { saveAs } from 'file-saver';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from '@/hooks/use-toast';
+import { LogFilters } from '@/components/deployment/logs/LogFilters';
+import { LogSearch } from '@/components/deployment/logs/LogSearch';
+import { LogDisplay } from '@/components/deployment/logs/LogDisplay';
+import { useDeploymentLogFiltering } from '@/hooks/useDeploymentLogFiltering';
 
 const DeploymentLogs = () => {
   const { logs, exportLogs, clearLogs } = useDeployment();
   const logsEndRef = useRef<HTMLDivElement>(null);
-  const [logFilter, setLogFilter] = useState<string>('all');
   const [autoScroll, setAutoScroll] = useState<boolean>(true);
-  const [searchQuery, setSearchQuery] = useState<string>('');
-  const [timeRange, setTimeRange] = useState<string>('all');
-  const [isSearching, setIsSearching] = useState<boolean>(false);
+  
+  const {
+    logFilter,
+    setLogFilter,
+    timeRange,
+    setTimeRange,
+    searchQuery,
+    setSearchQuery,
+    isSearching,
+    setIsSearching,
+    filteredLogs,
+    logCounts,
+  } = useDeploymentLogFiltering(logs);
 
-  // Auto-scroll to the bottom when logs update
+  // Auto-scroll to bottom when logs update
   useEffect(() => {
     if (logsEndRef.current && autoScroll) {
       logsEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [logs, autoScroll]);
-
-  // Filter logs based on selected type, time range, and search query
-  const filteredLogs = useMemo(() => {
-    return logs.filter(log => {
-      // Filter by log type
-      const typeMatch = logFilter === 'all' || log.includes(logFilter);
-      
-      // Filter by time range
-      let timeMatch = true;
-      if (timeRange !== 'all') {
-        const logTimestamp = new Date(log.substring(1, 20)).getTime();
-        const now = new Date().getTime();
-        const rangeMs = parseInt(timeRange) * 60 * 1000; // convert minutes to ms
-        timeMatch = now - logTimestamp <= rangeMs;
-      }
-      
-      // Filter by search query
-      const searchMatch = !searchQuery || log.toLowerCase().includes(searchQuery.toLowerCase());
-      
-      return typeMatch && timeMatch && searchMatch;
-    });
-  }, [logs, logFilter, timeRange, searchQuery]);
-
-  // Count logs by severity
-  const logCounts = useMemo(() => {
-    const counts = {
-      ERROR: 0,
-      WARNING: 0,
-      SUCCESS: 0,
-      INFO: 0,
-      DEBUG: 0,
-      total: logs.length
-    };
-
-    logs.forEach(log => {
-      if (log.includes('ERROR')) counts.ERROR++;
-      else if (log.includes('WARNING')) counts.WARNING++;
-      else if (log.includes('SUCCESS')) counts.SUCCESS++;
-      else if (log.includes('INFO')) counts.INFO++;
-      else if (log.includes('DEBUG')) counts.DEBUG++;
-    });
-
-    return counts;
-  }, [logs]);
 
   // Handle log export
   const handleExportLogs = () => {
@@ -93,41 +59,12 @@ const DeploymentLogs = () => {
     }
   };
 
-  // Handle search
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     setIsSearching(true);
-    // Artificial delay to simulate search
     setTimeout(() => {
       setIsSearching(false);
     }, 300);
-  };
-
-  // Determine log class based on log content
-  const getLogClass = (log: string) => {
-    if (log.includes('ERROR')) return 'text-red-500 font-medium';
-    if (log.includes('SUCCESS')) return 'text-green-500';
-    if (log.includes('WARNING')) return 'text-yellow-500';
-    if (log.includes('DEBUG')) return 'text-blue-400';
-    return 'text-gray-300';
-  };
-  
-  // Format log entry for display
-  const formatLogEntry = (log: string) => {
-    // Highlight the search term if present
-    if (searchQuery && log.toLowerCase().includes(searchQuery.toLowerCase())) {
-      const parts = log.split(new RegExp(`(${searchQuery})`, 'gi'));
-      return (
-        <span>
-          {parts.map((part, i) => 
-            part.toLowerCase() === searchQuery.toLowerCase() 
-              ? <span key={i} className="bg-yellow-500/20 px-1 rounded">{part}</span> 
-              : part
-          )}
-        </span>
-      );
-    }
-    return log;
   };
 
   return (
@@ -158,104 +95,34 @@ const DeploymentLogs = () => {
         </div>
       </CardHeader>
 
-      <div className="flex items-center justify-between p-3 bg-muted/30 border-b">
-        <Tabs defaultValue="all" className="w-full" onValueChange={setLogFilter}>
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-            <TabsList className="bg-background">
-              <TabsTrigger value="all">
-                All
-              </TabsTrigger>
-              <TabsTrigger value="ERROR" className="text-red-500">
-                Errors {logCounts.ERROR > 0 && `(${logCounts.ERROR})`}
-              </TabsTrigger>
-              <TabsTrigger value="WARNING" className="text-yellow-500">
-                Warnings {logCounts.WARNING > 0 && `(${logCounts.WARNING})`}
-              </TabsTrigger>
-              <TabsTrigger value="SUCCESS" className="text-green-500">
-                Success {logCounts.SUCCESS > 0 && `(${logCounts.SUCCESS})`}
-              </TabsTrigger>
-              <TabsTrigger value="INFO" className="text-blue-500">
-                Info {logCounts.INFO > 0 && `(${logCounts.INFO})`}
-              </TabsTrigger>
-            </TabsList>
-            <div className="flex items-center space-x-2">
-              <div className="flex items-center space-x-2">
-                <Clock className="h-4 w-4 text-gray-500" />
-                <Select value={timeRange} onValueChange={setTimeRange}>
-                  <SelectTrigger className="w-[140px] h-8 text-xs">
-                    <SelectValue placeholder="Time Range" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All time</SelectItem>
-                    <SelectItem value="5">Last 5 minutes</SelectItem>
-                    <SelectItem value="15">Last 15 minutes</SelectItem>
-                    <SelectItem value="60">Last hour</SelectItem>
-                    <SelectItem value="1440">Last 24 hours</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="h-8 text-xs" 
-                onClick={() => setAutoScroll(!autoScroll)}
-              >
-                <RefreshCw className={`h-3 w-3 mr-1 ${autoScroll ? 'animate-spin' : ''}`} />
-                {autoScroll ? 'Auto-scroll ON' : 'Auto-scroll OFF'}
-              </Button>
-            </div>
-          </div>
-        </Tabs>
-      </div>
+      <LogFilters
+        logFilter={logFilter}
+        onFilterChange={setLogFilter}
+        timeRange={timeRange}
+        onTimeRangeChange={setTimeRange}
+        autoScroll={autoScroll}
+        onAutoScrollChange={() => setAutoScroll(!autoScroll)}
+        logCounts={logCounts}
+      />
 
-      <div className="p-3 bg-muted/10 border-b">
-        <form onSubmit={handleSearch} className="flex gap-2">
-          <div className="relative flex-grow">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              type="search"
-              placeholder="Search logs..."
-              className="pl-8"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
-          <Button type="submit" size="sm" disabled={isSearching}>
-            {isSearching ? 'Searching...' : 'Search'}
-          </Button>
-        </form>
-      </div>
+      <LogSearch
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        isSearching={isSearching}
+        onSubmit={handleSearch}
+      />
       
       <CardContent className="p-0">
         <div className="bg-black text-white p-4 rounded-b font-mono text-sm h-80 overflow-y-auto">
-          {filteredLogs.length === 0 ? (
-            <div className="text-gray-400 flex items-center justify-center h-full">
-              <div className="text-center">
-                {searchQuery ? (
-                  <>
-                    <Search className="h-10 w-10 mx-auto mb-2 opacity-30" />
-                    <p>No logs matching your search criteria.</p>
-                  </>
-                ) : (
-                  <>
-                    <Filter className="h-10 w-10 mx-auto mb-2 opacity-30" />
-                    <p>No logs available{logFilter !== 'all' ? ' for the selected filter' : '. Start the deployment to see logs'}.</p>
-                  </>
-                )}
-              </div>
-            </div>
-          ) : (
-            <div>
-              {filteredLogs.map((log, index) => (
-                <div key={index} className={getLogClass(log)}>
-                  <pre className="whitespace-pre-wrap break-words">{formatLogEntry(log)}</pre>
-                </div>
-              ))}
-            </div>
-          )}
+          <LogDisplay
+            logs={filteredLogs}
+            searchQuery={searchQuery}
+            logFilter={logFilter}
+          />
           <div ref={logsEndRef} />
         </div>
       </CardContent>
+
       <CardFooter className="flex justify-between bg-muted/30 py-2 border-t">
         <div className="flex gap-2">
           <Button variant="ghost" size="sm" onClick={handleExportLogs} className="text-xs">
