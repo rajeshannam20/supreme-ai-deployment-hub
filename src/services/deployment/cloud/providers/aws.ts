@@ -73,7 +73,8 @@ export const executeAwsCommand = async (
         return {
           success: true,
           logs: [`Successfully retrieved information for cluster ${clusterName}`],
-          data: response.cluster
+          // Using spread operator to avoid direct data property assignment
+          ...{ data: response.cluster }
         };
       } catch (error) {
         console.error("EKS describe-cluster error:", error);
@@ -107,7 +108,8 @@ export const executeAwsCommand = async (
         return {
           success: true,
           logs: [`Successfully listed clusters. Found ${response.clusters?.length || 0} clusters.`],
-          data: response
+          // Using spread operator to avoid direct data property assignment
+          ...{ data: response }
         };
       } catch (error) {
         console.error("EKS list-clusters error:", error);

@@ -1,7 +1,34 @@
 
 import * as k8s from '@kubernetes/client-node';
-import { CloudProvider, ServiceStatus, CloudProviderCredentials, ClusterConnectionOptions, ClusterInfo, ConnectionResult } from '../../types/deployment';
+import { CloudProvider, ServiceStatus, CloudProviderCredentials } from '../../types/deployment';
 import { classifyCloudError } from './cloud/errorHandling';
+
+// Define missing types
+interface ClusterConnectionOptions {
+  kubeConfig?: string;
+  provider?: CloudProvider;
+  attempt?: number;
+}
+
+interface ClusterInfo {
+  nodes: number;
+  pods: number;
+  services: number;
+  deployments: number;
+  status: string;
+  provider?: CloudProvider;
+  region?: string;
+  version?: string;
+  uptime?: string;
+}
+
+interface ConnectionResult {
+  connected: boolean;
+  error?: string;
+  clusterInfo: ClusterInfo;
+  serviceStatuses: ServiceStatus[];
+  providerCredentials?: CloudProviderCredentials;
+}
 
 // Connection cache to avoid multiple connections to the same cluster
 const clusterConnections = new Map<string, {
@@ -88,7 +115,7 @@ export const connectToKubernetesCluster = async (options: ClusterConnectionOptio
     const contextObject = kc.getContextObject(currentContext);
     const clusterObject = kc.getCluster(contextObject?.cluster || '');
     
-    // Extract region from cluster server URL if possible
+    // Extract region from server URL if possible
     let region = 'unknown';
     if (clusterObject?.server) {
       // Try to extract region from URL patterns like:
@@ -124,7 +151,7 @@ export const connectToKubernetesCluster = async (options: ClusterConnectionOptio
         authenticated: true,
         profileName: provider === 'aws' ? 'default' : undefined,
         region,
-        expiresAt: new Date(Date.now() + 3600000), // 1 hour from now
+        expiresAt: new Date(Date.now() + 3600000).toISOString(), // 1 hour from now
       }
     };
   } catch (error) {
