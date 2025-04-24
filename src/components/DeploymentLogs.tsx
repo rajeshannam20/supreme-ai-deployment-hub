@@ -10,6 +10,7 @@ import LogFilters from '@/components/deployment/logs/LogFilters';
 import LogSearch from '@/components/deployment/logs/LogSearch';
 import LogDisplay from '@/components/deployment/logs/LogDisplay';
 import { useDeploymentLogFiltering } from '@/hooks/useDeploymentLogFiltering';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 const DeploymentLogs = () => {
   const { logs, exportLogs, clearLogs } = useDeployment();
@@ -29,7 +30,6 @@ const DeploymentLogs = () => {
     logCounts,
   } = useDeploymentLogFiltering(logs);
 
-  // Load saved filter preferences
   useEffect(() => {
     const savedFilter = localStorage.getItem('logFilter');
     const savedTimeRange = localStorage.getItem('timeRange');
@@ -37,34 +37,28 @@ const DeploymentLogs = () => {
     if (savedTimeRange) setTimeRange(savedTimeRange);
   }, []);
 
-  // Save filter preferences
   useEffect(() => {
     localStorage.setItem('logFilter', logFilter);
     localStorage.setItem('timeRange', timeRange);
   }, [logFilter, timeRange]);
 
-  // Real-time log updates (simulated for now)
   useEffect(() => {
     const pollInterval = setInterval(() => {
       if (logs.length > 0) {
         const lastTimestamp = new Date(logs[logs.length - 1].substring(1, 20)).getTime();
-        // In a real implementation, this would be an API call to fetch new logs
-        // For now, we're just checking if there are updates needed
         console.log('Checking for new logs since:', new Date(lastTimestamp).toISOString());
       }
-    }, 5000); // Poll every 5 seconds
+    }, 5000);
 
     return () => clearInterval(pollInterval);
   }, [logs]);
 
-  // Auto-scroll to bottom when logs update
   useEffect(() => {
     if (logsEndRef.current && autoScroll) {
       logsEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [logs, autoScroll]);
 
-  // Handle log export
   const handleExportLogs = () => {
     try {
       const exportData = exportLogs ? exportLogs() : JSON.stringify(logs, null, 2);
@@ -78,6 +72,36 @@ const DeploymentLogs = () => {
       });
     } catch (error) {
       console.error('Failed to export logs:', error);
+      toast({
+        title: "Export Failed",
+        description: "Could not export log file",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const exportLogsAsCSV = () => {
+    try {
+      const csvContent = logs.map(log => {
+        const timestamp = log.substring(1, 20);
+        const levelMatch = log.match(/\[(INFO|WARNING|ERROR|DEBUG)\]/);
+        const level = levelMatch ? levelMatch[1] : 'UNKNOWN';
+        const message = log.substring(log.indexOf(']', log.indexOf(']') + 1) + 2);
+        return `"${timestamp}","${level}","${message.replace(/"/g, '""')}"`;
+      }).join('\n');
+      
+      const csvHeader = 'Timestamp,Level,Message\n';
+      const blob = new Blob([csvHeader + csvContent], { type: 'text/csv;charset=utf-8' });
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      saveAs(blob, `deployment-logs-${timestamp}.csv`);
+      
+      toast({
+        title: "Logs Exported",
+        description: "Log file has been downloaded as CSV",
+        variant: "success",
+      });
+    } catch (error) {
+      console.error('Failed to export logs as CSV:', error);
       toast({
         title: "Export Failed",
         description: "Could not export log file",
@@ -152,10 +176,23 @@ const DeploymentLogs = () => {
 
       <CardFooter className="flex justify-between bg-muted/30 py-2 border-t">
         <div className="flex gap-2">
-          <Button variant="ghost" size="sm" onClick={handleExportLogs} className="text-xs">
-            <Download className="h-3 w-3 mr-1" />
-            Export Logs
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm" className="text-xs">
+                <Download className="h-3 w-3 mr-1" />
+                Export Logs
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem onClick={handleExportLogs}>
+                Export as JSON
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={exportLogsAsCSV}>
+                Export as CSV
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          
           {logs.length > 0 && clearLogs && (
             <Button variant="ghost" size="sm" onClick={clearLogs} className="text-xs text-muted-foreground">
               <X className="h-3 w-3 mr-1" />
