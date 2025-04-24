@@ -1,19 +1,14 @@
 
 import { useEffect, useRef } from 'react';
 
-export const useLogAutoScroll = (
-  data: any[], 
-  autoScroll: boolean
-): React.RefObject<HTMLDivElement> => {
-  const endRef = useRef<HTMLDivElement>(null);
+export const useLogAutoScroll = (logs: string[], autoScroll: boolean) => {
+  const logsEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (autoScroll && endRef.current) {
-      endRef.current.scrollIntoView({ behavior: 'smooth' });
+    if (autoScroll && logsEndRef.current) {
+      logsEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [data, autoScroll]);
+  }, [logs, autoScroll]);
 
-  return endRef;
+  return logsEndRef;
 };
-
-export default useLogAutoScroll;
