@@ -71,7 +71,6 @@ export interface SpeechRecognitionConstructor {
 }
 
 // Global speech recognition type definitions
-// Using a merged declaration to avoid conflicts
 declare global {
   interface Window {
     SpeechRecognition: any;
