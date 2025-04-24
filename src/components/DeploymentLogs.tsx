@@ -1,4 +1,3 @@
-
 import React, { useRef, useEffect, useState } from 'react';
 import { useDeployment } from '@/contexts/DeploymentContext';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -29,6 +28,34 @@ const DeploymentLogs = () => {
     filteredLogs,
     logCounts,
   } = useDeploymentLogFiltering(logs);
+
+  // Load saved filter preferences
+  useEffect(() => {
+    const savedFilter = localStorage.getItem('logFilter');
+    const savedTimeRange = localStorage.getItem('timeRange');
+    if (savedFilter) setLogFilter(savedFilter);
+    if (savedTimeRange) setTimeRange(savedTimeRange);
+  }, []);
+
+  // Save filter preferences
+  useEffect(() => {
+    localStorage.setItem('logFilter', logFilter);
+    localStorage.setItem('timeRange', timeRange);
+  }, [logFilter, timeRange]);
+
+  // Real-time log updates (simulated for now)
+  useEffect(() => {
+    const pollInterval = setInterval(() => {
+      if (logs.length > 0) {
+        const lastTimestamp = new Date(logs[logs.length - 1].substring(1, 20)).getTime();
+        // In a real implementation, this would be an API call to fetch new logs
+        // For now, we're just checking if there are updates needed
+        console.log('Checking for new logs since:', new Date(lastTimestamp).toISOString());
+      }
+    }, 5000); // Poll every 5 seconds
+
+    return () => clearInterval(pollInterval);
+  }, [logs]);
 
   // Auto-scroll to bottom when logs update
   useEffect(() => {
