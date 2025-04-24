@@ -1,4 +1,3 @@
-
 export interface SpeechOptions {
   onStart?: () => void;
   onEnd?: () => void;
@@ -65,10 +64,53 @@ export interface SpeechRecognitionAlternativeInstance {
   confidence: number;
 }
 
-// Add the global window interface
+// Global speech recognition type definitions
 declare global {
   interface Window {
-    SpeechRecognition: any;
-    webkitSpeechRecognition: any;
+    SpeechRecognition: SpeechRecognitionConstructor;
+    webkitSpeechRecognition: SpeechRecognitionConstructor;
+    speechSynthesis: SpeechSynthesis;
   }
+}
+
+// Speech Recognition Interface
+export interface SpeechRecognitionConstructor {
+  new(): SpeechRecognitionInstance;
+}
+
+export interface SpeechRecognitionInstance {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  onstart: (event: Event) => void;
+  onend: (event: Event) => void;
+  onerror: (event: SpeechRecognitionErrorEvent) => void;
+  onresult: (event: SpeechRecognitionEvent) => void;
+  start(): void;
+  stop(): void;
+}
+
+export interface SpeechRecognitionErrorEvent extends Event {
+  error: string;
+}
+
+export interface SpeechRecognitionEvent extends Event {
+  results: SpeechRecognitionResultList;
+  resultIndex: number;
+}
+
+export interface SpeechRecognitionResultList {
+  length: number;
+  item(index: number): SpeechRecognitionResult;
+}
+
+export interface SpeechRecognitionResult {
+  isFinal: boolean;
+  length: number;
+  item(index: number): SpeechRecognitionAlternative;
+}
+
+export interface SpeechRecognitionAlternative {
+  transcript: string;
+  confidence: number;
 }
