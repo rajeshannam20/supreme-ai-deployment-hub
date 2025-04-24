@@ -1,127 +1,141 @@
 
-import { CloudProvider, ServiceStatus, CloudProviderCredentials } from '../../types/deployment';
+import * as k8s from '@kubernetes/client-node';
+import { CloudProvider, ServiceStatus, CloudProviderCredentials, ClusterConnectionOptions, ClusterInfo, ConnectionResult } from '../../types/deployment';
+import { classifyCloudError } from './cloud/errorHandling';
 
-interface ClusterConnectionOptions {
-  kubeConfig?: string;
-  provider?: CloudProvider;
-  attempt?: number;
-}
-
-interface ClusterInfo {
-  nodes: number;
-  pods: number;
-  services: number;
-  deployments: number;
-  status: string;
-  provider?: CloudProvider;
-  region?: string;
-  version?: string;
-  uptime?: string;
-}
-
-interface ConnectionResult {
-  connected: boolean;
-  error?: string;
-  clusterInfo: ClusterInfo;
-  serviceStatuses: ServiceStatus[];
-  providerCredentials?: CloudProviderCredentials;
-}
+// Connection cache to avoid multiple connections to the same cluster
+const clusterConnections = new Map<string, {
+  kubeConfig: k8s.KubeConfig;
+  coreApi: k8s.CoreV1Api;
+  appsApi: k8s.AppsV1Api;
+}>();
 
 export const connectToKubernetesCluster = async (options: ClusterConnectionOptions): Promise<ConnectionResult> => {
   const { kubeConfig, provider = 'aws', attempt = 1 } = options;
   
   try {
-    // TODO: Replace with actual Kubernetes client implementation
-    // For now, this is a placeholder that returns mock data
+    console.log('Connecting to Kubernetes cluster:', { provider, kubeConfigProvided: !!kubeConfig });
     
-    // Simulate connection process
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    // Create KubeConfig
+    const kc = new k8s.KubeConfig();
     
-    // Simulate successful connection
+    if (kubeConfig) {
+      // Load from provided kubeconfig content
+      try {
+        kc.loadFromString(kubeConfig);
+      } catch (error) {
+        console.error('Failed to parse kubeconfig:', error);
+        return {
+          connected: false,
+          error: 'Invalid kubeconfig format. Please check your YAML syntax.',
+          clusterInfo: {
+            nodes: 0,
+            pods: 0,
+            services: 0,
+            deployments: 0,
+            status: 'Disconnected'
+          },
+          serviceStatuses: []
+        };
+      }
+    } else {
+      // Try to load from default location
+      try {
+        kc.loadFromDefault();
+      } catch (error) {
+        console.error('Failed to load default kubeconfig:', error);
+        return {
+          connected: false,
+          error: 'No kubeconfig provided and default config not found.',
+          clusterInfo: {
+            nodes: 0,
+            pods: 0,
+            services: 0,
+            deployments: 0,
+            status: 'Disconnected'
+          },
+          serviceStatuses: []
+        };
+      }
+    }
+    
+    // Test connection by creating API clients
+    const coreApi = kc.makeApiClient(k8s.CoreV1Api);
+    const appsApi = kc.makeApiClient(k8s.AppsV1Api);
+    
+    // Try to get cluster version
+    const versionApi = kc.makeApiClient(k8s.VersionApi);
+    const version = await versionApi.getCode();
+    
+    // Generate a unique connection ID
+    const connectionId = `${provider}-${Date.now()}`;
+    
+    // Store the connection for later use
+    clusterConnections.set(connectionId, {
+      kubeConfig: kc,
+      coreApi,
+      appsApi
+    });
+    
+    // Load cluster info
+    const clusterInfo = await fetchClusterInfo(coreApi, appsApi);
+    
+    // Fetch service statuses
+    const serviceStatuses = await fetchServiceStatuses(coreApi, appsApi);
+    
+    // Get provider region from current context
+    const currentContext = kc.getCurrentContext();
+    const contextObject = kc.getContextObject(currentContext);
+    const clusterObject = kc.getCluster(contextObject?.cluster || '');
+    
+    // Extract region from cluster server URL if possible
+    let region = 'unknown';
+    if (clusterObject?.server) {
+      // Try to extract region from URL patterns like:
+      // AWS: https://XYZ.gr7.us-west-2.eks.amazonaws.com
+      // Azure: https://name-12345-dns.hcp.westus2.azmk8s.io
+      // GCP: https://XX.XX.XX.XX.gke.gcp-region-zone.cloud.goog
+      const serverUrl = clusterObject.server;
+      
+      if (serverUrl.includes('eks.amazonaws.com')) {
+        const regionMatch = serverUrl.match(/\.([a-z0-9-]+)\.eks\.amazonaws\.com/);
+        region = regionMatch?.[1] || 'unknown';
+      } else if (serverUrl.includes('azmk8s.io')) {
+        const regionMatch = serverUrl.match(/\.([a-z0-9]+)\.azmk8s\.io/);
+        region = regionMatch?.[1] || 'unknown';
+      } else if (serverUrl.includes('cloud.goog')) {
+        const regionMatch = serverUrl.match(/gke\.([a-z0-9-]+)\.cloud\.goog/);
+        region = regionMatch?.[1] || 'unknown';
+      }
+    }
+
     return {
       connected: true,
       clusterInfo: {
-        nodes: 3,
-        pods: 12,
-        services: 8,
-        deployments: 5,
-        status: 'Healthy',
+        ...clusterInfo,
         provider,
-        region: provider === 'aws' ? 'us-west-2' : 
-                provider === 'azure' ? 'eastus' : 
-                provider === 'gcp' ? 'us-central1' : 'unknown',
-        version: 'v1.25.4',
-        uptime: '15d 7h',
+        region,
+        version: version?.body?.gitVersion || 'unknown',
+        uptime: 'N/A' // Kubernetes API doesn't provide uptime directly
       },
-      serviceStatuses: [
-        { 
-          name: 'devonn-ai-backend', 
-          status: 'Running', 
-          pods: '3/3', 
-          cpu: '45%', 
-          memory: '512Mi',
-          namespace: 'default',
-          type: 'ClusterIP',
-          endpoints: ['10.0.0.1:8080', '10.0.0.2:8080', '10.0.0.3:8080'],
-          age: '15d'
-        },
-        { 
-          name: 'devonn-ai-frontend', 
-          status: 'Running', 
-          pods: '2/2', 
-          cpu: '30%', 
-          memory: '256Mi',
-          namespace: 'default',
-          type: 'LoadBalancer',
-          endpoints: ['my-app.example.com'],
-          age: '15d'
-        },
-        { 
-          name: 'devonn-ai-inference', 
-          status: 'Running', 
-          pods: '3/3', 
-          cpu: '85%', 
-          memory: '1.2Gi',
-          namespace: 'ai',
-          type: 'ClusterIP',
-          age: '15d'
-        },
-        { 
-          name: 'devonn-ai-redis', 
-          status: 'Running', 
-          pods: '1/1', 
-          cpu: '10%', 
-          memory: '128Mi',
-          namespace: 'cache',
-          type: 'ClusterIP',
-          age: '15d'
-        },
-        { 
-          name: 'devonn-ai-database', 
-          status: 'Running', 
-          pods: '1/1', 
-          cpu: '25%', 
-          memory: '512Mi',
-          namespace: 'db',
-          type: 'ClusterIP',
-          age: '15d'
-        },
-      ],
+      serviceStatuses,
       providerCredentials: {
         provider,
         authenticated: true,
         profileName: provider === 'aws' ? 'default' : undefined,
-        region: provider === 'aws' ? 'us-west-2' : 
-                provider === 'azure' ? 'eastus' : 
-                provider === 'gcp' ? 'us-central1' : undefined,
+        region,
         expiresAt: new Date(Date.now() + 3600000), // 1 hour from now
       }
     };
   } catch (error) {
     console.error('Error connecting to Kubernetes cluster:', error);
+    
+    // Classify the error for more useful error messages
+    const { errorCode, errorMessage } = classifyCloudError(error, provider);
+    
     return {
       connected: false,
-      error: error instanceof Error ? error.message : 'Unknown error occurred',
+      error: errorMessage || (error instanceof Error ? error.message : 'Unknown error occurred'),
       clusterInfo: {
         nodes: 0,
         pods: 0,
@@ -134,17 +148,230 @@ export const connectToKubernetesCluster = async (options: ClusterConnectionOptio
   }
 };
 
+/**
+ * Fetch cluster information including node, pod, and deployment counts
+ */
+async function fetchClusterInfo(
+  coreApi: k8s.CoreV1Api,
+  appsApi: k8s.AppsV1Api
+): Promise<ClusterInfo> {
+  try {
+    // Fetch nodes
+    const nodesResponse = await coreApi.listNode();
+    const nodes = nodesResponse.body.items || [];
+    
+    // Fetch pods in all namespaces
+    const podsResponse = await coreApi.listPodForAllNamespaces();
+    const pods = podsResponse.body.items || [];
+    
+    // Fetch services in all namespaces
+    const servicesResponse = await coreApi.listServiceForAllNamespaces();
+    const services = servicesResponse.body.items || [];
+    
+    // Fetch deployments in all namespaces
+    const deploymentsResponse = await appsApi.listDeploymentForAllNamespaces();
+    const deployments = deploymentsResponse.body.items || [];
+    
+    // Determine cluster health status
+    let status = 'Healthy';
+    
+    // Check if any nodes are not ready
+    const unhealthyNodes = nodes.filter(node => 
+      !node.status?.conditions?.some(condition => 
+        condition.type === 'Ready' && condition.status === 'True'
+      )
+    );
+    
+    if (unhealthyNodes.length > 0) {
+      status = 'Degraded';
+    }
+    
+    return {
+      nodes: nodes.length,
+      pods: pods.length,
+      services: services.length,
+      deployments: deployments.length,
+      status
+    };
+  } catch (error) {
+    console.error('Error fetching cluster info:', error);
+    // Return basic info on error
+    return {
+      nodes: 0,
+      pods: 0,
+      services: 0,
+      deployments: 0,
+      status: 'Unknown'
+    };
+  }
+}
+
+/**
+ * Fetch service statuses from the cluster
+ */
+async function fetchServiceStatuses(
+  coreApi: k8s.CoreV1Api,
+  appsApi: k8s.AppsV1Api
+): Promise<ServiceStatus[]> {
+  try {
+    // Get deployments
+    const deploymentsResponse = await appsApi.listDeploymentForAllNamespaces();
+    const deployments = deploymentsResponse.body.items || [];
+    
+    // Get services
+    const servicesResponse = await coreApi.listServiceForAllNamespaces();
+    const services = servicesResponse.body.items || [];
+    
+    // Get pods
+    const podsResponse = await coreApi.listPodForAllNamespaces();
+    const pods = podsResponse.body.items || [];
+    
+    // Map services to our ServiceStatus model
+    return services.slice(0, 10).map(service => {
+      // Find related deployment
+      const relatedDeployment = deployments.find(deployment => 
+        deployment.metadata?.name === service.metadata?.name
+      );
+      
+      // Find pods for this service
+      const servicePods = pods.filter(pod => {
+        // Match pods by service selectors
+        if (!service.spec?.selector) return false;
+        
+        for (const [key, value] of Object.entries(service.spec.selector)) {
+          if (pod.metadata?.labels?.[key] !== value) {
+            return false;
+          }
+        }
+        return true;
+      });
+      
+      // Count ready vs total pods
+      let readyPods = 0;
+      servicePods.forEach(pod => {
+        if (pod.status?.containerStatuses?.every(container => container.ready)) {
+          readyPods++;
+        }
+      });
+      
+      // Calculate CPU and memory usage (mock values for now)
+      // In a real implementation, you would use the metrics API
+      const cpuPercentage = Math.floor(Math.random() * 100);
+      const memoryUsage = `${Math.floor(Math.random() * 512)}Mi`;
+      
+      // Service status
+      const status = servicePods.length > 0 && readyPods === servicePods.length 
+        ? 'Running' 
+        : readyPods > 0 
+          ? 'Degraded' 
+          : 'Pending';
+      
+      // Service endpoints
+      const endpoints = service.spec?.type === 'LoadBalancer' && service.status?.loadBalancer?.ingress
+        ? service.status.loadBalancer.ingress.map(ingress => ingress.hostname || ingress.ip || '')
+        : servicePods.map(pod => `${pod.status?.podIP || ''}:${service.spec?.ports?.[0]?.port || ''}`);
+      
+      return {
+        name: service.metadata?.name || 'unknown',
+        namespace: service.metadata?.namespace || 'default',
+        status,
+        pods: `${readyPods}/${servicePods.length}`,
+        cpu: `${cpuPercentage}%`,
+        memory: memoryUsage,
+        type: service.spec?.type || 'ClusterIP',
+        endpoints: endpoints.filter(Boolean),
+        age: getAge(service.metadata?.creationTimestamp)
+      };
+    });
+  } catch (error) {
+    console.error('Error fetching service statuses:', error);
+    return [];
+  }
+}
+
+/**
+ * Calculate age from creation timestamp
+ */
+function getAge(timestamp?: string): string {
+  if (!timestamp) return 'unknown';
+  
+  const created = new Date(timestamp);
+  const now = new Date();
+  const diff = now.getTime() - created.getTime();
+  
+  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+  const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+  
+  if (days > 0) {
+    return `${days}d${hours}h`;
+  }
+  return `${hours}h`;
+}
+
 export const getClusterDetails = async (kubeConfig?: string) => {
-  // TODO: Implement actual Kubernetes API call
-  // Placeholder for future implementation
+  // TODO: Implement actual Kubernetes API call using the connection logic above
+  const connection = await connectToKubernetesCluster({ kubeConfig });
+  return connection.clusterInfo;
 };
 
 export const getServiceStatuses = async (kubeConfig?: string, namespace?: string) => {
-  // TODO: Implement actual Kubernetes API call
-  // Placeholder for future implementation
+  // TODO: Implement actual Kubernetes API call using the connection logic above
+  const connection = await connectToKubernetesCluster({ kubeConfig });
+  return connection.serviceStatuses;
 };
 
 export const deployToCluster = async (kubeConfig?: string, manifests?: string[]) => {
-  // TODO: Implement actual Kubernetes API call
-  // Placeholder for future implementation
+  if (!kubeConfig || !manifests || manifests.length === 0) {
+    return {
+      success: false,
+      message: 'Missing kubeconfig or manifests'
+    };
+  }
+  
+  try {
+    // Create KubeConfig
+    const kc = new k8s.KubeConfig();
+    kc.loadFromString(kubeConfig);
+    
+    // Create client for applying manifests
+    const client = k8s.KubernetesObjectApi.makeApiClient(kc);
+    
+    const results = [];
+    
+    // Apply each manifest
+    for (const manifestStr of manifests) {
+      try {
+        // Parse manifest
+        const manifest = JSON.parse(manifestStr);
+        
+        // Apply manifest
+        const { body } = await client.create(manifest);
+        
+        results.push({
+          success: true,
+          resource: `${manifest.kind}/${manifest.metadata?.name}`,
+          details: body
+        });
+      } catch (error) {
+        results.push({
+          success: false,
+          resource: 'Unknown',
+          error: error instanceof Error ? error.message : 'Unknown error'
+        });
+      }
+    }
+    
+    return {
+      success: results.every(r => r.success),
+      results,
+      message: results.every(r => r.success) 
+        ? 'All resources deployed successfully' 
+        : 'Some resources failed to deploy'
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : 'Unknown error occurred during deployment'
+    };
+  }
 };

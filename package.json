@@ -11,6 +11,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@aws-sdk/client-eks": "^3.790.0",
     "@aws-sdk/client-sts": "^3.787.0",
     "@hookform/resolvers": "^3.9.0",
     "@kubernetes/client-node": "^0.21.0",
