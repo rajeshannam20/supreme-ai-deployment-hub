@@ -2,13 +2,13 @@
 import React, { useEffect } from 'react';
 import { useDeployment } from '@/contexts/DeploymentContext';
 import { Card, CardContent } from '@/components/ui/card';
-import LogFilters from '@/components/deployment/logs/LogFilters';
-import LogSearch from '@/components/deployment/logs/LogSearch';
-import LogDisplay from '@/components/deployment/logs/LogDisplay';
 import { useDeploymentLogFiltering } from '@/hooks/useDeploymentLogFiltering';
 import { useLogAutoScroll } from '@/hooks/useLogAutoScroll';
-import { LogHeader } from '@/components/deployment/logs/LogHeader';
-import { LogFooter } from '@/components/deployment/logs/LogFooter';
+import LogFilters from './deployment/logs/LogFilters';
+import LogSearch from './deployment/logs/LogSearch';
+import LogDisplay from './deployment/logs/LogDisplay';
+import { LogHeader } from './deployment/logs/LogHeader';
+import { LogFooter } from './deployment/logs/LogFooter';
 
 const DeploymentLogs = () => {
   const { logs, exportLogs, clearLogs } = useDeployment();
