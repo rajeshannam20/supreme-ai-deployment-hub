@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Sparkles, Mic, MicOff, Send, User } from 'lucide-react';
+import { Sparkles, Mic, MicOff, Send } from 'lucide-react';
 import { Button } from './ui/button';
 import { toast } from 'sonner';
 import { useChat } from '@/contexts/ChatContext';
@@ -81,7 +81,7 @@ const ChatInterface = () => {
       const newMessages = contextMessages.map(msg => ({
         id: msg.id || Date.now().toString(),
         content: msg.content,
-        sender: msg.sender === 'user' ? 'user' : 'assistant',
+        sender: msg.sender === 'user' ? 'user' : 'assistant' as 'user' | 'assistant',
         timestamp: new Date(msg.timestamp || Date.now())
       }));
       
