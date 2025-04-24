@@ -40,4 +40,5 @@ export interface ExecuteCommandOptions {
   command?: string;
   dryRun?: boolean;
   timeout?: number;
+  environment?: string; // Added this field to fix the error
 }
