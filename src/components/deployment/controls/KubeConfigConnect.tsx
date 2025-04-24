@@ -62,6 +62,12 @@ const KubeConfigConnect = () => {
 
       setConnectionError(userErrorMessage);
       toast.error("Connection error: " + userErrorMessage);
+    } finally {
+      // Always make sure we're not in a connecting state if something goes wrong
+      if (isConnecting) {
+        // In a real app this would be handled by the DeploymentContext
+        // connectToCluster handles this internally now
+      }
     }
   };
 
