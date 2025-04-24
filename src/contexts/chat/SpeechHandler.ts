@@ -15,6 +15,9 @@ export class SpeechHandler {
   private voices: SpeechSynthesisVoice[] = [];
   private autoRestart: boolean = false;
   private recognitionTimeout: NodeJS.Timeout | null = null;
+  private retryCount: number = 0;
+  private maxRetries: number = 3;
+  private retryTimeout: number = 2000; // 2 seconds
 
   constructor(options: SpeechOptions = {}) {
     this.options = options;
@@ -54,6 +57,7 @@ export class SpeechHandler {
 
         this.recognition.onstart = () => {
           this.isListening = true;
+          this.retryCount = 0; // Reset retry count on successful start
           if (this.options.onStart) this.options.onStart();
           
           // Set a timeout to restart recognition if it stops unexpectedly
@@ -110,8 +114,27 @@ export class SpeechHandler {
         this.recognition.onerror = (event) => {
           console.error('Speech recognition error:', event.error);
           
+          // Handle specific error types
+          if (event.error === 'network' && this.retryCount < this.maxRetries) {
+            this.retryCount++;
+            console.log(`Network error, retrying (${this.retryCount}/${this.maxRetries})...`);
+            
+            setTimeout(() => {
+              this.restartListening();
+            }, this.retryTimeout);
+          } else if (event.error === 'no-speech' && this.isListening) {
+            // Continue listening if no speech detected
+            console.log("No speech detected, continuing to listen...");
+          } else if (event.error === 'aborted') {
+            console.log("Recognition aborted");
+          } else if (event.error === 'audio-capture') {
+            console.error("Audio capture error - microphone may not be working");
+          } else if (event.error === 'not-allowed') {
+            console.error("Microphone access denied");
+          }
+          
           // Auto recover from errors
-          if (this.isListening && this.autoRestart) {
+          if (this.isListening && this.autoRestart && this.retryCount < this.maxRetries) {
             setTimeout(() => this.restartListening(), 2000);
           }
           
