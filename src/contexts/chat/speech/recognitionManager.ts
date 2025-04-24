@@ -1,9 +1,9 @@
 
 import { toast } from 'sonner';
-import { SpeechOptions } from './types';
+import { SpeechOptions, SpeechRecognitionInstance, SpeechRecognitionEventInstance, SpeechRecognitionErrorEventInstance } from './types';
 
 export class RecognitionManager {
-  private recognition: SpeechRecognition | null = null;
+  private recognition: SpeechRecognitionInstance | null = null;
   private options: SpeechOptions;
   private autoRestart: boolean = false;
   private recognitionTimeout: NodeJS.Timeout | null = null;
@@ -24,7 +24,7 @@ export class RecognitionManager {
 
     try {
       const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
-      this.recognition = new SpeechRecognitionAPI();
+      this.recognition = new SpeechRecognitionAPI() as SpeechRecognitionInstance;
       this.setupRecognition();
     } catch (error) {
       console.error("Error initializing speech recognition:", error);
@@ -60,11 +60,11 @@ export class RecognitionManager {
       }
     };
 
-    this.recognition.onresult = (event) => this.handleRecognitionResult(event);
-    this.recognition.onerror = (event) => this.handleRecognitionError(event);
+    this.recognition.onresult = (event: SpeechRecognitionEventInstance) => this.handleRecognitionResult(event);
+    this.recognition.onerror = (event: SpeechRecognitionErrorEventInstance) => this.handleRecognitionError(event);
   }
 
-  private handleRecognitionResult(event: SpeechRecognitionEvent) {
+  private handleRecognitionResult(event: SpeechRecognitionEventInstance) {
     let interim = '';
     let final = '';
     
@@ -85,7 +85,7 @@ export class RecognitionManager {
     }
   }
 
-  private handleRecognitionError(event: SpeechRecognitionErrorEvent) {
+  private handleRecognitionError(event: SpeechRecognitionErrorEventInstance) {
     console.error('Speech recognition error:', event.error);
     
     if (event.error === 'network' && this.retryCount < this.maxRetries) {
