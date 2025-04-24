@@ -62,6 +62,12 @@ export interface RecoveryExecution {
   logs: string[];
 }
 
+export interface TargetOverride {
+  provider?: CloudProvider;
+  region?: string;
+  environment?: string;
+}
+
 export class DisasterRecoveryService {
   private provider: CloudProvider;
   private config: CloudProviderConfig;
@@ -169,11 +175,7 @@ export class DisasterRecoveryService {
       dryRun?: boolean;
       priority?: string[];
       skipResources?: string[];
-      targetOverride?: {
-        provider?: CloudProvider;
-        region?: string;
-        environment?: string;
-      };
+      targetOverride?: TargetOverride;
     } = {}
   ): Promise<RecoveryExecution> {
     const plan = this.getRecoveryPlan(planId);
@@ -410,7 +412,7 @@ export class DisasterRecoveryService {
     this.recoveryPoints.push(testPoint);
     
     // Define test environment target
-    const targetOverride = {
+    const targetOverride: TargetOverride = {
       environment: `test-${plan.target.environment}`
     };
     
@@ -440,7 +442,7 @@ export class DisasterRecoveryService {
   private buildRecoveryCommand(
     resource: RecoveryResource,
     target: RecoveryPlan['target'],
-    override?: RecoveryExecution['metrics']
+    override?: TargetOverride
   ): string {
     const targetProvider = override?.provider || target.provider;
     const targetRegion = override?.region || target.region;

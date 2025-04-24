@@ -141,7 +141,7 @@ const DeploymentLogs = () => {
             </Badge>
           )}
           {logCounts.WARNING > 0 && (
-            <Badge variant="warning" className="ml-2 bg-yellow-500 hover:bg-yellow-600">
+            <Badge variant="outline" className="ml-2 bg-yellow-500 text-white hover:bg-yellow-600">
               {logCounts.WARNING} {logCounts.WARNING === 1 ? 'Warning' : 'Warnings'}
             </Badge>
           )}
