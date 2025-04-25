@@ -1,10 +1,10 @@
 
 import { useState, useMemo } from 'react';
-import { LogCounts } from '@/components/deployment/logs/LogFilters';
+import { LogCounts, LogFilterType, TimeRangeType } from '@/types/logs';
 
 export const useDeploymentLogFiltering = (logs: string[]) => {
-  const [logFilter, setLogFilter] = useState('all');
-  const [timeRange, setTimeRange] = useState('all');
+  const [logFilter, setLogFilter] = useState<LogFilterType>('all');
+  const [timeRange, setTimeRange] = useState<TimeRangeType>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
 
