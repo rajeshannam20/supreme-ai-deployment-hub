@@ -11,7 +11,6 @@ import {
   Node,
   Edge,
   Connection,
-  CoordinateExtent,
 } from '@xyflow/react';
 import { initialNodes, initialEdges } from './initial-elements';
 import AnnotationNode from './nodes/AnnotationNode';
