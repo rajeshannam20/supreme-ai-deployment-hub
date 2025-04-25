@@ -12,10 +12,8 @@ export const useDeploymentLogFiltering = (logs: Log[]) => {
   const filteredLogs = useMemo(() => {
     return logs.filter(log => {
       // Type filtering
-      if (logFilter !== 'all') {
-        if (log.type !== logFilter && logFilter !== 'all') {
-          return false;
-        }
+      if (logFilter !== 'all' && log.type !== logFilter) {
+        return false;
       }
 
       // Time range filtering
