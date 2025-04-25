@@ -43,8 +43,8 @@ const nodeClassName = (node: any) => node.type;
 const typedInitialNodes: Node[] = initialNodes.map(node => ({
   ...node,
   data: node.data || {}, // Ensure data property exists
-  // Convert string 'parent' to the correct type
-  extent: node.extent === 'parent' ? 'parent' as const : node.extent as CoordinateExtent | undefined
+  // Handle extent property correctly
+  extent: node.extent === 'parent' ? 'parent' as const : undefined
 }));
 
 const PocketFlow: React.FC = () => {
