@@ -56,6 +56,12 @@ jobs:
             echo "API_URL=https://api.devonn.ai" >> $GITHUB_ENV
           fi
       
+      - name: Validate OpenAI API Key
+        if: ${{ env.ENVIRONMENT == 'production' }}
+        run: node scripts/validate-openai-key.js
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      
       - name: Build extension
         run: npm run build:${{ env.ENVIRONMENT }}
       
@@ -64,36 +70,17 @@ jobs:
           cd dist
           zip -r ../devonn-ai-${{ env.ENVIRONMENT }}.zip *
       
-      - name: Set up Chrome Web Store CLI
-        run: npm install -g chrome-webstore-upload-cli
-      
       - name: Upload to Chrome Web Store
         if: ${{ github.event.inputs.environment == 'production' || github.ref == 'refs/heads/main' }}
         run: |
-          webstore upload --source devonn-ai-${{ env.ENVIRONMENT }}.zip \
-            --extension-id ${{ secrets.CHROME_EXTENSION_ID }} \
-            --client-id ${{ secrets.CHROME_CLIENT_ID }} \
-            --client-secret ${{ secrets.CHROME_CLIENT_SECRET }} \
-            --refresh-token ${{ secrets.CHROME_REFRESH_TOKEN }}
-      
-      - name: Verify successful upload
-        if: ${{ github.event.inputs.environment == 'production' || github.ref == 'refs/heads/main' }}
-        run: |
-          # Check that the upload was successful
-          if [ $? -ne 0 ]; then
-            echo "Failed to upload extension to Chrome Web Store"
-            exit 1
-          fi
-          echo "Successfully uploaded extension to Chrome Web Store"
-      
-      - name: Publish to Chrome Web Store
-        if: ${{ github.event.inputs.environment == 'production' || github.ref == 'refs/heads/main' }}
-        run: |
-          webstore publish \
-            --extension-id ${{ secrets.CHROME_EXTENSION_ID }} \
-            --client-id ${{ secrets.CHROME_CLIENT_ID }} \
-            --client-secret ${{ secrets.CHROME_CLIENT_SECRET }} \
-            --refresh-token ${{ secrets.CHROME_REFRESH_TOKEN }}
+          node scripts/upload-to-chrome-webstore.js
+        env:
+          CHROME_EXTENSION_ID: ${{ secrets.CHROME_EXTENSION_ID }}
+          CHROME_CLIENT_ID: ${{ secrets.CHROME_CLIENT_ID }}
+          CHROME_CLIENT_SECRET: ${{ secrets.CHROME_CLIENT_SECRET }}
+          CHROME_REFRESH_TOKEN: ${{ secrets.CHROME_REFRESH_TOKEN }}
+          ZIP_PATH: devonn-ai-${{ env.ENVIRONMENT }}.zip
+          PUBLISH_EXTENSION: ${{ env.ENVIRONMENT == 'production' }}
       
       - name: Create GitHub Release
         if: ${{ github.event.inputs.environment == 'production' || github.ref == 'refs/heads/main' }}
@@ -105,6 +92,26 @@ jobs:
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Notify Slack on Success
+        if: success()
+        run: |
+          curl -X POST -H 'Content-type: application/json' --data '{
+            "text": "✅ *Deployment Successful!*\nEnvironment: ${{ env.ENVIRONMENT }}\nBranch: ${{ github.ref_name }}\nTriggered by: ${{ github.actor }}"
+          }' ${{ secrets.SLACK_WEBHOOK_URL }}
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        continue-on-error: true
+
+      - name: Notify Slack on Failure
+        if: failure()
+        run: |
+          curl -X POST -H 'Content-type: application/json' --data '{
+            "text": "❌ *Deployment Failed!*\nEnvironment: ${{ env.ENVIRONMENT }}\nBranch: ${{ github.ref_name }}\nTriggered by: ${{ github.actor }}\nSee: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          }' ${{ secrets.SLACK_WEBHOOK_URL }}
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        continue-on-error: true
 
   smoke-test:
     name: Post-Deployment Smoke Test
@@ -144,3 +151,4 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL || '' }}
           SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
+

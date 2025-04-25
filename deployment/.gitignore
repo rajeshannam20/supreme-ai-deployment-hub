@@ -2,3 +2,5 @@
 # Ignore environment-specific builds
 *.zip
 env-config.ts
+.env
+
