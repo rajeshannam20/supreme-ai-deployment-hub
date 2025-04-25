@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Card, CardContent } from './ui/card';
 import { useDeployment } from '@/contexts/DeploymentContext';
 import { useDeploymentLogFiltering } from '@/hooks/useDeploymentLogFiltering';
+import { Log } from '@/types/logs';
 
 import { LogFilters } from '@/components/deployment/logs/LogFilters';
 import { LogSearch } from '@/components/deployment/logs/LogSearch';
@@ -13,6 +14,24 @@ import { LogFooter } from '@/components/deployment/logs/LogFooter';
 const DeploymentLogs: React.FC = () => {
   const { logs, clearLogs } = useDeployment();
   const [autoScroll, setAutoScroll] = useState(true);
+  
+  // Convert string logs to Log objects
+  const logObjects: Log[] = logs.map(logString => {
+    // Parse log string: [YYYY-MM-DD HH:MM:SS] TYPE: Message
+    const timestampMatch = logString.match(/\[([\d-]+ [\d:]+)\]/);
+    const timestamp = timestampMatch ? timestampMatch[1] : new Date().toISOString();
+    
+    let type: 'info' | 'error' | 'warning' | 'success' | 'debug' = 'info';
+    if (logString.includes('ERROR')) type = 'error';
+    else if (logString.includes('WARNING')) type = 'warning';
+    else if (logString.includes('SUCCESS')) type = 'success';
+    else if (logString.includes('DEBUG')) type = 'debug';
+    
+    const messageMatch = logString.match(/\]\s*[A-Z]+:\s*(.*)/);
+    const message = messageMatch ? messageMatch[1] : logString;
+    
+    return { message, timestamp, type };
+  });
   
   const {
     logFilter,
@@ -25,7 +44,7 @@ const DeploymentLogs: React.FC = () => {
     setIsSearching,
     filteredLogs,
     logCounts
-  } = useDeploymentLogFiltering(logs);
+  } = useDeploymentLogFiltering(logObjects);
 
   return (
     <Card>

@@ -1,14 +1,15 @@
 
 import { renderHook, act } from '@testing-library/react-hooks';
 import { useDeploymentLogFiltering } from '../useDeploymentLogFiltering';
+import { Log } from '@/types/logs';
 
 describe('useDeploymentLogFiltering', () => {
-  const mockLogs = [
-    '[2024-04-24 10:00:00] INFO: Server started',
-    '[2024-04-24 10:00:01] ERROR: Connection failed',
-    '[2024-04-24 10:00:02] WARNING: High memory usage',
-    '[2024-04-24 10:00:03] SUCCESS: Task completed',
-    '[2024-04-24 10:00:04] DEBUG: Processing request'
+  const mockLogs: Log[] = [
+    { message: 'Server started', timestamp: '2024-04-24 10:00:00', type: 'info' },
+    { message: 'Connection failed', timestamp: '2024-04-24 10:00:01', type: 'error' },
+    { message: 'High memory usage', timestamp: '2024-04-24 10:00:02', type: 'warning' },
+    { message: 'Task completed', timestamp: '2024-04-24 10:00:03', type: 'success' },
+    { message: 'Processing request', timestamp: '2024-04-24 10:00:04', type: 'debug' }
   ];
 
   it('initializes with default values', () => {
@@ -27,7 +28,7 @@ describe('useDeploymentLogFiltering', () => {
     });
     
     expect(result.current.filteredLogs).toHaveLength(1);
-    expect(result.current.filteredLogs[0]).toContain('ERROR: Connection failed');
+    expect(result.current.filteredLogs[0].message).toContain('Connection failed');
   });
 
   it('filters logs by search query', () => {
@@ -39,7 +40,7 @@ describe('useDeploymentLogFiltering', () => {
     });
     
     expect(result.current.filteredLogs).toHaveLength(1);
-    expect(result.current.filteredLogs[0]).toContain('Server started');
+    expect(result.current.filteredLogs[0].message).toContain('Server started');
   });
 
   it('calculates log counts correctly', () => {
