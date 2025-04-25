@@ -1,34 +1,38 @@
+import { useEffect, useRef, RefObject } from 'react';
 
-import { useEffect, useRef } from 'react';
+/**
+ * Hook to enable automatic scrolling of logs
+ * 
+ * @param scrollAreaRef Reference to the scroll area element
+ * @param logs Array of logs to watch for changes
+ * @param autoScroll Boolean to enable/disable auto-scrolling
+ */
+export const useLogAutoScroll = (
+  scrollAreaRef: RefObject<HTMLDivElement>,
+  logs: string[],
+  autoScroll: boolean
+) => {
+  // Keep track of previous logs count to determine if new logs were added
+  const prevLogsCountRef = useRef<number>(0);
 
-export function useLogAutoScroll(
-  enabled: boolean,
-  items: any[],
-  scrollAreaRef: React.RefObject<HTMLDivElement>
-) {
-  const shouldScrollRef = useRef(true);
-
+  // Effect to handle auto-scrolling when logs change
   useEffect(() => {
-    if (!enabled || !scrollAreaRef.current) return;
-    
-    const scrollElement = scrollAreaRef.current;
-    
-    // Check if user has scrolled up manually
-    const handleScroll = () => {
-      const { scrollTop, scrollHeight, clientHeight } = scrollElement;
-      const isScrolledToBottom = Math.abs(scrollHeight - scrollTop - clientHeight) < 10;
-      shouldScrollRef.current = isScrolledToBottom;
+    const scrollToBottom = () => {
+      if (scrollAreaRef.current) {
+        const scrollContainer = scrollAreaRef.current;
+        scrollContainer.scrollTop = scrollContainer.scrollHeight;
+      }
     };
 
-    scrollElement.addEventListener('scroll', handleScroll);
-    
-    // Scroll to bottom if user hasn't scrolled up
-    if (shouldScrollRef.current) {
-      scrollElement.scrollTop = scrollElement.scrollHeight;
+    // Check if new logs were added
+    const newLogsAdded = logs.length > prevLogsCountRef.current;
+    prevLogsCountRef.current = logs.length;
+
+    // Scroll to bottom if auto-scroll is enabled and new logs were added
+    if (autoScroll && newLogsAdded) {
+      requestAnimationFrame(scrollToBottom);
     }
-    
-    return () => {
-      scrollElement.removeEventListener('scroll', handleScroll);
-    };
-  }, [items, enabled, scrollAreaRef]);
-}
+  }, [logs, autoScroll, scrollAreaRef]);
+};
+
+export default useLogAutoScroll;

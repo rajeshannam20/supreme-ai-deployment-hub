@@ -6,5 +6,7 @@ export * from './stepUtils';
 export * from './commandExecution';
 export * from './deploymentValidator';
 export * from './deploymentActions';
-export * from './deploymentOrchestrator';
+export * from './orchestration';
 
+// For backward compatibility
+export { runDeploymentProcess, performRollback } from './orchestration';
