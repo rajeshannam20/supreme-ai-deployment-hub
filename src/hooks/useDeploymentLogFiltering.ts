@@ -1,6 +1,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 
+// Update the interface to include an index signature
 interface LogCounts {
   INFO: number;
   WARNING: number;
@@ -8,6 +9,7 @@ interface LogCounts {
   DEBUG: number;
   TRACE: number;
   total: number;
+  [key: string]: number; // Add index signature to make it compatible with Record<string, number>
 }
 
 export const useDeploymentLogFiltering = (logs: string[]) => {
