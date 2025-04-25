@@ -1,6 +1,6 @@
 
 import { renderHook, act } from '@testing-library/react-hooks';
-import { useDeploymentLogFiltering } from '../../hooks/useDeploymentLogFiltering';
+import { useDeploymentLogFiltering } from '../useDeploymentLogFiltering';
 
 describe('useDeploymentLogFiltering', () => {
   const mockLogs = [
@@ -23,7 +23,7 @@ describe('useDeploymentLogFiltering', () => {
     const { result } = renderHook(() => useDeploymentLogFiltering(mockLogs));
     
     act(() => {
-      result.current.setLogFilter('ERROR');
+      result.current.setLogFilter('error');
     });
     
     expect(result.current.filteredLogs).toHaveLength(1);
@@ -35,6 +35,7 @@ describe('useDeploymentLogFiltering', () => {
     
     act(() => {
       result.current.setSearchQuery('Server');
+      result.current.setIsSearching(true);
     });
     
     expect(result.current.filteredLogs).toHaveLength(1);
@@ -45,12 +46,11 @@ describe('useDeploymentLogFiltering', () => {
     const { result } = renderHook(() => useDeploymentLogFiltering(mockLogs));
     
     expect(result.current.logCounts).toEqual({
-      ERROR: 1,
-      WARNING: 1,
-      SUCCESS: 1,
-      INFO: 1,
-      DEBUG: 1,
-      total: 5
+      all: 5,
+      info: 1,
+      warning: 1,
+      error: 1,
+      success: 1
     });
   });
 
@@ -62,7 +62,7 @@ describe('useDeploymentLogFiltering', () => {
     const { result } = renderHook(() => useDeploymentLogFiltering(mockLogs));
     
     act(() => {
-      result.current.setTimeRange('1'); // Last 1 minute
+      result.current.setTimeRange('hour');
     });
     
     expect(result.current.filteredLogs.length).toBeLessThanOrEqual(mockLogs.length);

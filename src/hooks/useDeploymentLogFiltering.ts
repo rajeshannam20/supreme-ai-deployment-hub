@@ -2,13 +2,7 @@
 import { useState, useMemo } from 'react';
 import { LogCounts } from '@/components/deployment/logs/LogFilters';
 
-interface Log {
-  message: string;
-  timestamp: Date;
-  type?: 'info' | 'error' | 'warning' | 'success';
-}
-
-export const useDeploymentLogFiltering = (logs: Log[]) => {
+export const useDeploymentLogFiltering = (logs: string[]) => {
   const [logFilter, setLogFilter] = useState('all');
   const [timeRange, setTimeRange] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -18,23 +12,31 @@ export const useDeploymentLogFiltering = (logs: Log[]) => {
   const filteredLogs = useMemo(() => {
     return logs.filter(log => {
       // Type filtering
-      if (logFilter !== 'all' && log.type !== logFilter) {
-        return false;
+      if (logFilter !== 'all') {
+        const logType = logFilter.toUpperCase();
+        if (!log.includes(logType)) {
+          return false;
+        }
       }
 
       // Time range filtering
       if (timeRange !== 'all') {
-        const now = new Date();
-        const logTime = new Date(log.timestamp);
-        const diffMs = now.getTime() - logTime.getTime();
-        
-        if (timeRange === 'recent' && diffMs > 10 * 60 * 1000) return false;
-        if (timeRange === 'hour' && diffMs > 60 * 60 * 1000) return false;
-        if (timeRange === 'day' && diffMs > 24 * 60 * 60 * 1000) return false;
+        // Extract timestamp from log entry [YYYY-MM-DD HH:MM:SS]
+        const timestampMatch = log.match(/\[([\d-]+ [\d:]+)\]/);
+        if (timestampMatch) {
+          const now = new Date();
+          const logTime = new Date(timestampMatch[1]);
+          const diffMs = now.getTime() - logTime.getTime();
+          
+          if (timeRange === 'recent' && diffMs > 10 * 60 * 1000) return false;
+          if (timeRange === 'hour' && diffMs > 60 * 60 * 1000) return false;
+          if (timeRange === 'day' && diffMs > 24 * 60 * 60 * 1000) return false;
+          if (timeRange === 'week' && diffMs > 7 * 24 * 60 * 60 * 1000) return false;
+        }
       }
 
       // Search filtering
-      if (isSearching && searchQuery && !log.message.toLowerCase().includes(searchQuery.toLowerCase())) {
+      if (isSearching && searchQuery && !log.toLowerCase().includes(searchQuery.toLowerCase())) {
         return false;
       }
 
@@ -46,10 +48,10 @@ export const useDeploymentLogFiltering = (logs: Log[]) => {
   const logCounts: LogCounts = useMemo(() => {
     return {
       all: logs.length,
-      info: logs.filter(log => log.type === 'info').length,
-      warning: logs.filter(log => log.type === 'warning').length,
-      error: logs.filter(log => log.type === 'error').length,
-      success: logs.filter(log => log.type === 'success').length
+      info: logs.filter(log => log.includes('INFO')).length,
+      warning: logs.filter(log => log.includes('WARNING')).length,
+      error: logs.filter(log => log.includes('ERROR')).length,
+      success: logs.filter(log => log.includes('SUCCESS')).length
     };
   }, [logs]);
 
