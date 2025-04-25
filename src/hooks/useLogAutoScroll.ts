@@ -12,3 +12,5 @@ export const useLogAutoScroll = (logs: string[], autoScroll: boolean) => {
 
   return logsEndRef;
 };
+
+export default useLogAutoScroll;
