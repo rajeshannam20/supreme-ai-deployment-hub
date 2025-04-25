@@ -11,6 +11,7 @@ import {
   Node,
   Edge,
   Connection,
+  CoordinateExtent,
 } from '@xyflow/react';
 import { initialNodes, initialEdges } from './initial-elements';
 import AnnotationNode from './nodes/AnnotationNode';
@@ -38,10 +39,12 @@ const edgeTypes = {
 
 const nodeClassName = (node: any) => node.type;
 
-// Make sure all nodes have the required data property
+// Make sure all nodes have the required data property and correct extent type
 const typedInitialNodes: Node[] = initialNodes.map(node => ({
   ...node,
-  data: node.data || {}  // Ensure data property exists
+  data: node.data || {}, // Ensure data property exists
+  // Convert string 'parent' to the correct type
+  extent: node.extent === 'parent' ? 'parent' as const : node.extent as CoordinateExtent | undefined
 }));
 
 const PocketFlow: React.FC = () => {
