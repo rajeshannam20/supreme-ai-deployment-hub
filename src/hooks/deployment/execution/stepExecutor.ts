@@ -58,6 +58,15 @@ export const executeDeploymentStep = async (
   updateStep(stepId, { status: 'in-progress', progress: 0, outputLog: [] });
   addLog(`[${step.title}] - Starting...`);
 
+  // Create a complete retry strategy by merging with defaults
+  const completeRetryStrategy: RetryStrategy = {
+    maxAttempts: 3,
+    initialDelayMs: 1000,
+    backoffFactor: 2,
+    maxDelayMs: 30000,
+    ...retryStrategy
+  };
+
   // Execute the step operation with retry capabilities
   try {
     return await executeWithRetry(
@@ -77,7 +86,7 @@ export const executeDeploymentStep = async (
       // Function to determine if we can retry
       (error) => canAutoRecover(error),
       // Retry strategy
-      retryStrategy || {},
+      completeRetryStrategy,
       // On retry callback
       (attemptNumber, delay) => {
         addLog(

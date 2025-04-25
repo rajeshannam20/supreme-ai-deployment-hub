@@ -1,92 +1,57 @@
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
+import { LogCounts } from '@/components/deployment/logs/LogFilters';
 
-// Update the interface to include an index signature
-interface LogCounts {
-  INFO: number;
-  WARNING: number;
-  ERROR: number;
-  DEBUG: number;
-  TRACE: number;
-  total: number;
-  [key: string]: number; // Add index signature to make it compatible with Record<string, number>
+interface Log {
+  message: string;
+  timestamp: Date;
+  type?: 'info' | 'error' | 'warning' | 'success';
 }
 
-export const useDeploymentLogFiltering = (logs: string[]) => {
-  const [logFilter, setLogFilter] = useState<string>('ALL');
-  const [timeRange, setTimeRange] = useState<string>('all');
-  const [searchQuery, setSearchQuery] = useState<string>('');
-  const [isSearching, setIsSearching] = useState<boolean>(false);
+export const useDeploymentLogFiltering = (logs: Log[]) => {
+  const [logFilter, setLogFilter] = useState('all');
+  const [timeRange, setTimeRange] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
 
-  // Count logs by type
-  const logCounts = useMemo(() => {
-    const counts = logs.reduce((counts, log) => {
-      if (log.includes('[INFO]')) counts.INFO++;
-      else if (log.includes('[WARNING]')) counts.WARNING++;
-      else if (log.includes('[ERROR]')) counts.ERROR++;
-      else if (log.includes('[DEBUG]')) counts.DEBUG++;
-      else if (log.includes('[TRACE]')) counts.TRACE++;
-      return counts;
-    }, { INFO: 0, WARNING: 0, ERROR: 0, DEBUG: 0, TRACE: 0 } as LogCounts);
-    
-    // Calculate total count
-    counts.total = counts.INFO + counts.WARNING + counts.ERROR + counts.DEBUG + counts.TRACE;
-    
-    return counts;
-  }, [logs]);
-
-  // Filter logs by type and time
+  // Filter logs based on type and time range
   const filteredLogs = useMemo(() => {
-    let filtered = [...logs];
-
-    // Filter by log level
-    if (logFilter !== 'ALL') {
-      filtered = filtered.filter(log => log.includes(`[${logFilter}]`));
-    }
-
-    // Filter by time range
-    if (timeRange !== 'all' && filtered.length > 0) {
-      const now = new Date();
-      let cutoffTime: Date;
-
-      switch (timeRange) {
-        case 'hour':
-          cutoffTime = new Date(now.getTime() - 60 * 60 * 1000);
-          break;
-        case 'day':
-          cutoffTime = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-          break;
-        case 'week':
-          cutoffTime = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-          break;
-        default:
-          return filtered;
+    return logs.filter(log => {
+      // Type filtering
+      if (logFilter !== 'all' && log.type !== logFilter) {
+        return false;
       }
 
-      filtered = filtered.filter(log => {
-        try {
-          // Extract timestamp assuming format like: "[2025-04-24T12:34:56.789Z]"
-          const timestamp = log.match(/\[([\d\-T:.Z]+)\]/)?.[1];
-          if (timestamp) {
-            const logDate = new Date(timestamp);
-            return logDate >= cutoffTime;
-          }
-          return true;
-        } catch (e) {
-          return true;
-        }
-      });
-    }
+      // Time range filtering
+      if (timeRange !== 'all') {
+        const now = new Date();
+        const logTime = new Date(log.timestamp);
+        const diffMs = now.getTime() - logTime.getTime();
+        
+        if (timeRange === 'recent' && diffMs > 10 * 60 * 1000) return false;
+        if (timeRange === 'hour' && diffMs > 60 * 60 * 1000) return false;
+        if (timeRange === 'day' && diffMs > 24 * 60 * 60 * 1000) return false;
+      }
 
-    // Filter by search query
-    if (searchQuery) {
-      filtered = filtered.filter(log => 
-        log.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-    }
+      // Search filtering
+      if (isSearching && searchQuery && !log.message.toLowerCase().includes(searchQuery.toLowerCase())) {
+        return false;
+      }
 
-    return filtered;
-  }, [logs, logFilter, timeRange, searchQuery]);
+      return true;
+    });
+  }, [logs, logFilter, timeRange, searchQuery, isSearching]);
+
+  // Calculate log counts for the badges
+  const logCounts: LogCounts = useMemo(() => {
+    return {
+      all: logs.length,
+      info: logs.filter(log => log.type === 'info').length,
+      warning: logs.filter(log => log.type === 'warning').length,
+      error: logs.filter(log => log.type === 'error').length,
+      success: logs.filter(log => log.type === 'success').length
+    };
+  }, [logs]);
 
   return {
     logFilter,
@@ -101,5 +66,3 @@ export const useDeploymentLogFiltering = (logs: string[]) => {
     logCounts
   };
 };
-
-export default useDeploymentLogFiltering;
