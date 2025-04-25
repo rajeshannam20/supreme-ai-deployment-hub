@@ -3,7 +3,7 @@ import { RetryStrategy } from './types';
 import { executeDeploymentStep } from './stepExecution';
 import { UseDeploymentProcessProps } from './types';
 import { validateDeploymentBeforeStart } from './deploymentValidator';
-import { runDeploymentProcess } from './deploymentOrchestrator';
+import { runDeploymentProcess } from './orchestration/deploymentOrchestrator';
 import { toast } from '@/hooks/use-toast';
 
 /**
