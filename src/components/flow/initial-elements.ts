@@ -1,5 +1,5 @@
 
-import { MarkerType } from '@xyflow/react';
+import { MarkerType, Node, Edge } from '@xyflow/react';
 
 export const initialNodes = [
   {
@@ -70,11 +70,12 @@ export const initialNodes = [
       width: 380,
       height: 180,
     },
+    data: {}, // Add empty data object to satisfy Node type
   },
   {
     id: '2-2',
-    data: {},
     type: 'tools',
+    data: {},
     position: { x: 50, y: 50 },
     style: {
       width: 80,

@@ -8,6 +8,9 @@ import {
   Background,
   useNodesState,
   useEdgesState,
+  Node,
+  Edge,
+  Connection,
 } from '@xyflow/react';
 import { initialNodes, initialEdges } from './initial-elements';
 import AnnotationNode from './nodes/AnnotationNode';
@@ -35,11 +38,18 @@ const edgeTypes = {
 
 const nodeClassName = (node: any) => node.type;
 
+// Make sure all nodes have the required data property
+const typedInitialNodes: Node[] = initialNodes.map(node => ({
+  ...node,
+  data: node.data || {}  // Ensure data property exists
+}));
+
 const PocketFlow: React.FC = () => {
-  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
-  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
+  const [nodes, setNodes, onNodesChange] = useNodesState(typedInitialNodes);
+  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges as Edge[]);
+  
   const onConnect = useCallback(
-    (params) => setEdges((eds) => addEdge(params, eds)),
+    (params: Connection) => setEdges((eds) => addEdge(params, eds)),
     [],
   );
 

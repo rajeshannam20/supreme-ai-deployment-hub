@@ -1,8 +1,8 @@
 
+/* Global Flow Styles */
 @import url('./xy-theme.css');
 
 /* Circle Node */
-
 .react-flow__node-circle {
   border-radius: 50%;
   height: 100px;
@@ -12,7 +12,6 @@
 }
 
 /* Text Input Node */
-
 .react-flow__node-textinput {
   width: 150px;
   font-family: monospace;
@@ -38,7 +37,6 @@ input[type='number']::-webkit-inner-spin-button {
 }
 
 /* Annotation Node */
-
 .react-flow__node-annotation {
   font-size: 16px;
   width: 200px;
@@ -66,14 +64,13 @@ input[type='number']::-webkit-inner-spin-button {
 }
 
 /* Toolbar Node */
-
-.react-flow__node-toolbar {
+.react-flow__node-tools {
   background-color: #000000;
   border-radius: 16px;
   overflow: hidden;
 }
 
-.react-flow__node-toolbar button {
+.react-flow__node-tools button {
   cursor: pointer;
   background: inherit;
   border: none;
@@ -83,12 +80,11 @@ input[type='number']::-webkit-inner-spin-button {
   box-shadow: var(--xy-node-boxshadow-default);
 }
 
-.react-flow__node-toolbar button:hover {
+.react-flow__node-tools button:hover {
   background: #4d4d4d;
 }
 
 /* Resizer Node */
-
 .resizer-node__handles {
   display: flex;
   position: absolute;
@@ -105,7 +101,6 @@ input[type='number']::-webkit-inner-spin-button {
 }
 
 /* Button Edge */
-
 .button-edge__label {
   position: absolute;
   pointer-events: all;
@@ -134,7 +129,6 @@ input[type='number']::-webkit-inner-spin-button {
 }
 
 /* Custom Handles */
-
 .react-flow__handle.custom-handle {
   background-color: var(--xy-handle-border-color-default);
   border-radius: 1px;
@@ -169,7 +163,6 @@ input[type='number']::-webkit-inner-spin-button {
 }
 
 /* Minimap */
-
 .react-flow__minimap .group {
   fill-opacity: 0.4;
 }
