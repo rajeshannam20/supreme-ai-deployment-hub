@@ -14,6 +14,7 @@ import NotFound from "./pages/NotFound";
 import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
 import AgentDashboard from "./pages/AgentDashboard";
+import FlowEditor from "./pages/FlowEditor"; // Import the new flow editor page
 import { Toaster } from "./components/ui/sonner";
 import { ChatProvider } from "./contexts/ChatContext";
 import { ThemeProvider } from 'next-themes';
@@ -36,6 +37,7 @@ function App() {
                   <Route path="/documentation" element={<Documentation />} />
                   <Route path="/agents" element={<AgentDashboard />} />
                   <Route path="/devonn" element={<DevonnDashboard />} />
+                  <Route path="/flow" element={<FlowEditor />} /> {/* Add the new route */}
                   <Route path="/about" element={<About />} />
                   <Route path="/contact" element={<Contact />} />
                   <Route path="/terms" element={<Terms />} />

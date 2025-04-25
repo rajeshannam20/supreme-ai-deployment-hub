@@ -3,6 +3,7 @@ import React, { useEffect } from 'react';
 import { motion, useScroll, useSpring } from 'framer-motion';
 import Footer from '@/components/Footer';
 import { toast } from 'sonner';
+import { Link } from 'react-router-dom';
 
 // Import all the component sections
 import HeroSection from '@/components/index/HeroSection';
@@ -81,6 +82,33 @@ const Index = () => {
       <Testimonials />
       <FAQSection />
       <ManifestSection />
+      
+      {/* New Flow Editor Callout */}
+      <div className="py-12 bg-muted/50">
+        <div className="container mx-auto px-4">
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="max-w-3xl mx-auto text-center"
+          >
+            <h2 className="text-3xl font-bold mb-6">Interactive Flow Editor</h2>
+            <p className="text-lg mb-8">
+              Design complex workflows visually with our powerful PocketFlow editor, based on ReactFlow technology.
+            </p>
+            <Link to="/flow">
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="px-8 py-3 bg-primary text-white rounded-lg shadow-lg hover:bg-primary/90 transition-colors"
+              >
+                Try Flow Editor
+              </motion.button>
+            </Link>
+          </motion.div>
+        </div>
+      </div>
+      
       <CTASection />
       
       <Footer />
