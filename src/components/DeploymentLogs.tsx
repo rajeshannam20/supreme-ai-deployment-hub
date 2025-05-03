@@ -1,15 +1,16 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent } from './ui/card';
 import { useDeployment } from '@/contexts/DeploymentContext';
 import { useDeploymentLogFiltering } from '@/hooks/useDeploymentLogFiltering';
 import { Log } from '@/types/logs';
 
-import { LogFilters } from '@/components/deployment/logs/LogFilters';
-import { LogSearch } from '@/components/deployment/logs/LogSearch';
-import { LogDisplay } from '@/components/deployment/logs/LogDisplay';
-import { LogHeader } from '@/components/deployment/logs/LogHeader';
-import { LogFooter } from '@/components/deployment/logs/LogFooter';
+import { 
+  LogFilters, 
+  LogSearch, 
+  LogDisplay, 
+  LogHeader, 
+  LogFooter 
+} from '@/components/deployment/logs';
 
 const DeploymentLogs: React.FC = () => {
   const { logs, clearLogs } = useDeployment();
