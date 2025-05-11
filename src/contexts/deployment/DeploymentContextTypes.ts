@@ -1,40 +1,31 @@
 
-import { 
-  CloudProvider,
-  DeploymentConfig,
-  DeploymentEnvironment,
-  DeploymentStatus,
-  DeploymentStep,
-  ServiceStatus,
-  ClusterStatus,
-  CloudProviderCredentials
-} from '../../types/deployment';
+import { ReactNode } from 'react';
 
-// Context interface
+// Types for logging
+export type LogType = 'info' | 'error' | 'warning' | 'success' | 'debug';
+
+// Main deployment context type
 export interface DeploymentContextType {
-  deploymentSteps: DeploymentStep[];
-  clusterStatus: ClusterStatus;
-  serviceStatus: ServiceStatus[];
-  logs: string[];
-  currentStep: string;
-  isConnected: boolean;
-  isConnecting: boolean;
+  // State
   isDeploying: boolean;
-  provider: CloudProvider;
-  providerCredentials: CloudProviderCredentials | null;
-  deploymentConfig: DeploymentConfig | null;
-  environment: DeploymentEnvironment;
-  overallProgress: number; // Added overall progress percentage
-  connectToCluster: (kubeConfig?: string) => Promise<boolean>;
-  disconnectFromCluster: () => boolean;
-  setCloudProvider: (provider: CloudProvider) => boolean;
-  setDeploymentEnvironment: (environment: DeploymentEnvironment) => void;
-  updateDeploymentConfig: (config: Partial<DeploymentConfig>) => void;
-  startDeployment: () => Promise<void>;
-  runStep: (stepId: string, timeoutMs?: number) => Promise<boolean>;
-  retryStep?: (stepId: string) => Promise<boolean>;
+  progress: number;
+  logs: string[];
+  status: 'idle' | 'running' | 'success' | 'error' | 'canceled';
+  
+  // Actions
+  startDeployment: () => void;
   cancelDeployment: () => void;
-  getDeploymentSummary: () => string;
-  exportLogs?: () => string;
-  clearLogs?: () => void;
+  resetDeployment: () => void;
+  addLog: (message: string, type?: LogType, context?: Record<string, any>) => void;
+  clearLogs: () => void;
+  
+  // Configuration
+  environment: string;
+  setEnvironment: (env: string) => void;
+  provider: string;
+  setProvider: (provider: string) => void;
+}
+
+export interface DeploymentProviderProps {
+  children: ReactNode;
 }

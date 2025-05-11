@@ -15,7 +15,7 @@ import {
 } from '@/components/deployment/logs';
 
 const DeploymentLogs: React.FC = () => {
-  const { logs, clearLogs } = useDeployment();
+  const { logs, clearLogs, addLog } = useDeployment();
   const [autoScroll, setAutoScroll] = useState(true);
   const [isStreaming, setIsStreaming] = useState(false);
   const [streamInterval, setStreamInterval] = useState<NodeJS.Timeout | null>(null);
@@ -111,21 +111,18 @@ const DeploymentLogs: React.FC = () => {
     } else {
       // This is a simulation - in a real app, we'd connect to a websocket or SSE
       const interval = setInterval(() => {
-        const { addLog } = useDeployment();
         const types = ['info', 'error', 'warning', 'success', 'debug'] as const;
         const randomType = types[Math.floor(Math.random() * types.length)];
         const randomMessage = `Auto-generated log message at ${new Date().toLocaleTimeString()}`;
         
-        if (typeof addLog === 'function') {
-          addLog(randomMessage, randomType);
-        }
+        addLog(randomMessage, randomType);
       }, 3000);
       
       setStreamInterval(interval);
       setIsStreaming(true);
       toast.success('Log streaming started');
     }
-  }, [isStreaming, streamInterval]);
+  }, [isStreaming, streamInterval, addLog]);
 
   // Clean up on unmount
   useEffect(() => {

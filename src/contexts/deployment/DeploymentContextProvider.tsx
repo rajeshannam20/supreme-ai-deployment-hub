@@ -1,146 +1,125 @@
 
-import React, { createContext, useMemo, ReactNode } from 'react';
-import { DeploymentContextType } from './DeploymentContextTypes';
+import React, { createContext, useState, useCallback, useMemo } from 'react';
+import { DeploymentContextType, DeploymentProviderProps, LogType } from './DeploymentContextTypes';
+import { useDeploymentLogs } from '@/hooks/useDeploymentLogs';
 
-import { useDeploymentLogs } from '../../hooks/useDeploymentLogs';
-import { useDeploymentSteps } from '../../hooks/useDeploymentSteps';
-import { useClusterConnection } from '../../hooks/useClusterConnection';
-import { useDeploymentProcess } from '../../hooks/useDeploymentProcess';
+// Create the context with default values
+export const DeploymentContext = createContext<DeploymentContextType>({
+  isDeploying: false,
+  progress: 0,
+  logs: [],
+  status: 'idle',
+  startDeployment: () => {},
+  cancelDeployment: () => {},
+  resetDeployment: () => {},
+  addLog: () => {},
+  clearLogs: () => {},
+  environment: 'development',
+  setEnvironment: () => {},
+  provider: 'aws',
+  setProvider: () => {},
+});
 
-import { ConfigProvider, useConfig } from './providers/ConfigProvider';
-import { ProgressProvider, useProgress } from './providers/ProgressProvider';
-import { SummaryProvider, useSummary } from './providers/SummaryProvider';
-
-export const DeploymentContext = createContext<DeploymentContextType | undefined>(undefined);
-
-export const DeploymentContextProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  // Core hooks
-  const { logs, addLog, exportLogs, clearLogs } = useDeploymentLogs();
+export const DeploymentProvider: React.FC<DeploymentProviderProps> = ({ children }) => {
+  const [isDeploying, setIsDeploying] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [status, setStatus] = useState<'idle' | 'running' | 'success' | 'error' | 'canceled'>('idle');
+  const [environment, setEnvironment] = useState('development');
+  const [provider, setProvider] = useState('aws');
   
-  const { deploymentSteps, currentStep, setCurrentStep, updateStep } = useDeploymentSteps();
-  
+  // Use the deployment logs hook
   const { 
-    isConnected, 
-    isConnecting, 
-    clusterStatus, 
-    serviceStatus, 
-    provider, 
-    providerCredentials,
-    connectToCluster, 
-    disconnectFromCluster,
-    setCloudProvider 
-  } = useClusterConnection(addLog);
-
-  // Compose the inner content with all providers
-  const InnerContent: React.FC = () => {
-    // Access the context from providers
-    const { overallProgress } = useProgress();
+    logs, 
+    addLog: addLogInternal, 
+    clearLogs: clearLogsInternal 
+  } = useDeploymentLogs(
+    environment as any, 
+    provider as any
+  );
+  
+  // Start deployment
+  const startDeployment = useCallback(() => {
+    setIsDeploying(true);
+    setStatus('running');
+    setProgress(0);
+    addLogInternal('Deployment started', 'info');
     
-    const {
-      deploymentConfig,
-      environment,
-      setDeploymentEnvironment,
-      updateDeploymentConfig
-    } = useConfig();
+    // Simulate deployment progress
+    const interval = setInterval(() => {
+      setProgress(prev => {
+        if (prev >= 100) {
+          clearInterval(interval);
+          setIsDeploying(false);
+          setStatus('success');
+          addLogInternal('Deployment completed successfully', 'success');
+          return 100;
+        }
+        return prev + 5;
+      });
+    }, 1000);
     
-    const { getDeploymentSummary } = useSummary();
-
-    // Hook that depends on other contexts
-    const { isDeploying, runStep, retryStep, startDeployment, cancelDeployment } = useDeploymentProcess({
-      deploymentSteps,
-      isConnected,
-      updateStep,
-      setCurrentStep,
-      connectToCluster,
-      addLog,
-      deploymentConfig: deploymentConfig || undefined,
-      environment
-    });
-
-    const contextValue = useMemo(() => ({
-      deploymentSteps,
-      clusterStatus,
-      serviceStatus,
-      logs,
-      currentStep,
-      isConnected,
-      isConnecting,
-      isDeploying,
-      provider,
-      providerCredentials,
-      deploymentConfig,
-      environment,
-      overallProgress,
-      connectToCluster,
-      disconnectFromCluster,
-      setCloudProvider,
-      setDeploymentEnvironment,
-      updateDeploymentConfig,
-      startDeployment,
-      runStep,
-      retryStep,
-      cancelDeployment,
-      getDeploymentSummary,
-      exportLogs,
-      clearLogs
-    }), [
-      deploymentSteps,
-      clusterStatus,
-      serviceStatus,
-      logs,
-      currentStep,
-      isConnected,
-      isConnecting,
-      isDeploying,
-      provider,
-      providerCredentials,
-      deploymentConfig,
-      environment,
-      overallProgress,
-      connectToCluster,
-      disconnectFromCluster,
-      setCloudProvider,
-      setDeploymentEnvironment,
-      updateDeploymentConfig,
-      startDeployment,
-      runStep,
-      retryStep,
-      cancelDeployment,
-      getDeploymentSummary,
-      exportLogs,
-      clearLogs
-    ]);
-
-    return (
-      <DeploymentContext.Provider value={contextValue}>
-        {children}
-      </DeploymentContext.Provider>
-    );
-  };
-
+    return () => clearInterval(interval);
+  }, [addLogInternal]);
+  
+  // Cancel deployment
+  const cancelDeployment = useCallback(() => {
+    setIsDeploying(false);
+    setStatus('canceled');
+    addLogInternal('Deployment canceled by user', 'warning');
+  }, [addLogInternal]);
+  
+  // Reset deployment
+  const resetDeployment = useCallback(() => {
+    setIsDeploying(false);
+    setProgress(0);
+    setStatus('idle');
+    addLogInternal('Deployment reset', 'info');
+  }, [addLogInternal]);
+  
+  // Add log
+  const addLog = useCallback((message: string, type: LogType = 'info', context?: Record<string, any>) => {
+    addLogInternal(message, type, context);
+  }, [addLogInternal]);
+  
+  // Clear logs
+  const clearLogs = useCallback(() => {
+    clearLogsInternal();
+  }, [clearLogsInternal]);
+  
+  // Create the context value
+  const value = useMemo(() => ({
+    isDeploying,
+    progress,
+    logs,
+    status,
+    startDeployment,
+    cancelDeployment,
+    resetDeployment,
+    addLog,
+    clearLogs,
+    environment,
+    setEnvironment,
+    provider,
+    setProvider,
+  }), [
+    isDeploying, 
+    progress, 
+    logs, 
+    status, 
+    startDeployment, 
+    cancelDeployment, 
+    resetDeployment,
+    addLog,
+    clearLogs,
+    environment,
+    setEnvironment,
+    provider,
+    setProvider,
+  ]);
+  
   return (
-    <ConfigProvider
-      provider={provider}
-      isDeploying={false}
-      addLog={addLog}
-    >
-      <ProgressProvider
-        deploymentSteps={deploymentSteps}
-        environment="development"
-      >
-        <SummaryProvider
-          deploymentSteps={deploymentSteps}
-          isConnected={isConnected}
-          provider={provider}
-          clusterStatus={clusterStatus}
-          isDeploying={false}
-          environment="development"
-          overallProgress={0}
-          serviceStatus={serviceStatus}
-        >
-          <InnerContent />
-        </SummaryProvider>
-      </ProgressProvider>
-    </ConfigProvider>
+    <DeploymentContext.Provider value={value}>
+      {children}
+    </DeploymentContext.Provider>
   );
 };
