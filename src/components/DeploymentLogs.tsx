@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent } from './ui/card';
-import { useDeployment } from '@/contexts/DeploymentContext';
+import { useDeployment } from '@/contexts/deployment';
 import { useDeploymentLogFiltering } from '@/hooks/useDeploymentLogFiltering';
 import { Log } from '@/types/logs';
 import { toast } from 'sonner';
