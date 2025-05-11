@@ -3,7 +3,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent } from './ui/card';
 import { useDeployment } from '@/contexts/deployment';
 import { useDeploymentLogFiltering } from '@/hooks/useDeploymentLogFiltering';
-import { Log } from '@/types/logs';
+import { Log, TimeRangeType, LogFilterType } from '@/types/logs';
 import { toast } from 'sonner';
 
 import { 
@@ -147,9 +147,9 @@ const DeploymentLogs: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           <LogFilters
             logFilter={logFilter}
-            setLogFilter={setLogFilter}
+            setLogFilter={(filter: LogFilterType) => setLogFilter(filter)}
             timeRange={timeRange}
-            setTimeRange={setTimeRange}
+            setTimeRange={(range: TimeRangeType) => setTimeRange(range)}
             logCounts={logCounts}
           />
           <div className="lg:col-span-2">
