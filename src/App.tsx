@@ -14,12 +14,14 @@ import NotFound from "./pages/NotFound";
 import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
 import AgentDashboard from "./pages/AgentDashboard";
-import FlowEditor from "./pages/FlowEditor"; // Import the new flow editor page
+import FlowEditor from "./pages/FlowEditor";
+import AgentDemo from "./pages/AgentDemo"; // Import the new AgentDemo page
 import { Toaster } from "./components/ui/sonner";
 import { ChatProvider } from "./contexts/ChatContext";
 import { ThemeProvider } from 'next-themes';
 import { DeploymentProvider } from "./contexts/DeploymentContext";
 import { APIProvider } from "./contexts/APIContext";
+import { AGUIProvider } from "./contexts/agui/AGUIContext";
 
 function App() {
   return (
@@ -27,27 +29,30 @@ function App() {
       <DeploymentProvider>
         <APIProvider>
           <ChatProvider>
-            <Router>
-              <Navbar />
-              <main className="min-h-screen">
-                <Routes>
-                  <Route path="/" element={<Index />} />
-                  <Route path="/deployment" element={<DeploymentDashboard />} />
-                  <Route path="/api" element={<APIManagement />} />
-                  <Route path="/documentation" element={<Documentation />} />
-                  <Route path="/agents" element={<AgentDashboard />} />
-                  <Route path="/devonn" element={<DevonnDashboard />} />
-                  <Route path="/flow" element={<FlowEditor />} /> {/* Add the new route */}
-                  <Route path="/about" element={<About />} />
-                  <Route path="/contact" element={<Contact />} />
-                  <Route path="/terms" element={<Terms />} />
-                  <Route path="/privacy" element={<Privacy />} />
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-              </main>
-              <Footer />
-            </Router>
-            <Toaster />
+            <AGUIProvider>
+              <Router>
+                <Navbar />
+                <main className="min-h-screen">
+                  <Routes>
+                    <Route path="/" element={<Index />} />
+                    <Route path="/deployment" element={<DeploymentDashboard />} />
+                    <Route path="/api" element={<APIManagement />} />
+                    <Route path="/documentation" element={<Documentation />} />
+                    <Route path="/agents" element={<AgentDashboard />} />
+                    <Route path="/devonn" element={<DevonnDashboard />} />
+                    <Route path="/flow" element={<FlowEditor />} />
+                    <Route path="/agent-demo" element={<AgentDemo />} /> {/* Add the new route */}
+                    <Route path="/about" element={<About />} />
+                    <Route path="/contact" element={<Contact />} />
+                    <Route path="/terms" element={<Terms />} />
+                    <Route path="/privacy" element={<Privacy />} />
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+                </main>
+                <Footer />
+              </Router>
+              <Toaster />
+            </AGUIProvider>
           </ChatProvider>
         </APIProvider>
       </DeploymentProvider>
