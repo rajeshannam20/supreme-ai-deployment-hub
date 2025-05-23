@@ -3,6 +3,7 @@ export interface Log {
   message: string;
   timestamp: string;
   type: 'info' | 'error' | 'warning' | 'success' | 'debug';
+  context?: Record<string, any>;
 }
 
 export interface LogCounts {
