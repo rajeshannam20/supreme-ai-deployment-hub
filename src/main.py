@@ -4,7 +4,7 @@ from typing import Optional, List, Dict, Any
 import httpx
 import os
 import json
-from secrets.manager import get_api_key, list_available_keys, set_api_key, delete_api_key
+from secret_manager.manager import get_api_key, list_available_keys, set_api_key, delete_api_key
 from auth.token_utils import verify_token, get_current_user
 from fastapi.middleware.cors import CORSMiddleware
 from services.agui_listener import router as agui_router  # Import the AG-UI router
@@ -26,6 +26,23 @@ app.add_middleware(
 
 # Include the AG-UI router
 app.include_router(agui_router)
+
+# Import and include the Schedule router
+import sys
+sys.path.append('/home/runner/work/supreme-ai-deployment-hub/supreme-ai-deployment-hub')
+from app.api.schedule import router as schedule_router
+from app.main import create_tables
+
+app.include_router(schedule_router, prefix="/schedules", tags=["schedules"])
+
+# Initialize database tables
+create_tables()
+
+# Include the Schedule router
+app.include_router(schedule_router, prefix="/schedules", tags=["schedules"])
+
+# Initialize database tables
+create_tables()
 
 # ===== Models =====
 class ChatRequest(BaseModel):
