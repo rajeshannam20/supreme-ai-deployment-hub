@@ -12,7 +12,7 @@ import base64
 _api_keys_cache: Dict[str, str] = {}
 
 # Path to encrypted keys storage
-KEYS_FILE = os.environ.get("KEYS_FILE", "secrets/encrypted_keys.json")
+KEYS_FILE = os.environ.get("KEYS_FILE", "key_manager/encrypted_keys.json")
 
 # Encryption key - in production this would come from environment or secure storage
 # For demo purposes, we're using a fixed key - CHANGE THIS IN PRODUCTION!

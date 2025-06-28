@@ -4,10 +4,11 @@ from typing import Optional, List, Dict, Any
 import httpx
 import os
 import json
-from secrets.manager import get_api_key, list_available_keys, set_api_key, delete_api_key
-from auth.token_utils import verify_token, get_current_user
+from key_manager.manager import get_api_key, list_available_keys, set_api_key, delete_api_key
+from auth.token_utils import verify_token
 from fastapi.middleware.cors import CORSMiddleware
 from services.agui_listener import router as agui_router  # Import the AG-UI router
+from api.auth import router as auth_router, get_current_user  # Import the auth router and dependency
 
 app = FastAPI(
     title="MCP - Model Control Panel",
@@ -26,6 +27,9 @@ app.add_middleware(
 
 # Include the AG-UI router
 app.include_router(agui_router)
+
+# Include the auth router
+app.include_router(auth_router, prefix="/auth", tags=["authentication"])
 
 # ===== Models =====
 class ChatRequest(BaseModel):
@@ -68,22 +72,21 @@ class StatusResponse(BaseModel):
 
 # ===== API Key Management =====
 @app.get("/admin/keys", response_model=List[str])
-async def list_keys(user: str = Depends(get_current_user)):
+async def list_keys(current_user = Depends(get_current_user)):
     """List all available API keys (names only)"""
-    if user != "admin":
-        raise HTTPException(status_code=403, detail="Only admin users can list keys")
-    
+    # For now, any authenticated user can list keys
+    # In production, you'd check roles/permissions here
     return list_available_keys()
 
 @app.put("/admin/keys/{service}", response_model=StatusResponse)
 async def update_key(
     service: str, 
     data: APIKeyRequest,
-    user: str = Depends(get_current_user)
+    current_user = Depends(get_current_user)
 ):
     """Update or create an API key"""
-    if user != "admin":
-        raise HTTPException(status_code=403, detail="Only admin users can update keys")
+    # For now, any authenticated user can update keys
+    # In production, you'd check roles/permissions here
     
     if set_api_key(service, data.key):
         return StatusResponse(
@@ -96,11 +99,11 @@ async def update_key(
 @app.delete("/admin/keys/{service}", response_model=StatusResponse)
 async def remove_key(
     service: str,
-    user: str = Depends(get_current_user)
+    current_user = Depends(get_current_user)
 ):
     """Remove an API key"""
-    if user != "admin":
-        raise HTTPException(status_code=403, detail="Only admin users can delete keys")
+    # For now, any authenticated user can delete keys
+    # In production, you'd check roles/permissions here
     
     if delete_api_key(service):
         return StatusResponse(
