@@ -94,7 +94,7 @@ const Index = () => {
           >
             <h2 className="text-3xl font-bold mb-6">Interactive Flow Editor</h2>
             <p className="text-lg mb-8">
-              Design complex workflows visually with our powerful PocketFlow editor, based on ReactFlow technology.
+              Design complex workflows visually with our powerful flow editor interface.
             </p>
             <Link to="/flow">
               <motion.button
