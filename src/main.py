@@ -4,10 +4,10 @@ from typing import Optional, List, Dict, Any
 import httpx
 import os
 import json
-from secrets.manager import get_api_key, list_available_keys, set_api_key, delete_api_key
-from auth.token_utils import verify_token, get_current_user
+from .secrets.manager import get_api_key, list_available_keys, set_api_key, delete_api_key
+from .auth.token_utils import verify_token, get_current_user
 from fastapi.middleware.cors import CORSMiddleware
-from services.agui_listener import router as agui_router  # Import the AG-UI router
+from .services.agui_listener import router as agui_router  # Import the AG-UI router
 
 app = FastAPI(
     title="MCP - Model Control Panel",

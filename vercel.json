@@ -1,0 +1,26 @@
+{
+  "builds": [
+    {
+      "src": "src/main.py",
+      "use": "@vercel/python"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "/src/main.py"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
+    }
+  ],
+  "env": {
+    "PYTHONPATH": "/var/task/src"
+  },
+  "functions": {
+    "src/main.py": {
+      "runtime": "python3.9"
+    }
+  }
+}

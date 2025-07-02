@@ -1,0 +1,148 @@
+name: Vercel Preview Integration Tests
+
+on:
+  pull_request:
+    branches: [main, develop]
+    paths-ignore:
+      - '*.md'
+      - 'docs/**'
+  push:
+    branches-ignore: [main]
+    paths-ignore:
+      - '*.md' 
+      - 'docs/**'
+  workflow_dispatch:
+
+jobs:
+  deploy-and-test:
+    name: Deploy to Vercel and Run Integration Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+          cache: 'pip'
+          
+      - name: Install Node.js dependencies
+        run: npm ci
+        
+      - name: Install Python dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install pytest-asyncio
+          
+      - name: Build frontend
+        run: npm run build
+        
+      - name: Deploy to Vercel
+        id: vercel-deploy
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          working-directory: ./
+          scope: ${{ secrets.VERCEL_ORG_ID }}
+          
+      - name: Wait for deployment
+        run: |
+          echo "Deployment URL: ${{ steps.vercel-deploy.outputs.preview-url }}"
+          echo "Waiting for deployment to be ready..."
+          
+          # Wait up to 5 minutes for deployment to be ready
+          for i in {1..30}; do
+            if curl -f -s "${{ steps.vercel-deploy.outputs.preview-url }}/health" > /dev/null; then
+              echo "Deployment is ready!"
+              break
+            fi
+            echo "Attempt $i: Deployment not ready yet, waiting 10 seconds..."
+            sleep 10
+          done
+          
+          # Final check
+          if ! curl -f -s "${{ steps.vercel-deploy.outputs.preview-url }}/health" > /dev/null; then
+            echo "Deployment failed to become ready after 5 minutes"
+            exit 1
+          fi
+          
+      - name: Run integration tests
+        env:
+          INTEGRATION_TEST_URL: ${{ steps.vercel-deploy.outputs.preview-url }}
+        run: |
+          echo "Running integration tests against: $INTEGRATION_TEST_URL"
+          python -m pytest tests/integration_test.py -v --tb=short --durations=10
+          
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: integration-test-results
+          path: |
+            pytest.log
+            test-results/
+          retention-days: 30
+          
+      - name: Comment on PR with results
+        if: github.event_name == 'pull_request' && always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const deploymentUrl = '${{ steps.vercel-deploy.outputs.preview-url }}';
+            const testStatus = '${{ job.status }}' === 'success' ? '✅ PASSED' : '❌ FAILED';
+            
+            const body = `## 🚀 Vercel Preview Deployment & Integration Tests
+            
+            **Deployment URL:** ${deploymentUrl}
+            **Integration Tests:** ${testStatus}
+            
+            ### Test Endpoints Checked:
+            - \`/health\` - Health check endpoint
+            - \`/\` - Root API information
+            - \`/docs\` - API documentation
+            - \`/openapi.json\` - OpenAPI schema
+            - Authentication on admin endpoints
+            - Error handling
+            
+            ${deploymentUrl ? `🔗 [View Live Preview](${deploymentUrl})` : ''}
+            ${deploymentUrl ? `📖 [API Documentation](${deploymentUrl}/docs)` : ''}
+            
+            ℹ️ Integration tests verify that the deployed application works correctly in the live environment.`;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            });
+            
+      - name: Set deployment status
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const state = '${{ job.status }}' === 'success' ? 'success' : 'failure';
+            const description = '${{ job.status }}' === 'success' 
+              ? 'Integration tests passed on Vercel preview' 
+              : 'Integration tests failed on Vercel preview';
+            
+            github.rest.repos.createCommitStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              sha: context.sha,
+              state: state,
+              target_url: '${{ steps.vercel-deploy.outputs.preview-url }}',
+              description: description,
+              context: 'Vercel Preview Integration Tests'
+            });
