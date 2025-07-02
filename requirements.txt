@@ -7,3 +7,12 @@ pydantic>=2.3.0
 cryptography>=41.0.0
 python-multipart>=0.0.6
 python-dotenv>=1.0.0
+sse-starlette>=1.6.0
+
+# Testing dependencies
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+
+# Linting and formatting
+black>=23.0.0
+flake8>=6.0.0
