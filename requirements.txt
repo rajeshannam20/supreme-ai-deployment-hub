@@ -1,9 +1,35 @@
 
+# FastAPI Core Dependencies
 fastapi>=0.103.0
-uvicorn>=0.22.0
+uvicorn[standard]>=0.22.0
+pydantic>=2.3.0
+pydantic[email]>=2.3.0
+
+# HTTP Client & Authentication
 httpx>=0.24.1
 pyjwt>=2.8.0
-pydantic>=2.3.0
+python-jose[cryptography]>=3.3.0
 cryptography>=41.0.0
 python-multipart>=0.0.6
+
+# Configuration Management
 python-dotenv>=1.0.0
+
+# Async File Operations (useful for file uploads/downloads)
+aiofiles>=23.2.0
+
+# Password Hashing (commonly needed for user auth)
+passlib[bcrypt]>=1.7.4
+
+# Testing Dependencies
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+
+# Development Tools
+black>=23.0.0
+flake8>=6.0.0
+isort>=5.12.0
+
+# Code Quality Tools
+mypy>=1.5.0
+pre-commit>=3.4.0
