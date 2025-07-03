@@ -11,10 +11,14 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@11labs/react": "^0.1.4",
+    "@anthropic-ai/sdk": "^0.56.0",
     "@aws-sdk/client-eks": "^3.790.0",
     "@aws-sdk/client-sts": "^3.787.0",
     "@commitlint/cli": "^19.8.0",
+    "@google/generative-ai": "^0.24.1",
     "@hookform/resolvers": "^3.9.0",
+    "@huggingface/transformers": "^3.6.1",
     "@kubernetes/client-node": "^0.21.0",
     "@playwright/test": "^1.51.1",
     "@radix-ui/react-accordion": "^1.2.0",
