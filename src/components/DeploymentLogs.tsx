@@ -6,13 +6,9 @@ import { useDeploymentLogFiltering } from '@/hooks/useDeploymentLogFiltering';
 import { Log, TimeRangeType, LogFilterType } from '@/types/logs';
 import { toast } from 'sonner';
 
-import { 
-  LogFilters, 
-  LogSearch, 
-  LogDisplay, 
-  LogHeader, 
-  LogFooter 
-} from '@/components/deployment/logs';
+import { ScrollArea } from './ui/scroll-area';
+import { Badge } from './ui/badge';
+import { Button } from './ui/button';
 
 const DeploymentLogs: React.FC = () => {
   const { logs, clearLogs, addLog } = useDeployment();
@@ -136,43 +132,50 @@ const DeploymentLogs: React.FC = () => {
   return (
     <Card>
       <CardContent className="p-4 space-y-4">
-        <LogHeader 
-          logs={filteredLogs} 
-          clearLogs={handleClearLogs} 
-          exportLogs={exportLogs}
-          isStreaming={isStreaming}
-          toggleStreaming={toggleStreaming}
-        />
-        
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          <LogFilters
-            logFilter={logFilter}
-            setLogFilter={(filter: LogFilterType) => setLogFilter(filter)}
-            timeRange={timeRange}
-            setTimeRange={(range: TimeRangeType) => setTimeRange(range)}
-            logCounts={logCounts}
-          />
-          <div className="lg:col-span-2">
-            <LogSearch
-              searchQuery={searchQuery}
-              setSearchQuery={setSearchQuery}
-              isSearching={isSearching}
-              setIsSearching={setIsSearching}
-            />
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-medium">Deployment Logs</h3>
+          <div className="flex items-center space-x-2">
+            <Button
+              variant={isStreaming ? 'destructive' : 'default'}
+              size="sm"
+              onClick={toggleStreaming}
+            >
+              {isStreaming ? 'Stop Stream' : 'Start Stream'}
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleClearLogs}>
+              Clear Logs
+            </Button>
           </div>
         </div>
         
-        <LogDisplay 
-          logs={filteredLogs} 
-          autoScroll={autoScroll} 
-          highlightTerm={isSearching ? searchQuery : undefined}
-        />
+        <ScrollArea className="h-96 w-full border rounded-md">
+          <div className="p-4 space-y-2">
+            {filteredLogs.length === 0 ? (
+              <div className="text-center text-muted-foreground py-8">
+                No logs to display
+              </div>
+            ) : (
+              filteredLogs.map((log, index) => (
+                <div key={index} className="flex items-start space-x-2 text-sm">
+                  <Badge variant="outline" className="text-xs shrink-0">
+                    {log.type.toUpperCase()}
+                  </Badge>
+                  <span className="text-xs text-muted-foreground shrink-0 font-mono">
+                    {log.timestamp}
+                  </span>
+                  <span className="flex-1 break-words">{log.message}</span>
+                </div>
+              ))
+            )}
+          </div>
+        </ScrollArea>
         
-        <LogFooter 
-          logCount={filteredLogs.length} 
-          autoScroll={autoScroll} 
-          setAutoScroll={setAutoScroll} 
-        />
+        <div className="flex items-center justify-between text-sm text-muted-foreground">
+          <span>{filteredLogs.length} logs displayed</span>
+          <Button variant="outline" size="sm" onClick={() => exportLogs()}>
+            Export Logs
+          </Button>
+        </div>
       </CardContent>
     </Card>
   );
