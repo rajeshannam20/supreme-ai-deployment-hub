@@ -4,6 +4,7 @@ import "./App.css";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import Index from "./pages/Index";
+import WorkflowManagement from "./pages/WorkflowManagement";
 import DeploymentDashboard from "./pages/DeploymentDashboard";
 import APIManagement from "./pages/APIManagement";
 import Documentation from "./pages/Documentation";
@@ -42,6 +43,7 @@ function App() {
                     <Route path="/agents" element={<AgentDashboard />} />
                     <Route path="/devonn" element={<DevonnDashboard />} />
                     <Route path="/flow" element={<FlowEditor />} />
+                    <Route path="/workflows" element={<WorkflowManagement />} />
                     <Route path="/agent-demo" element={<AgentDemo />} /> {/* Add the new route */}
                     <Route path="/enhanced-agents" element={<EnhancedAgentDemo />} /> {/* Enhanced multi-LLM platform */}
                     <Route path="/about" element={<About />} />
