@@ -1,6 +1,6 @@
 
 # Dockerfile for Devonn AI API
-FROM python:3.10-slim
+FROM python:3.13.5-slim
 
 WORKDIR /app
 
