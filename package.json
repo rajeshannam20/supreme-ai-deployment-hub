@@ -19,7 +19,7 @@
     "@google/generative-ai": "^0.24.1",
     "@hookform/resolvers": "^3.9.0",
     "@huggingface/transformers": "^3.6.1",
-    "@kubernetes/client-node": "^0.21.0",
+    "@kubernetes/client-node": "^1.0.0",
     "@playwright/test": "^1.51.1",
     "@radix-ui/react-accordion": "^1.2.0",
     "@radix-ui/react-alert-dialog": "^1.1.1",
